@@ -9,6 +9,13 @@ import { ApiError } from "./utils/api-error";
 import { globalErrorHandler } from "./utils/global-error-handler";
 import { logger } from "./utils/logger";
 import { parsePageAndLimitNumber } from "./utils/request-query-parser";
+import departmentRoutes from "./routes/department.routes";
+import employeeRoutes from "./routes/employee.routes";
+import leaveRoutes from "./routes/leave.routes";
+import attendanceRoutes from "./routes/attendance.routes";
+import payrollRoutes from "./routes/payroll.routes";
+import positionRoutes from "./routes/position.routes";
+import authRoutes from "./routes/auth.routes";
 
 const allowedOrigins = config.get<string[]>("allowedOrigins");
 
@@ -56,7 +63,11 @@ app.use(
   morgan(
     '{"timestamp": ":date[iso]", "requestId": ":requestId", "protocol": "HTTP/:http-version", "clientIp": ":requestIp", "method": ":method", "path": ":path", "responseTimeInMs": ":response-time[digits]", "statusCode": :status, "referer": ":referrer", "contentLength": :res[content-length], "userAgent": ":user-agent"}',
     {
-      stream: logger.stream,
+      stream: {
+        write: (message: string) => {
+          logger.http(message.trim());
+        },
+      },
     },
   ),
 );
@@ -77,6 +88,20 @@ app.use((req, res, next) => {
   req.pagination = parsePageAndLimitNumber(Number(page), Number(rows));
 
   next();
+});
+
+// API Routes
+app.use("/api/auth", authRoutes);
+app.use("/api/departments", departmentRoutes);
+app.use("/api/employees", employeeRoutes);
+app.use("/api/leaves", leaveRoutes);
+app.use("/api/attendance", attendanceRoutes);
+app.use("/api/payroll", payrollRoutes);
+app.use("/api/positions", positionRoutes);
+
+// Health check
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
 app.use((req, res, next) => {

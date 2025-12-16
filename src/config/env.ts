@@ -16,6 +16,9 @@ const envSchema = z.object({
   DB_PORT: z.string(),
   DB_TYPE: z.string(),
   NODE_CONFIG_DIR: z.string().default("src/config"),
+  JWT_SECRET: z.string(),
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

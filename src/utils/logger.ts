@@ -1,5 +1,6 @@
 import 'dotenv/config';
-import winston, { Logger } from 'winston';
+import winston, { Logger as WinstonLogger } from 'winston';
+import { TransformableInfo } from 'winston/lib/winston/logger';
 
 const { transports, format } = winston;
 const { timestamp, combine, errors, printf } = format;
@@ -29,7 +30,7 @@ const accessTransport = new transports.File({
   format: httpLevelOnly(),
 });
 
-const logger: Logger = winston.createLogger({
+const logger: WinstonLogger = winston.createLogger({
   level: process.env.LOG_LEVEL?.toLowerCase() || 'info',
   format: combine(
     errors({ stack: true }),
@@ -43,22 +44,23 @@ if (process.env.NODE_ENV !== 'production') {
   logger.add(new winston.transports.Console());
 }
 
-function jsonPrintFormat(log = {}) {
+function jsonPrintFormat(log: TransformableInfo) {
   if (log.level === 'http') {
     return log.message;
   }
 
-  let output = Object.assign(
+  let output: Record<string, any> = Object.assign(
     {},
     { timestamp: log.timestamp, level: log.level, message: log.message },
   );
 
-  function appendLogKeyValue(prop, logMessageString) {
-    if (log[prop])
-      logMessageString = Object.assign({}, logMessageString, {
+  function appendLogKeyValue(prop: string, logMessageObject: Record<string, any>) {
+    if (log[prop]) {
+      logMessageObject = Object.assign({}, logMessageObject, {
         [prop]: log[prop],
       });
-    return logMessageString;
+    }
+    return logMessageObject;
   }
 
   const logStandardProps = [
@@ -74,7 +76,7 @@ function jsonPrintFormat(log = {}) {
   ];
 
   // Useful for tracking non-standard log props
-  let logCopy = {};
+  let logCopy: Record<string, any> = {};
 
   const logHasNonStandardProps =
     Object.keys(log).length > logStandardProps.length;
@@ -83,9 +85,12 @@ function jsonPrintFormat(log = {}) {
   }
 
   logStandardProps.forEach((prop) => {
-    if (log[prop]) output = appendLogKeyValue(prop, output);
-
-    logHasNonStandardProps & logCopy[prop] & delete logCopy[prop];
+    if (log[prop]) {
+      output = appendLogKeyValue(prop, output);
+    }
+    if (logHasNonStandardProps && logCopy[prop]) {
+      delete logCopy[prop];
+    }
   });
 
   if (logHasNonStandardProps) {
@@ -96,11 +101,5 @@ function jsonPrintFormat(log = {}) {
 
   return JSON.stringify(output);
 }
-
-logger.stream = {
-  write: (message, encoding) => {
-    logger.http(message.trim());
-  },
-};
 
 export { logger };
