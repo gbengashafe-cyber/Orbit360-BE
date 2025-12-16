@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response } from "express";
+import { ErrorRequestHandler, Response } from "express";
 import {
   BaseError,
   ConnectionError,
@@ -11,11 +11,11 @@ import { env } from "../config/env";
 import { ApiError } from "./api-error";
 import { logger } from "./logger";
 
-const globalErrorHandler = (
-  err: any, // Replace `any` with a custom error type if available
-  req: Request,
-  res: Response,
-  next: NextFunction,
+const globalErrorHandler: ErrorRequestHandler = (
+  err,
+  req,
+  res,
+  next,
 ): Response => {
   ["development", "test"].includes(env.NODE_ENV) &&
     console.log(
