@@ -11,7 +11,8 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "prepare": "husky",
-    "seed": "ts-node src/db/seed.ts"
+    "seed": "ts-node src/db/seed.ts",
+    "clear-db": "ts-node src/db/purge.ts"
   },
   "keywords": [],
   "author": "",
@@ -23,7 +24,7 @@
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "helmet": "^8.1.0",
-    "jsonwebtoken": "^9.1.2",
+    "jsonwebtoken": "^9.0.3",
     "morgan": "^1.10.1",
     "mysql2": "^3.15.3",
     "sequelize": "^6.37.7",

@@ -1,18 +1,18 @@
-import { Request, Response, NextFunction } from 'express';
-import { Position } from '../models';
-import { ApiError } from '../utils/api-error';
-import { logger } from '../utils/logger';
+import { NextFunction, Request, Response } from "express";
+import { Position } from "../models";
+import { ApiError } from "../utils/api-error";
+import { logger } from "../utils/logger";
 
 export class PositionController {
   static async getAll(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page, rows } = req.pagination;
+      const { page, rows } = req.body.pagination;
       const offset = (page - 1) * rows;
 
       const { count, rows: positions } = await Position.findAndCountAll({
         limit: rows,
         offset,
-        order: [['createdAt', 'DESC']],
+        order: [["createdAt", "DESC"]],
       });
 
       res.json({
@@ -34,11 +34,11 @@ export class PositionController {
     try {
       const { id } = req.params;
       const position = await Position.findByPk(id, {
-        include: [{ association: 'employees', attributes: ['id', 'firstName', 'lastName', 'email'] }],
+        include: [{ association: "employees", attributes: ["id", "firstName", "lastName", "email"] }],
       });
 
       if (!position) {
-        throw ApiError.notFound('Position not found');
+        throw ApiError.notFound("Position not found");
       }
 
       res.json({ data: position });
@@ -57,7 +57,7 @@ export class PositionController {
         description,
       });
 
-      res.status(201).json({ data: position, message: 'Position created successfully' });
+      res.status(201).json({ data: position, message: "Position created successfully" });
     } catch (error) {
       logger.error(`Error creating position: ${error}`);
       next(error);
@@ -71,12 +71,12 @@ export class PositionController {
 
       const position = await Position.findByPk(id);
       if (!position) {
-        throw ApiError.notFound('Position not found');
+        throw ApiError.notFound("Position not found");
       }
 
       await position.update({ title, description });
 
-      res.json({ data: position, message: 'Position updated successfully' });
+      res.json({ data: position, message: "Position updated successfully" });
     } catch (error) {
       logger.error(`Error updating position: ${error}`);
       next(error);
@@ -89,12 +89,12 @@ export class PositionController {
 
       const position = await Position.findByPk(id);
       if (!position) {
-        throw ApiError.notFound('Position not found');
+        throw ApiError.notFound("Position not found");
       }
 
       await position.destroy();
 
-      res.json({ message: 'Position deleted successfully' });
+      res.json({ message: "Position deleted successfully" });
     } catch (error) {
       logger.error(`Error deleting position: ${error}`);
       next(error);

@@ -1,18 +1,18 @@
-import { Request, Response, NextFunction } from 'express';
-import { Department } from '../models';
-import { ApiError } from '../utils/api-error';
-import { logger } from '../utils/logger';
+import { NextFunction, Request, Response } from "express";
+import { Department } from "../models";
+import { ApiError } from "../utils/api-error";
+import { logger } from "../utils/logger";
 
 export class DepartmentController {
   static async getAll(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page, rows } = req.pagination!;
+      const { page, rows } = req.body.pagination!;
       const offset = (page - 1) * rows;
 
       const { count, rows: departments } = await Department.findAndCountAll({
         limit: rows,
         offset,
-        order: [['createdAt', 'DESC']],
+        order: [["createdAt", "DESC"]],
       });
 
       res.json({
@@ -34,11 +34,11 @@ export class DepartmentController {
     try {
       const { id } = req.params;
       const department = await Department.findByPk(id, {
-        include: [{ association: 'employees', attributes: ['id', 'firstName', 'lastName', 'email'] }],
+        include: [{ association: "employees", attributes: ["id", "firstName", "lastName", "email"] }],
       });
 
       if (!department) {
-        throw ApiError.notFound('Department not found');
+        throw ApiError.notFound("Department not found");
       }
 
       res.json({ data: department });
@@ -57,7 +57,7 @@ export class DepartmentController {
         description,
       });
 
-      res.status(201).json({ data: department, message: 'Department created successfully' });
+      res.status(201).json({ data: department, message: "Department created successfully" });
     } catch (error) {
       logger.error(`Error creating department: ${error}`);
       next(error);
@@ -71,12 +71,12 @@ export class DepartmentController {
 
       const department = await Department.findByPk(id);
       if (!department) {
-        throw ApiError.notFound('Department not found');
+        throw ApiError.notFound("Department not found");
       }
 
       await department.update({ name, description });
 
-      res.json({ data: department, message: 'Department updated successfully' });
+      res.json({ data: department, message: "Department updated successfully" });
     } catch (error) {
       logger.error(`Error updating department: ${error}`);
       next(error);
@@ -89,12 +89,12 @@ export class DepartmentController {
 
       const department = await Department.findByPk(id);
       if (!department) {
-        throw ApiError.notFound('Department not found');
+        throw ApiError.notFound("Department not found");
       }
 
       await department.destroy();
 
-      res.json({ message: 'Department deleted successfully' });
+      res.json({ message: "Department deleted successfully" });
     } catch (error) {
       logger.error(`Error deleting department: ${error}`);
       next(error);

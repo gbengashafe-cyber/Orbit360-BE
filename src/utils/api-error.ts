@@ -1,40 +1,64 @@
-class ApiError {
-  constructor(code, message) {
-    this.name = 'ApiError';
+export const HttpStatus = {
+  MaskedError: 200,
+  BadRequest: 400,
+  NotFound: 404,
+  Unauthenticated: 401,
+  Forbidden: 403,
+  TooManyRequests: 429,
+  Conflict: 409,
+  InternalServerError: 500,
+  NotImplemented: 501,
+} as const;
+
+class ApiError extends Error {
+  public readonly code: number;
+
+  constructor(code: number, message: string) {
+    super(message);
+
+    this.name = "ApiError";
     this.code = code;
-    this.message = message;
+
+    Object.setPrototypeOf(this, new.target.prototype);
+
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
   }
 
-  static maskedError(msg) {
-    return new ApiError(200, msg);
+  static maskedError(message: string): ApiError {
+    return new ApiError(HttpStatus.MaskedError, message);
   }
 
-  static badRequest(msg) {
-    return new ApiError(400, msg);
+  static badRequest(message: string): ApiError {
+    return new ApiError(HttpStatus.BadRequest, message);
   }
 
-  static notFound(msg) {
-    return new ApiError(404, msg);
+  static notFound(message: string): ApiError {
+    return new ApiError(HttpStatus.NotFound, message);
   }
 
-  static unauthenticated(msg) {
-    return new ApiError(401, msg);
+  static unauthenticated(message: string): ApiError {
+    return new ApiError(HttpStatus.Unauthenticated, message);
   }
 
-  static forbidden(msg) {
-    return new ApiError(403, msg);
+  static forbidden(message: string): ApiError {
+    return new ApiError(HttpStatus.Forbidden, message);
   }
 
-  static tooManyRequests(msg) {
-    return new ApiError(429, msg);
+  static tooManyRequests(message: string): ApiError {
+    return new ApiError(HttpStatus.TooManyRequests, message);
+  }
+  static conflict(message: string): ApiError {
+    return new ApiError(HttpStatus.Conflict, message);
   }
 
-  static internalServerError(msg) {
-    return new ApiError(500, msg);
+  static internalServerError(message: string): ApiError {
+    return new ApiError(HttpStatus.InternalServerError, message);
   }
 
-  static notImplemented(msg) {
-    return new ApiError(501, msg);
+  static notImplemented(message: string): ApiError {
+    return new ApiError(HttpStatus.NotImplemented, message);
   }
 }
 

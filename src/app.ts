@@ -5,17 +5,18 @@ import express, { Request } from "express";
 import helmet from "helmet";
 import morgan from "morgan";
 import { randomUUID } from "node:crypto";
-import { ApiError } from "./utils/api-error";
-import { globalErrorHandler } from "./utils/global-error-handler";
-import { logger } from "./utils/logger";
-import { parsePageAndLimitNumber } from "./utils/request-query-parser";
+import { companyRoutes } from "./features/company/company.routes";
+import attendanceRoutes from "./routes/attendance.routes";
+import authRoutes from "./routes/auth.routes";
 import departmentRoutes from "./routes/department.routes";
 import employeeRoutes from "./routes/employee.routes";
 import leaveRoutes from "./routes/leave.routes";
-import attendanceRoutes from "./routes/attendance.routes";
 import payrollRoutes from "./routes/payroll.routes";
 import positionRoutes from "./routes/position.routes";
-import authRoutes from "./routes/auth.routes";
+import { ApiError } from "./utils/api-error";
+import { globalErrorHandler } from "./utils/global-error-handler";
+import { logger } from "./utils/logger";
+import { parsePageAndLimitNumber, parseQueryParams } from "./utils/request-query-parser";
 
 const allowedOrigins = config.get<string[]>("allowedOrigins");
 
@@ -33,10 +34,7 @@ app.use((req, res, next) => {
 });
 
 const parseIp = (req: Request) =>
-  (Array.isArray(req.headers["x-forwarded-for"])
-    ? req.headers["x-forwarded-for"][0]
-    : req.headers["x-forwarded-for"]
-  )
+  (Array.isArray(req.headers["x-forwarded-for"]) ? req.headers["x-forwarded-for"][0] : req.headers["x-forwarded-for"])
     ?.split(",")
     .shift() || req.socket?.remoteAddress;
 
@@ -75,6 +73,12 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// handle case where request body is empty
+app.use((req, res, next) => {
+  req.body = req.body ?? {};
+  next();
+});
+
 app.use(
   cors({
     origin: allowedOrigins,
@@ -85,7 +89,8 @@ app.use(
 
 app.use((req, res, next) => {
   const { page, rows } = req.query;
-  req.pagination = parsePageAndLimitNumber(Number(page), Number(rows));
+  req.body.pagination = parsePageAndLimitNumber(page, rows);
+  req.body.query = parseQueryParams(req.query.q);
 
   next();
 });
@@ -98,6 +103,7 @@ app.use("/api/leaves", leaveRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/payroll", payrollRoutes);
 app.use("/api/positions", positionRoutes);
+app.use("/api/v1/companies", companyRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => {

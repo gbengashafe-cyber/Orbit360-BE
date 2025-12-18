@@ -5,7 +5,6 @@ declare module "express-serve-static-core" {
     requestId?: string;
     requestIp?: string;
     requestPath?: string;
-    pagination?: { page: number; rows: number };
   }
 }
 

@@ -1,22 +1,20 @@
-import { Request, Response, NextFunction } from 'express';
-import { Attendance, Employee } from '../models';
-import { ApiError } from '../utils/api-error';
-import { logger } from '../utils/logger';
-import { Op } from 'sequelize';
+import { NextFunction, Request, Response } from "express";
+import { Op } from "sequelize";
+import { Attendance, Employee } from "../models";
+import { ApiError } from "../utils/api-error";
+import { logger } from "../utils/logger";
 
 export class AttendanceController {
   static async getAll(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page, rows } = req.pagination;
+      const { page, rows } = req.body.pagination;
       const offset = (page - 1) * rows;
 
       const { count, rows: attendances } = await Attendance.findAndCountAll({
         limit: rows,
         offset,
-        include: [
-          { model: Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'email'] },
-        ],
-        order: [['date', 'DESC']],
+        include: [{ model: Employee, as: "employee", attributes: ["id", "firstName", "lastName", "email"] }],
+        order: [["date", "DESC"]],
       });
 
       res.json({
@@ -37,7 +35,7 @@ export class AttendanceController {
   static async getByEmployee(req: Request, res: Response, next: NextFunction) {
     try {
       const { employeeId } = req.params;
-      const { page, rows } = req.pagination;
+      const { page, rows } = req.body.pagination;
       const { startDate, endDate } = req.query;
       const offset = (page - 1) * rows;
 
@@ -53,7 +51,7 @@ export class AttendanceController {
         where: whereClause,
         limit: rows,
         offset,
-        order: [['date', 'DESC']],
+        order: [["date", "DESC"]],
       });
 
       res.json({
@@ -75,13 +73,11 @@ export class AttendanceController {
     try {
       const { id } = req.params;
       const attendance = await Attendance.findByPk(id, {
-        include: [
-          { model: Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'email'] },
-        ],
+        include: [{ model: Employee, as: "employee", attributes: ["id", "firstName", "lastName", "email"] }],
       });
 
       if (!attendance) {
-        throw ApiError.notFound('Attendance record not found');
+        throw ApiError.notFound("Attendance record not found");
       }
 
       res.json({ data: attendance });
@@ -94,7 +90,7 @@ export class AttendanceController {
   static async checkIn(req: Request, res: Response, next: NextFunction) {
     try {
       const { employeeId } = req.body;
-      const today = new Date().toISOString().split('T')[0];
+      const today = new Date().toISOString().split("T")[0];
 
       let attendance = await Attendance.findOne({
         where: {
@@ -108,13 +104,13 @@ export class AttendanceController {
           employeeId,
           date: today,
           checkIn: new Date(),
-          status: 'present',
+          status: "present",
         });
       } else if (!attendance.checkIn) {
         await attendance.update({ checkIn: new Date() });
       }
 
-      res.json({ data: attendance, message: 'Checked in successfully' });
+      res.json({ data: attendance, message: "Checked in successfully" });
     } catch (error) {
       logger.error(`Error during check-in: ${error}`);
       next(error);
@@ -124,7 +120,7 @@ export class AttendanceController {
   static async checkOut(req: Request, res: Response, next: NextFunction) {
     try {
       const { employeeId } = req.body;
-      const today = new Date().toISOString().split('T')[0];
+      const today = new Date().toISOString().split("T")[0];
 
       const attendance = await Attendance.findOne({
         where: {
@@ -134,12 +130,12 @@ export class AttendanceController {
       });
 
       if (!attendance) {
-        throw ApiError.notFound('No check-in record found for today');
+        throw ApiError.notFound("No check-in record found for today");
       }
 
       await attendance.update({ checkOut: new Date() });
 
-      res.json({ data: attendance, message: 'Checked out successfully' });
+      res.json({ data: attendance, message: "Checked out successfully" });
     } catch (error) {
       logger.error(`Error during check-out: ${error}`);
       next(error);
@@ -161,13 +157,13 @@ export class AttendanceController {
         attendance = await Attendance.create({
           employeeId,
           date,
-          status: 'absent',
+          status: "absent",
         });
       } else {
-        await attendance.update({ status: 'absent' });
+        await attendance.update({ status: "absent" });
       }
 
-      res.json({ data: attendance, message: 'Marked as absent' });
+      res.json({ data: attendance, message: "Marked as absent" });
     } catch (error) {
       logger.error(`Error marking absent: ${error}`);
       next(error);
@@ -180,12 +176,12 @@ export class AttendanceController {
 
       const attendance = await Attendance.findByPk(id);
       if (!attendance) {
-        throw ApiError.notFound('Attendance record not found');
+        throw ApiError.notFound("Attendance record not found");
       }
 
       await attendance.destroy();
 
-      res.json({ message: 'Attendance record deleted' });
+      res.json({ message: "Attendance record deleted" });
     } catch (error) {
       logger.error(`Error deleting attendance: ${error}`);
       next(error);
