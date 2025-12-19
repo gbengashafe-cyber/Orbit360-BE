@@ -1,6 +1,6 @@
-import { DataTypes, Model } from "sequelize";
-import { db } from "../../db";
-import { Company } from "../company/company.model";
+import { DataTypes, Model } from 'sequelize';
+import { db } from '../../db';
+import { Company } from '../company/company.model';
 
 export interface DepartmentAttributes {
   id?: number;
@@ -25,7 +25,10 @@ Department.init(
     name: {
       type: DataTypes.STRING(100),
       allowNull: false,
-      unique: true,
+      unique: 'name',
+      set(value: string) {
+        this.setDataValue('name', value.toUpperCase());
+      },
     },
     description: {
       type: DataTypes.TEXT,
@@ -35,9 +38,9 @@ Department.init(
   {
     sequelize: db,
     underscored: true,
-    tableName: "departments",
+    tableName: 'departments',
   },
 );
 
-Department.belongsTo(Company, { foreignKey: { name: "companyId", allowNull: false } });
-Company.hasMany(Department, { foreignKey: { name: "companyId", allowNull: false } });
+Department.belongsTo(Company, { foreignKey: { name: 'companyId', allowNull: false }, as: 'company' });
+Company.hasMany(Department, { foreignKey: { name: 'companyId', allowNull: false }, as: 'companies' });
