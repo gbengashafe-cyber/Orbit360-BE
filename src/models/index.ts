@@ -1,16 +1,13 @@
 import { db } from '../db';
 import { Department } from '../features/department/department.model';
+import { Employee } from '../features/employee/employee.model';
 import { Attendance } from './attendance.model';
-import { Employee } from './employee.model';
 import { Leave } from './leave.model';
 import { Payroll } from './payroll.model';
 import { Position } from './position.model';
 import { User } from './user.model';
 
 // Define associations
-Department.hasMany(Employee, { foreignKey: 'departmentId', as: 'employees' });
-Employee.belongsTo(Department, { foreignKey: 'departmentId', as: 'department' });
-
 Position.hasMany(Employee, { foreignKey: 'positionId', as: 'employees' });
 Employee.belongsTo(Position, { foreignKey: 'positionId', as: 'position' });
 

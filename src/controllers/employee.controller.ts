@@ -1,7 +1,8 @@
-import { NextFunction, Request, Response } from "express";
-import { Department, Employee, Position } from "../models";
-import { ApiError } from "../utils/api-error";
-import { logger } from "../utils/logger";
+import { NextFunction, Request, Response } from 'express';
+import { Company } from '../features/company/company.model';
+import { Department, Employee, Position } from '../models';
+import { ApiError } from '../utils/api-error';
+import { logger } from '../utils/logger';
 
 export class EmployeeController {
   static async getAll(req: Request, res: Response, next: NextFunction) {
@@ -13,10 +14,10 @@ export class EmployeeController {
         limit: rows,
         offset,
         include: [
-          { model: Department, as: "department", attributes: ["id", "name"] },
-          { model: Position, as: "position", attributes: ["id", "title"] },
+          { model: Department, as: 'department', attributes: ['id', 'name'] },
+          { model: Position, as: 'position', attributes: ['id', 'title'] },
         ],
-        order: [["createdAt", "DESC"]],
+        order: [['createdAt', 'DESC']],
       });
 
       res.json({
@@ -39,13 +40,18 @@ export class EmployeeController {
       const { id } = req.params;
       const employee = await Employee.findByPk(id, {
         include: [
-          { model: Department, as: "department", attributes: ["id", "name"] },
-          { model: Position, as: "position", attributes: ["id", "title"] },
+          {
+            model: Department,
+            as: 'department',
+            attributes: ['id', 'name'],
+            include: [{ model: Company, as: 'company', attributes: ['id', 'name', 'description'] }],
+          },
+          { model: Position, as: 'position', attributes: ['id', 'title'] },
         ],
       });
 
       if (!employee) {
-        throw ApiError.notFound("Employee not found");
+        throw ApiError.notFound('Employee not found');
       }
 
       res.json({ data: employee });
@@ -68,17 +74,17 @@ export class EmployeeController {
         salary,
         departmentId,
         positionId,
-        status: status || "active",
+        status: status || 'active',
       });
 
       const createdEmployee = await Employee.findByPk(employee.id, {
         include: [
-          { model: Department, as: "department", attributes: ["id", "name"] },
-          { model: Position, as: "position", attributes: ["id", "title"] },
+          { model: Department, as: 'department', attributes: ['id', 'name'] },
+          { model: Position, as: 'position', attributes: ['id', 'title'] },
         ],
       });
 
-      res.status(201).json({ data: createdEmployee, message: "Employee created successfully" });
+      res.status(201).json({ data: createdEmployee, message: 'Employee created successfully' });
     } catch (error) {
       logger.error(`Error creating employee: ${error}`);
       next(error);
@@ -92,7 +98,7 @@ export class EmployeeController {
 
       const employee = await Employee.findByPk(id);
       if (!employee) {
-        throw ApiError.notFound("Employee not found");
+        throw ApiError.notFound('Employee not found');
       }
 
       await employee.update({
@@ -108,12 +114,12 @@ export class EmployeeController {
 
       const updatedEmployee = await Employee.findByPk(id, {
         include: [
-          { model: Department, as: "department", attributes: ["id", "name"] },
-          { model: Position, as: "position", attributes: ["id", "title"] },
+          { model: Department, as: 'department', attributes: ['id', 'name'] },
+          { model: Position, as: 'position', attributes: ['id', 'title'] },
         ],
       });
 
-      res.json({ data: updatedEmployee, message: "Employee updated successfully" });
+      res.json({ data: updatedEmployee, message: 'Employee updated successfully' });
     } catch (error) {
       logger.error(`Error updating employee: ${error}`);
       next(error);
@@ -126,12 +132,12 @@ export class EmployeeController {
 
       const employee = await Employee.findByPk(id);
       if (!employee) {
-        throw ApiError.notFound("Employee not found");
+        throw ApiError.notFound('Employee not found');
       }
 
       await employee.destroy();
 
-      res.json({ message: "Employee deleted successfully" });
+      res.json({ message: 'Employee deleted successfully' });
     } catch (error) {
       logger.error(`Error deleting employee: ${error}`);
       next(error);
