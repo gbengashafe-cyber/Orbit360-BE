@@ -19,6 +19,9 @@ Company.init(
       type: DataTypes.STRING(100),
       allowNull: false,
       unique: "name",
+      set(value: string) {
+        this.setDataValue("name", value.toUpperCase());
+      },
     },
     description: {
       type: DataTypes.TEXT,

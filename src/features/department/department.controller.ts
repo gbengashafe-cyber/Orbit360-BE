@@ -1,7 +1,8 @@
 import { NextFunction, Request, Response } from "express";
-import { Department } from "../models";
-import { ApiError } from "../utils/api-error";
-import { logger } from "../utils/logger";
+import { Department } from "../../models";
+import { ApiError } from "../../utils/api-error";
+import { logger } from "../../utils/logger";
+import { Company } from "../company/company.model";
 
 export class DepartmentController {
   static async getAll(req: Request, res: Response, next: NextFunction) {
@@ -13,6 +14,7 @@ export class DepartmentController {
         limit: rows,
         offset,
         order: [["createdAt", "DESC"]],
+        include: [{ model: Company, attributes: ["id", "name", "description"] }],
       });
 
       res.json({

@@ -17,10 +17,10 @@ async function seed() {
 
     // Create Departments
     const departments = await Department.bulkCreate([
-      { name: "Engineering", description: "Software Development" },
-      { name: "Human Resources", description: "HR Department" },
-      { name: "Finance", description: "Finance Department" },
-      { name: "Sales", description: "Sales Department" },
+      { name: "Engineering", description: "Software Development", companyId: companies[0].id },
+      { name: "Human Resources", description: "HR Department", companyId: companies[0].id },
+      { name: "Finance", description: "Finance Department", companyId: companies[0].id },
+      { name: "Sales", description: "Sales Department", companyId: companies[0].id },
     ]);
     logger.info("Departments created");
 
