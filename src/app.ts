@@ -5,11 +5,12 @@ import express, { Request } from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { randomUUID } from 'node:crypto';
-import { companyRoutes } from './features/company/company.routes';
+import { companyRouter } from './features/company/company.routes';
+import { deductionRouter } from './features/deductions/deduction.routes';
+import employeeRoutes from './features/employee/employee.routes';
 import attendanceRoutes from './routes/attendance.routes';
 import authRoutes from './routes/auth.routes';
 import departmentRoutes from './routes/department.routes';
-import employeeRoutes from './routes/employee.routes';
 import leaveRoutes from './routes/leave.routes';
 import payrollRoutes from './routes/payroll.routes';
 import positionRoutes from './routes/position.routes';
@@ -103,7 +104,8 @@ app.use('/api/leaves', leaveRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/payroll', payrollRoutes);
 app.use('/api/positions', positionRoutes);
-app.use('/api/v1/companies', companyRoutes);
+app.use('/api/v1/companies', companyRouter);
+app.use('/api/v1/deductions', deductionRouter);
 
 // Health check
 app.get('/api/health', (req, res) => {
