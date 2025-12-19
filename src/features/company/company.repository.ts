@@ -16,7 +16,11 @@ class CompanyRepository {
     return Company.findByPk(id);
   };
 
-  static delete = async (id: number) => {
+  static update = async (id, company) => {
+    return Company.update(company, { where: { id } });
+  };
+
+  static delete = async (id) => {
     return Company.destroy({ where: { id } });
   };
 }

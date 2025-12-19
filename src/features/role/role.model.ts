@@ -1,13 +1,13 @@
 import { CreationOptional, DataTypes, InferAttributes, InferCreationAttributes, Model } from "sequelize";
 import { db } from "../../db";
 
-export class Permission extends Model<InferAttributes<Permission>, InferCreationAttributes<Permission>> {
+export class Role extends Model<InferAttributes<Role>, InferCreationAttributes<Role>> {
   declare id: CreationOptional<number>;
   declare name: string;
   declare description: CreationOptional<string>;
 }
 
-Permission.init(
+Role.init(
   {
     id: {
       type: DataTypes.INTEGER,
@@ -27,6 +27,6 @@ Permission.init(
   {
     sequelize: db,
     underscored: true,
-    tableName: "permissions",
+    tableName: "roles",
   },
 );

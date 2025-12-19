@@ -55,6 +55,36 @@ class CompanyController {
       }),
     );
   }
+
+  static async update(req: Request, res: Response, next: NextFunction) {
+    const { id } = req.params;
+
+    await CompanyRepository.update(id, req.body.company);
+
+    res.json(
+      ApiResponse({
+        data: req.body.company,
+        message: "Company updated successfully",
+      }),
+    );
+  }
+
+  static async delete(req: Request, res: Response, next: NextFunction) {
+    const { id } = req.params;
+
+    const resultCount = await CompanyRepository.delete(id);
+
+    if (!resultCount) {
+      throw ApiError.badRequest("Company not found");
+    }
+
+    res.json(
+      ApiResponse({
+        data: { id },
+        message: "Company deleted successfully",
+      }),
+    );
+  }
 }
 
 export { CompanyController };

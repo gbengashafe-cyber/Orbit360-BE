@@ -57,6 +57,24 @@ Content-Type: application/json
 }
 ```
 
+### Update Company
+
+```
+PUT /companies/:id
+Content-Type: application/json
+
+{
+  "name": "Company Alpha",
+  "description": "Updated description"
+}
+```
+
+### Delete Company
+
+```
+DELETE /companies/:id
+```
+
 ---
 
 ## Departments

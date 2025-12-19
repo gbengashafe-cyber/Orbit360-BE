@@ -1,29 +1,19 @@
 import { db } from ".";
 import { Company } from "../features/company/company.model";
-import { Permission } from "../features/permission/permission.model";
+import { Role } from "../features/role/role.model";
 import { Attendance, Department, Employee, Leave, Payroll, Position } from "../models";
 import { logger } from "../utils/logger";
 
 async function seed() {
   try {
-    // Sync database
     await db.sync({ alter: true });
     logger.info("Database synced");
 
-    // Create companies
-    const companies = await Company.bulkCreate([
-      { name: "MFB", description: "Microfinance Bank", createdBy: "" },
-      { name: "RAIN", description: "Oil and Gas", createdBy: "" },
-    ]);
+    const companies = await Company.bulkCreate([{ name: "MFB", description: "Microfinance Bank", createdBy: "" }]);
     logger.info("Companies created");
 
-    // Create permissions
-    const permissions = await Permission.bulkCreate([
-      { name: "CREATE_COMPANY", description: "Permission to create company" },
-      { name: "LIST_COMPANIES", description: "Permission to list company" },
-      { name: "READ_COMPANY", description: "Permission to read company" },
-    ]);
-    logger.info("Companies created");
+    const roles = await Role.bulkCreate([{ name: "ADMIN", description: "System admin" }]);
+    logger.info("Role created");
 
     // Create Departments
     const departments = await Department.bulkCreate([
