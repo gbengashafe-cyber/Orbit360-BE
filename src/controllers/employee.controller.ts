@@ -1,12 +1,13 @@
-import { Request, Response, NextFunction } from 'express';
-import { Employee, Department, Position } from '../models';
+import { NextFunction, Request, Response } from 'express';
+import { Company } from '../features/company/company.model';
+import { Department, Employee, Position } from '../models';
 import { ApiError } from '../utils/api-error';
 import { logger } from '../utils/logger';
 
 export class EmployeeController {
   static async getAll(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page, rows } = req.pagination!;
+      const { page, rows } = req.body.pagination!;
       const offset = (page - 1) * rows;
 
       const { count, rows: employees } = await Employee.findAndCountAll({
@@ -39,7 +40,12 @@ export class EmployeeController {
       const { id } = req.params;
       const employee = await Employee.findByPk(id, {
         include: [
-          { model: Department, as: 'department', attributes: ['id', 'name'] },
+          {
+            model: Department,
+            as: 'department',
+            attributes: ['id', 'name'],
+            include: [{ model: Company, as: 'company', attributes: ['id', 'name', 'description'] }],
+          },
           { model: Position, as: 'position', attributes: ['id', 'title'] },
         ],
       });

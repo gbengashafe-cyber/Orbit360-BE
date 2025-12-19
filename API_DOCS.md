@@ -1,11 +1,13 @@
 # Orbit360 HR API Documentation
 
 ## Base URL
+
 ```
 http://localhost:3000/api
 ```
 
 ## Authentication
+
 Currently no authentication implemented. To be added: JWT tokens.
 
 ---
@@ -13,10 +15,13 @@ Currently no authentication implemented. To be added: JWT tokens.
 ## Endpoints
 
 ### Health Check
+
 ```
 GET /health
 ```
+
 Response:
+
 ```json
 {
   "status": "ok",
@@ -26,19 +31,68 @@ Response:
 
 ---
 
+## Companies
+
+### Get All Companies
+
+```
+GET /companies?page=1&rows=10
+```
+
+### Get Company by ID
+
+```
+GET /companies/:id
+```
+
+### Create Company
+
+```
+POST /companies
+Content-Type: application/json
+
+{
+  "name": "Company Alpha",
+  "description": "Capital Management company"
+}
+```
+
+### Update Company
+
+```
+PUT /companies/:id
+Content-Type: application/json
+
+{
+  "name": "Company Alpha",
+  "description": "Updated description"
+}
+```
+
+### Delete Company
+
+```
+DELETE /companies/:id
+```
+
+---
+
 ## Departments
 
 ### Get All Departments
+
 ```
 GET /departments?page=1&rows=10
 ```
 
 ### Get Department by ID
+
 ```
 GET /departments/:id
 ```
 
 ### Create Department
+
 ```
 POST /departments
 Content-Type: application/json
@@ -50,6 +104,7 @@ Content-Type: application/json
 ```
 
 ### Update Department
+
 ```
 PUT /departments/:id
 Content-Type: application/json
@@ -61,6 +116,7 @@ Content-Type: application/json
 ```
 
 ### Delete Department
+
 ```
 DELETE /departments/:id
 ```
@@ -70,16 +126,19 @@ DELETE /departments/:id
 ## Positions
 
 ### Get All Positions
+
 ```
 GET /positions?page=1&rows=10
 ```
 
 ### Get Position by ID
+
 ```
 GET /positions/:id
 ```
 
 ### Create Position
+
 ```
 POST /positions
 Content-Type: application/json
@@ -91,6 +150,7 @@ Content-Type: application/json
 ```
 
 ### Update Position
+
 ```
 PUT /positions/:id
 Content-Type: application/json
@@ -102,6 +162,7 @@ Content-Type: application/json
 ```
 
 ### Delete Position
+
 ```
 DELETE /positions/:id
 ```
@@ -111,16 +172,19 @@ DELETE /positions/:id
 ## Employees
 
 ### Get All Employees
+
 ```
 GET /employees?page=1&rows=10
 ```
 
 ### Get Employee by ID
+
 ```
 GET /employees/:id
 ```
 
 ### Create Employee
+
 ```
 POST /employees
 Content-Type: application/json
@@ -139,6 +203,7 @@ Content-Type: application/json
 ```
 
 ### Update Employee
+
 ```
 PUT /employees/:id
 Content-Type: application/json
@@ -156,6 +221,7 @@ Content-Type: application/json
 ```
 
 ### Delete Employee
+
 ```
 DELETE /employees/:id
 ```
@@ -165,21 +231,25 @@ DELETE /employees/:id
 ## Attendance
 
 ### Get All Attendance Records
+
 ```
 GET /attendance?page=1&rows=10
 ```
 
 ### Get Employee Attendance
+
 ```
 GET /attendance/employee/:employeeId?page=1&rows=10&startDate=2024-01-01&endDate=2024-01-31
 ```
 
 ### Get Attendance by ID
+
 ```
 GET /attendance/:id
 ```
 
 ### Check In
+
 ```
 POST /attendance/check-in
 Content-Type: application/json
@@ -190,6 +260,7 @@ Content-Type: application/json
 ```
 
 Response:
+
 ```json
 {
   "data": {
@@ -205,6 +276,7 @@ Response:
 ```
 
 ### Check Out
+
 ```
 POST /attendance/check-out
 Content-Type: application/json
@@ -215,6 +287,7 @@ Content-Type: application/json
 ```
 
 ### Mark Absent
+
 ```
 POST /attendance/mark-absent
 Content-Type: application/json
@@ -226,6 +299,7 @@ Content-Type: application/json
 ```
 
 ### Delete Attendance Record
+
 ```
 DELETE /attendance/:id
 ```
@@ -235,21 +309,25 @@ DELETE /attendance/:id
 ## Leave
 
 ### Get All Leave Requests
+
 ```
 GET /leaves?page=1&rows=10
 ```
 
 ### Get Employee Leave Requests
+
 ```
 GET /leaves/employee/:employeeId?page=1&rows=10
 ```
 
 ### Get Leave Request by ID
+
 ```
 GET /leaves/:id
 ```
 
 ### Create Leave Request
+
 ```
 POST /leaves
 Content-Type: application/json
@@ -266,16 +344,19 @@ Content-Type: application/json
 Allowed types: `sick`, `vacation`, `personal`, `maternity`, `paternity`
 
 ### Approve Leave Request
+
 ```
 POST /leaves/:id/approve
 ```
 
 ### Reject Leave Request
+
 ```
 POST /leaves/:id/reject
 ```
 
 ### Cancel Leave Request
+
 ```
 DELETE /leaves/:id
 ```
@@ -285,21 +366,25 @@ DELETE /leaves/:id
 ## Payroll
 
 ### Get All Payroll Records
+
 ```
 GET /payroll?page=1&rows=10
 ```
 
 ### Get Employee Payroll
+
 ```
 GET /payroll/employee/:employeeId?page=1&rows=10
 ```
 
 ### Get Payroll by ID
+
 ```
 GET /payroll/:id
 ```
 
 ### Create Payroll
+
 ```
 POST /payroll
 Content-Type: application/json
@@ -315,6 +400,7 @@ Content-Type: application/json
 ```
 
 Response:
+
 ```json
 {
   "data": {
@@ -335,6 +421,7 @@ Response:
 ```
 
 ### Update Payroll
+
 ```
 PUT /payroll/:id
 Content-Type: application/json
@@ -347,16 +434,19 @@ Content-Type: application/json
 ```
 
 ### Mark Payroll as Processed
+
 ```
 POST /payroll/:id/process
 ```
 
 ### Mark Payroll as Paid
+
 ```
 POST /payroll/:id/pay
 ```
 
 ### Delete Payroll
+
 ```
 DELETE /payroll/:id
 ```
@@ -377,6 +467,7 @@ All errors follow this format:
 ```
 
 Common HTTP Status Codes:
+
 - `200` - OK
 - `201` - Created
 - `400` - Bad Request
@@ -388,10 +479,12 @@ Common HTTP Status Codes:
 ## Pagination
 
 All list endpoints support pagination with query parameters:
+
 - `page` - Page number (default: 1)
 - `rows` - Items per page (default: 10)
 
 Response format:
+
 ```json
 {
   "data": [...],

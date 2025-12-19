@@ -1,18 +1,20 @@
-import { Request, Response, NextFunction } from 'express';
-import { Department } from '../models';
-import { ApiError } from '../utils/api-error';
-import { logger } from '../utils/logger';
+import { NextFunction, Request, Response } from 'express';
+import { Department } from '../../models';
+import { ApiError } from '../../utils/api-error';
+import { ApiResponse } from '../../utils/api-response';
+import { logger } from '../../utils/logger';
 
 export class DepartmentController {
   static async getAll(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page, rows } = req.pagination!;
+      const { page, rows } = req.body.pagination!;
       const offset = (page - 1) * rows;
 
       const { count, rows: departments } = await Department.findAndCountAll({
         limit: rows,
         offset,
         order: [['createdAt', 'DESC']],
+        include: [{ association: 'company', attributes: ['id', 'name', 'description'] }],
       });
 
       res.json({
@@ -34,7 +36,7 @@ export class DepartmentController {
     try {
       const { id } = req.params;
       const department = await Department.findByPk(id, {
-        include: [{ association: 'employees', attributes: ['id', 'firstName', 'lastName', 'email'] }],
+        include: [{ association: 'company', attributes: ['id', 'name', 'description'] }],
       });
 
       if (!department) {
@@ -50,14 +52,15 @@ export class DepartmentController {
 
   static async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const { name, description } = req.body;
+      const { name, description, companyId } = req.body;
 
       const department = await Department.create({
         name,
         description,
+        companyId,
       });
 
-      res.status(201).json({ data: department, message: 'Department created successfully' });
+      res.status(201).json(ApiResponse({ data: department, message: 'Department created successfully' }));
     } catch (error) {
       logger.error(`Error creating department: ${error}`);
       next(error);
