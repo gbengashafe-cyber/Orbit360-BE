@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { EmployeeController } from '../controllers/employee.controller';
-import { validateCreateEmployee, validateUpdateEmployee } from "../features/employee/employee.validators";
+import { EmployeeController } from './employee.controller';
+import { validateCreateEmployee, validateUpdateEmployee } from "./employee.validators";
 
 const router = Router();
 
