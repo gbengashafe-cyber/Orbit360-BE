@@ -1,6 +1,11 @@
 import { Router } from 'express';
-import { PayrollController } from '../controllers/payroll.controller';
-import { validateCreatePayroll, validateUpdatePayroll, validatePayrollIdParam, validateEmployeeIdParam } from "../features/payroll/payroll.validators";
+import { PayrollController } from './payroll.controller';
+import {
+  validateCreatePayroll,
+  validateEmployeeIdParam,
+  validatePayrollIdParam,
+  validateUpdatePayroll,
+} from './payroll.validators';
 
 const router = Router();
 

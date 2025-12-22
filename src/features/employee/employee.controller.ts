@@ -1,9 +1,11 @@
 import { NextFunction, Request, Response } from 'express';
-import { Department, Employee, Position } from '../../models';
 import { ApiError } from '../../utils/api-error';
 import { ApiResponse } from '../../utils/api-response';
 import { logger } from '../../utils/logger';
 import { Company } from '../company/company.model';
+import { Department } from '../department/department.model';
+import { Position } from '../position/position.model';
+import { Employee } from './employee.model';
 
 export class EmployeeController {
   static async getAll(req: Request, res: Response, next: NextFunction) {

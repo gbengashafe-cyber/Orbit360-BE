@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { LeaveController } from '../controllers/leave.controller';
-import { validateCreateLeave, validateLeaveIdParam, validateEmployeeIdParam } from "../features/leave/leave.validators";
+import { LeaveController } from './leave.controller';
+import { validateCreateLeave, validateEmployeeIdParam, validateLeaveIdParam } from './leave.validators';
 
 const router = Router();
 
@@ -12,4 +12,4 @@ router.post('/:id/approve', validateLeaveIdParam, LeaveController.approve);
 router.post('/:id/reject', validateLeaveIdParam, LeaveController.reject);
 router.delete('/:id', validateLeaveIdParam, LeaveController.cancel);
 
-export default router;
+export { router as leaveRoutes };

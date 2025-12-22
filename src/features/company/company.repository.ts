@@ -1,5 +1,5 @@
-import { InferCreationAttributes, Op } from "sequelize";
-import { Company } from "./company.model";
+import { InferCreationAttributes, Op } from 'sequelize';
+import { Company } from './company.model';
 
 class CompanyRepository {
   static add = async (company: InferCreationAttributes<Company>) => {

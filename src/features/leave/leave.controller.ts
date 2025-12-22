@@ -1,7 +1,8 @@
-import { NextFunction, Request, Response } from "express";
-import { Employee, Leave } from "../models";
-import { ApiError } from "../utils/api-error";
-import { logger } from "../utils/logger";
+import { NextFunction, Request, Response } from 'express';
+import { ApiError } from '../../utils/api-error';
+import { logger } from '../../utils/logger';
+import { Employee } from '../employee/employee.model';
+import { Leave } from './leave.model';
 
 export class LeaveController {
   static async getAll(req: Request, res: Response, next: NextFunction) {
@@ -12,8 +13,8 @@ export class LeaveController {
       const { count, rows: leaves } = await Leave.findAndCountAll({
         limit: rows,
         offset,
-        include: [{ model: Employee, as: "employee", attributes: ["id", "firstName", "lastName", "email"] }],
-        order: [["createdAt", "DESC"]],
+        include: [{ model: Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'email'] }],
+        order: [['createdAt', 'DESC']],
       });
 
       res.json({
@@ -41,7 +42,7 @@ export class LeaveController {
         where: { employeeId },
         limit: rows,
         offset,
-        order: [["createdAt", "DESC"]],
+        order: [['createdAt', 'DESC']],
       });
 
       res.json({
@@ -63,11 +64,11 @@ export class LeaveController {
     try {
       const { id } = req.params;
       const leave = await Leave.findByPk(id, {
-        include: [{ model: Employee, as: "employee", attributes: ["id", "firstName", "lastName", "email"] }],
+        include: [{ model: Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'email'] }],
       });
 
       if (!leave) {
-        throw ApiError.notFound("Leave request not found");
+        throw ApiError.notFound('Leave request not found');
       }
 
       res.json({ data: leave });
@@ -87,14 +88,14 @@ export class LeaveController {
         endDate,
         type,
         reason,
-        status: "pending",
+        status: 'pending',
       });
 
       const createdLeave = await Leave.findByPk(leave.id, {
-        include: [{ model: Employee, as: "employee", attributes: ["id", "firstName", "lastName", "email"] }],
+        include: [{ model: Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'email'] }],
       });
 
-      res.status(201).json({ data: createdLeave, message: "Leave request created successfully" });
+      res.status(201).json({ data: createdLeave, message: 'Leave request created successfully' });
     } catch (error) {
       logger.error(`Error creating leave: ${error}`);
       next(error);
@@ -107,16 +108,16 @@ export class LeaveController {
 
       const leave = await Leave.findByPk(id);
       if (!leave) {
-        throw ApiError.notFound("Leave request not found");
+        throw ApiError.notFound('Leave request not found');
       }
 
-      await leave.update({ status: "approved" });
+      await leave.update({ status: 'approved' });
 
       const updatedLeave = await Leave.findByPk(id, {
-        include: [{ model: Employee, as: "employee", attributes: ["id", "firstName", "lastName", "email"] }],
+        include: [{ model: Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'email'] }],
       });
 
-      res.json({ data: updatedLeave, message: "Leave request approved" });
+      res.json({ data: updatedLeave, message: 'Leave request approved' });
     } catch (error) {
       logger.error(`Error approving leave: ${error}`);
       next(error);
@@ -129,16 +130,16 @@ export class LeaveController {
 
       const leave = await Leave.findByPk(id);
       if (!leave) {
-        throw ApiError.notFound("Leave request not found");
+        throw ApiError.notFound('Leave request not found');
       }
 
-      await leave.update({ status: "rejected" });
+      await leave.update({ status: 'rejected' });
 
       const updatedLeave = await Leave.findByPk(id, {
-        include: [{ model: Employee, as: "employee", attributes: ["id", "firstName", "lastName", "email"] }],
+        include: [{ model: Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'email'] }],
       });
 
-      res.json({ data: updatedLeave, message: "Leave request rejected" });
+      res.json({ data: updatedLeave, message: 'Leave request rejected' });
     } catch (error) {
       logger.error(`Error rejecting leave: ${error}`);
       next(error);
@@ -151,12 +152,12 @@ export class LeaveController {
 
       const leave = await Leave.findByPk(id);
       if (!leave) {
-        throw ApiError.notFound("Leave request not found");
+        throw ApiError.notFound('Leave request not found');
       }
 
       await leave.destroy();
 
-      res.json({ message: "Leave request cancelled" });
+      res.json({ message: 'Leave request cancelled' });
     } catch (error) {
       logger.error(`Error cancelling leave: ${error}`);
       next(error);

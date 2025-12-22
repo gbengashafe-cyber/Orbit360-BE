@@ -1,7 +1,7 @@
 import { CreationOptional, DataTypes, ForeignKey, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import { db } from '../../db';
-import { Position } from '../../models/position.model';
 import { Department } from '../department/department.model';
+import { Position } from '../position/position.model';
 import { EmployeeCompensation } from './employeeCompensation.model';
 
 export class Employee extends Model<InferAttributes<Employee>, InferCreationAttributes<Employee>> {
@@ -95,3 +95,6 @@ Department.hasMany(Employee, { foreignKey: { name: 'departmentId', allowNull: fa
 
 Employee.hasOne(EmployeeCompensation, { foreignKey: { name: 'employeeId', allowNull: false }, as: 'employeeBank' });
 EmployeeCompensation.belongsTo(Employee, { foreignKey: { name: 'employeeId', allowNull: false }, as: 'employeeBank' });
+
+Position.hasMany(Employee, { foreignKey: 'positionId', as: 'employees' });
+Employee.belongsTo(Position, { foreignKey: 'positionId', as: 'position' });
