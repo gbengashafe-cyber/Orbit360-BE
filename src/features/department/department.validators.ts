@@ -2,30 +2,31 @@ import { NextFunction, Request, Response } from "express";
 import { z } from "zod";
 import { ApiError } from "../../utils/api-error";
 
-const createCompanySchema = z.object({
+const createDepartmentSchema = z.object({
   name: z.string().min(1, "Name is required").max(100, "Name cannot exceed 100 characters"),
   description: z.string().optional().nullable(),
+  companyId: z.number().int("Company ID must be an integer").min(1, "Company ID is required"),
 });
 
-const updateCompanySchema = z.object({
+const updateDepartmentSchema = z.object({
   name: z.string().min(1, "Name is required").max(100, "Name cannot exceed 100 characters").optional(),
   description: z.string().optional().nullable(),
 });
 
-type CreateCompanyBody = z.infer<typeof createCompanySchema>;
-type UpdateCompanyBody = z.infer<typeof updateCompanySchema>;
+type CreateDepartmentBody = z.infer<typeof createDepartmentSchema>;
+type UpdateDepartmentBody = z.infer<typeof updateDepartmentSchema>;
 
 const validate = (schema: z.ZodObject<any>) => (req: Request, res: Response, next: NextFunction) => {
   try {
-    const parsedBody = schema.parse(req.body);
-    req.body.company = parsedBody;
+    schema.parse(req.body);
     next();
   } catch (error: any) {
     next(ApiError.badRequest(error.errors[0].message || "Validation Error"));
   }
 };
 
-const validateCreateCompany = validate(createCompanySchema);
-const validateUpdateCompany = validate(updateCompanySchema);
+const validateCreateDepartment = validate(createDepartmentSchema);
+const validateUpdateDepartment = validate(updateDepartmentSchema);
 
-export { validateCreateCompany, validateUpdateCompany };
+export { validateCreateDepartment, validateUpdateDepartment };
+

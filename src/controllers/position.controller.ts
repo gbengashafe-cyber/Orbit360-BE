@@ -17,7 +17,7 @@ export class PositionController {
 
       res.json({
         data: positions,
-        pagination: {
+        pagination: { 
           total: count,
           page,
           rows,
@@ -43,11 +43,11 @@ export class PositionController {
 
       res.json({ data: position });
     } catch (error) {
-      logger.error(`Error fetching position: ${error}`);
+   logger.error(`Error fetching position: ${error}`);
       next(error);
     }
   }
-
+  
   static async create(req: Request, res: Response, next: NextFunction) {
     try {
       const { title, description } = req.body;

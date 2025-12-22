@@ -8,7 +8,6 @@ export class PayrollController {
     try {
       const { page, rows } = req.body.pagination;
       const offset = (page - 1) * rows;
-
       const { count, rows: payrolls } = await Payroll.findAndCountAll({
         limit: rows,
         offset,
