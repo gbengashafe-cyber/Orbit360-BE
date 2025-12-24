@@ -12,8 +12,8 @@ class DeductionController {
   };
 
   static async get(req: Request, res: Response, next) {
-    const { page, rows } = req.body.pagination!;
-    const query = req.body.query;
+    const { page, rows } = req.pagination!;
+    const query = req.reqQuery;
 
     const { count, rows: deductions } = await DeductionRepository.read({
       page,

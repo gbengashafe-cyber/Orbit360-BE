@@ -1,5 +1,5 @@
 import { InferAttributes, InferCreationAttributes, Op } from 'sequelize';
-import { Role } from './role.model';
+import { Role } from './role.m';
 
 class RoleRepository {
   static getRoleByName = async (name: string) => {

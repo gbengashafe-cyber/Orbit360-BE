@@ -6,7 +6,7 @@ import { Position } from './position.model';
 export class PositionController {
   static async getAll(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page, rows } = req.body.pagination;
+      const { page, rows } = req.pagination;
       const offset = (page - 1) * rows;
 
       const { count, rows: positions } = await Position.findAndCountAll({

@@ -73,11 +73,11 @@ EmployeeCompensation.init(
     nokRelationship: { type: DataTypes.STRING(50) },
     nokPhone: { type: DataTypes.STRING(50) },
     nokAddress: { type: DataTypes.STRING(100) },
-    leaveEntitlement: { type: DataTypes.NUMBER },
+    leaveEntitlement: { type: DataTypes.INTEGER() },
   },
   {
     sequelize: db,
     underscored: true,
-    tableName: 'employeeBanks',
+    tableName: 'employee_compensation',
   },
 );

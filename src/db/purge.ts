@@ -1,19 +1,21 @@
-import { env } from "../config/env";
-import { db } from "../models";
-import { logger } from "../utils/logger";
+import { db } from '.';
+import { env } from '../config/env';
+import { logger } from '../utils/logger';
+import { loadModels } from './loadModels';
 
 const drop = async () => {
   try {
     await db.drop();
-    logger.info("Database tables deleted");
+    logger.info('Database tables deleted');
 
     process.exit(0);
   } catch (error) {
-    logger.error("Error deleting database tables:", error);
+    console.error('Error deleting database tables:', error);
     process.exit(1);
   }
 };
 
-if (env.NODE_ENV !== "production") {
+if (env.NODE_ENV !== 'production') {
+  loadModels();
   drop();
 }

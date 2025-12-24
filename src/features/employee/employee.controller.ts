@@ -10,7 +10,7 @@ import { Employee } from './employee.model';
 export class EmployeeController {
   static async getAll(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page, rows } = req.body.pagination!;
+      const { page, rows } = req.pagination!;
       const offset = (page - 1) * rows;
 
       const { count, rows: employees } = await Employee.findAndCountAll({
@@ -93,7 +93,7 @@ export class EmployeeController {
         phone,
         hireDate,
         salary,
-        departmentId,
+        department: departmentId,
         positionId,
         status,
       });

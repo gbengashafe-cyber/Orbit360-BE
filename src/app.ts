@@ -14,7 +14,7 @@ import employeeRoutes from './features/employee/employee.routes';
 import { leaveRoutes } from './features/leave/leave.routes';
 import payrollRoutes from './features/payroll/payroll.routes';
 import positionRoutes from './features/position/position.routes';
-import { roleRoutes } from './features/role/role.routes';
+import { userRoutes } from './features/users/user.router';
 import { ApiError } from './utils/api-error';
 import { globalErrorHandler } from './utils/global-error-handler';
 import { logger } from './utils/logger';
@@ -91,8 +91,8 @@ app.use(
 
 app.use((req, res, next) => {
   const { page, rows } = req.query;
-  req.body.pagination = parsePageAndLimitNumber(page, rows);
-  req.body.query = parseQueryParams(req.query.q);
+  req.pagination = parsePageAndLimitNumber(page, rows);
+  req.reqQuery = parseQueryParams(req.query.q);
 
   next();
 });
@@ -107,7 +107,7 @@ app.use('/api/payroll', payrollRoutes);
 app.use('/api/positions', positionRoutes);
 app.use('/api/v1/companies', companyRouter);
 app.use('/api/v1/deductions', deductionRouter);
-app.use('/api/v1/roles', roleRoutes);
+app.use('/api/v1/users', userRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

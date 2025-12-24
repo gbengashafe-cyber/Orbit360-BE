@@ -23,6 +23,7 @@ Position.init(
     title: {
       type: DataTypes.STRING(100),
       allowNull: false,
+      unique: 'title',
     },
     description: {
       type: DataTypes.TEXT,
@@ -31,7 +32,6 @@ Position.init(
   },
   {
     sequelize: db,
-    modelName: 'Position',
     tableName: 'positions',
   },
 );

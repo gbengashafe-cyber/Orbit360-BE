@@ -8,7 +8,7 @@ import { Attendance } from './attendance.model';
 export class AttendanceController {
   static async getAll(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page, rows } = req.body.pagination;
+      const { page, rows } = req.pagination;
       const offset = (page - 1) * rows;
 
       const { count, rows: attendances } = await Attendance.findAndCountAll({
@@ -36,7 +36,7 @@ export class AttendanceController {
   static async getByEmployee(req: Request, res: Response, next: NextFunction) {
     try {
       const { employeeId } = req.params;
-      const { page, rows } = req.body.pagination;
+      const { page, rows } = req.pagination;
       const { startDate, endDate } = req.query;
       const offset = (page - 1) * rows;
 

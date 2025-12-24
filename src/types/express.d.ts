@@ -5,7 +5,9 @@ declare module 'express-serve-static-core' {
     requestId?: string;
     requestIp?: string;
     requestPath?: string;
-    user?: { id: number | string; role: string };
+    user?: { id: number | string; position: string; role: string };
+    pagination: { page: number; rows: number };
+    reqQuery: string;
   }
 }
 

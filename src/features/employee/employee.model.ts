@@ -9,18 +9,18 @@ export class Employee extends Model<InferAttributes<Employee>, InferCreationAttr
   declare employeeId: string;
   public firstName!: string;
   public lastName!: string;
-  declare dob: string;
+  declare dob: Date;
   public email!: string;
   public phone!: string;
   declare address: string;
   public hireDate!: Date;
-  public terminationDate!: Date;
+  declare terminationDate: CreationOptional<Date>;
   declare nationality: string;
   public salary!: number;
   declare gender: 'M' | 'F';
-  declare supervisorId: ForeignKey<Employee['id']>;
-  declare departmentId: ForeignKey<Department['id']>;
-  declare positionId: ForeignKey<Position['id']>;
+  declare supervisorId: ForeignKey<Employee['employeeId']>;
+  declare department: ForeignKey<Department['name']>;
+  declare position: ForeignKey<Position['title']>;
   declare status: 'active' | 'inactive' | 'terminated' | 'on_leave';
 }
 
@@ -76,7 +76,7 @@ Employee.init(
     },
 
     status: {
-      type: DataTypes.ENUM('active', 'inactive', 'terminated', 'on_leaves'),
+      type: DataTypes.ENUM('active', 'inactive', 'terminated', 'on_leave'),
       defaultValue: 'active',
     },
     gender: {
@@ -87,11 +87,12 @@ Employee.init(
     sequelize: db,
     tableName: 'employees',
     paranoid: true,
+    underscored: true,
   },
 );
 
-Employee.belongsTo(Department, { foreignKey: { name: 'departmentId', allowNull: false }, as: 'department' });
-Department.hasMany(Employee, { foreignKey: { name: 'departmentId', allowNull: false }, as: 'employees' });
+Employee.belongsTo(Department, { foreignKey: { name: 'department', allowNull: false }, targetKey: 'name' });
+Department.hasMany(Employee, { foreignKey: { name: 'department', allowNull: false }, sourceKey: 'name' });
 
 Employee.hasOne(EmployeeCompensation, { foreignKey: { name: 'employeeId', allowNull: false }, as: 'employeeBank' });
 EmployeeCompensation.belongsTo(Employee, { foreignKey: { name: 'employeeId', allowNull: false }, as: 'employeeBank' });

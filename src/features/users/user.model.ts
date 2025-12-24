@@ -1,31 +1,25 @@
-import { DataTypes, Model } from 'sequelize';
+import { CreationOptional, DataTypes, ForeignKey, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import { db } from '../../db';
+import { Department } from '../department/department.model';
 import { Employee } from '../employee/employee.model';
+import { Position } from '../position/position.model';
 
-export interface UserAttributes {
-  id?: number;
-  email: string;
-  password?: string;
-  firstName: string;
-  lastName: string;
-  profileImage?: string;
-  googleId?: string;
-  employeeId?: number;
-  role: 'admin' | 'hr' | 'employee' | 'manager';
-  status: 'active' | 'inactive';
-}
+const userStatusOptions = ['active', 'inactive'];
 
-export class User extends Model<UserAttributes> implements UserAttributes {
-  public id!: number;
+export class User extends Model<InferAttributes<User>, InferCreationAttributes<User>> {
+  declare id: CreationOptional<number>;
   public email!: string;
   public password!: string;
   public firstName!: string;
   public lastName!: string;
-  public profileImage!: string;
-  public googleId!: string;
-  public employeeId!: number;
-  public role!: 'admin' | 'hr' | 'employee' | 'manager';
-  public status!: 'active' | 'inactive';
+  declare profileImage: CreationOptional<string>;
+  declare googleId: CreationOptional<string>;
+  declare employeeId: ForeignKey<Employee['employeeId']>;
+  declare systemRole: CreationOptional<'admin' | 'user'>;
+  // Defines what the user does for the organization
+  declare position: ForeignKey<Position['title']>;
+  declare department: ForeignKey<Department['name']>;
+  declare status: CreationOptional<'active' | 'suspended'>;
 }
 
 User.init(
@@ -38,11 +32,11 @@ User.init(
     email: {
       type: DataTypes.STRING(100),
       allowNull: false,
-      unique: true,
+      unique: 'email',
     },
     password: {
       type: DataTypes.STRING,
-      allowNull: true,
+      allowNull: false,
     },
     firstName: {
       type: DataTypes.STRING(50),
@@ -59,27 +53,27 @@ User.init(
     googleId: {
       type: DataTypes.STRING,
       allowNull: true,
-      unique: true,
+      unique: 'googleId',
     },
-    employeeId: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-    },
-    role: {
-      type: DataTypes.ENUM('admin', 'hr', 'employee', 'manager'),
-      defaultValue: 'employee',
-    },
+    // Determines if the user is a system admin or a regular user (self-service)
+    systemRole: { type: DataTypes.ENUM, values: ['admin', 'user'], defaultValue: 'user' },
     status: {
-      type: DataTypes.ENUM('active', 'inactive'),
+      type: DataTypes.ENUM,
+      values: userStatusOptions,
       defaultValue: 'active',
     },
   },
   {
     sequelize: db,
-    modelName: 'User',
     tableName: 'users',
+    underscored: true,
   },
 );
 
-User.belongsTo(Employee, { foreignKey: 'employeeId', as: 'employee' });
-Employee.hasOne(User, { foreignKey: 'employeeId', as: 'user' });
+User.belongsTo(Position, { foreignKey: { name: 'position', allowNull: false }, targetKey: 'title' });
+Position.hasMany(User, { foreignKey: { name: 'position', allowNull: false }, sourceKey: 'title' });
+
+User.belongsTo(Department, { foreignKey: { name: 'department', allowNull: false }, targetKey: 'name' });
+Department.hasMany(User, { foreignKey: { name: 'department', allowNull: false }, sourceKey: 'name' });
+
+export { userStatusOptions };

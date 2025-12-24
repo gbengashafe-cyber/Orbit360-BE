@@ -12,8 +12,9 @@ import { ApiError } from './api-error';
 import { logger } from './logger';
 
 const globalErrorHandler: ErrorRequestHandler = (err, req, res, next): Response => {
-  ['development', 'test'].includes(env.NODE_ENV) && console.log('GLOBAL ERROR HANDLER:\n RequestID: ', req?.requestId, '\n', err);
   logger.debug(err);
+
+  ['development', 'test'].includes(env.NODE_ENV) && console.log('GLOBAL ERROR HANDLER:\n RequestID: ', req?.requestId, '\n', err);
 
   err.ip = req.requestIp;
   err.origin = req.headers.origin || 'undefined';

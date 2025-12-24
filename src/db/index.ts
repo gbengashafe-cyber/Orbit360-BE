@@ -1,6 +1,6 @@
-import { Dialect, Sequelize } from "sequelize";
-import { env } from "../config/env";
-import { logger } from "../utils/logger";
+import { Dialect, Sequelize } from 'sequelize';
+import { env } from '../config/env';
+import { logger } from '../utils/logger';
 
 const { DB_NAME, DB_USER, DB_PASSWORD, DB_HOST_NAME, DB_TYPE, DB_PORT } = env;
 
@@ -12,14 +12,14 @@ const db = new Sequelize(DB_NAME, DB_USER, DB_PASSWORD, {
     max: 5,
   },
   define: {
-    charset: "utf8mb4",
-    collate: "utf8mb4_general_ci",
+    charset: 'utf8mb4',
+    collate: 'utf8mb4_general_ci',
   },
   dialectOptions: {
     // collate: "utf8mb4_general_ci",
   },
 
-  logging: (msg) => (env.NODE_ENV === "production" ? logger.debug(msg) : logger.info(msg)),
+  logging: (msg) => (env.NODE_ENV === 'production' ? logger.debug(msg) : logger.info(msg)),
 });
 
 db.authenticate()
