@@ -4,8 +4,9 @@ import { ApiResponse } from '../../utils/api-response';
 import { logger } from '../../utils/logger';
 import { Company } from '../company/company.model';
 import { Department } from '../department/department.model';
-import { Position } from '../position/position.model';
 import { Employee } from './employee.model';
+import { EmployeeRepository } from './employee.repository';
+import { EmployeeCompensation } from './employeeCompensation.model';
 
 export class EmployeeController {
   static async getAll(req: Request, res: Response, next: NextFunction) {
@@ -14,24 +15,29 @@ export class EmployeeController {
       const offset = (page - 1) * rows;
 
       const { count, rows: employees } = await Employee.findAndCountAll({
+        attributes: { exclude: ['departmentName'] },
         limit: rows,
         offset,
-        include: [
-          { model: Department, as: 'department', attributes: ['id', 'name'] },
-          { model: Position, as: 'position', attributes: ['id', 'title'] },
-        ],
+        include: [{ model: Department, as: 'department', attributes: ['name'] }],
         order: [['createdAt', 'DESC']],
       });
 
-      res.json({
-        data: employees,
-        pagination: {
-          total: count,
-          page,
-          rows,
-          pages: Math.ceil(count / rows),
-        },
-      });
+      if (!count) {
+        throw ApiError.notFound('No employee found');
+      }
+
+      res.json(
+        ApiResponse({
+          message: 'Employees fetched successfully',
+          data: employees,
+          pagination: {
+            total: count,
+            page,
+            rows,
+            pages: Math.ceil(count / rows),
+          },
+        }),
+      );
     } catch (error) {
       logger.error(`Error fetching employees: ${error}`);
       next(error);
@@ -42,14 +48,19 @@ export class EmployeeController {
     try {
       const { id } = req.params;
       const employee = await Employee.findByPk(id, {
+        attributes: { exclude: ['departmentName'] },
         include: [
           {
             model: Department,
             as: 'department',
-            attributes: ['id', 'name'],
-            include: [{ model: Company, as: 'company', attributes: ['id', 'name', 'description'] }],
+            attributes: ['name'],
+            include: [{ model: Company, as: 'company', attributes: ['name', 'description'] }],
           },
-          { model: Position, as: 'position', attributes: ['id', 'title'] },
+          {
+            model: EmployeeCompensation,
+            as: 'compensation',
+            attributes: { exclude: ['id', 'employeeId', 'createdAt', 'updatedAt'] },
+          },
         ],
       });
 
@@ -57,7 +68,7 @@ export class EmployeeController {
         throw ApiError.notFound('Employee not found');
       }
 
-      res.json({ data: employee });
+      res.json(ApiResponse({ data: employee, message: 'Employee fetched successfully' }));
     } catch (error) {
       logger.error(`Error fetching employee: ${error}`);
       next(error);
@@ -66,9 +77,9 @@ export class EmployeeController {
 
   static async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const employee = req.body.employee;
+      const employee = req.body.validated.employee;
 
-      const createdEmployee = await Employee.create(employee);
+      const createdEmployee = await EmployeeRepository.create(employee);
 
       res.status(201).json(ApiResponse({ data: createdEmployee, message: 'Employee created successfully' }));
     } catch (error) {
@@ -80,32 +91,19 @@ export class EmployeeController {
   static async update(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const { firstName, lastName, phone, hireDate, salary, departmentId, positionId, status } = req.body;
+      const { firstName, lastName, phone, hireDate, departmentId, positionId: position, status } = req.body;
 
-      const employee = await Employee.findByPk(id);
+      const employee = await EmployeeRepository.isExist(id);
+
       if (!employee) {
         throw ApiError.notFound('Employee not found');
       }
 
-      await employee.update({
-        firstName,
-        lastName,
-        phone,
-        hireDate,
-        salary,
-        department: departmentId,
-        positionId,
-        status,
-      });
+      await EmployeeRepository.update(id, req.body.validated.employee);
 
-      const updatedEmployee = await Employee.findByPk(id, {
-        include: [
-          { model: Department, as: 'department', attributes: ['id', 'name'] },
-          { model: Position, as: 'position', attributes: ['id', 'title'] },
-        ],
-      });
+      const updatedEmployee = await EmployeeRepository.readById(id);
 
-      res.json({ data: updatedEmployee, message: 'Employee updated successfully' });
+      res.json(ApiResponse({ data: updatedEmployee, message: 'Employee updated successfully' }));
     } catch (error) {
       logger.error(`Error updating employee: ${error}`);
       next(error);

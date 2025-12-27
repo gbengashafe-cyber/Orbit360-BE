@@ -1,6 +1,5 @@
 import { DataTypes, Model } from 'sequelize';
 import { db } from '../../db';
-import { Employee } from '../employee/employee.model';
 
 export interface AttendanceAttributes {
   id?: number;
@@ -54,6 +53,3 @@ Attendance.init(
     tableName: 'attendances',
   },
 );
-
-Attendance.belongsTo(Employee, { foreignKey: 'employeeId', as: 'employee' });
-Employee.hasMany(Attendance, { foreignKey: 'employeeId', as: 'attendances' });

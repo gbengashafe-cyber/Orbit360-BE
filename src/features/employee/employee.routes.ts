@@ -1,13 +1,47 @@
 import { Router } from 'express';
+import { hasRequiredPermission, isInAllowedDepartment } from '../../utils/check-permission';
+import { validateAuthToken } from '../authentication/auth.middleware';
 import { EmployeeController } from './employee.controller';
-import { validateCreateEmployee, validateUpdateEmployee } from "./employee.validators";
+import { validateCreateEmployee, validateUpdateEmployee } from './employee.validators';
 
 const router = Router();
 
-router.get('/', EmployeeController.getAll);
-router.get('/:id', EmployeeController.getById);
-router.post('/', validateCreateEmployee, EmployeeController.create);
-router.put('/:id', validateUpdateEmployee, EmployeeController.update);
-router.delete('/:id', EmployeeController.delete);
+router.get(
+  '/',
+  validateAuthToken,
+  isInAllowedDepartment(['HR']),
+  hasRequiredPermission('MANAGE_EMPLOYEES'),
+  EmployeeController.getAll,
+);
+router.get(
+  '/:id',
+  validateAuthToken,
+  isInAllowedDepartment(['HR']),
+  hasRequiredPermission('MANAGE_EMPLOYEES'),
+  EmployeeController.getById,
+);
+router.post(
+  '/',
+  validateAuthToken,
+  isInAllowedDepartment(['HR']),
+  hasRequiredPermission('MANAGE_EMPLOYEES'),
+  validateCreateEmployee,
+  EmployeeController.create,
+);
+router.put(
+  '/:id',
+  validateAuthToken,
+  isInAllowedDepartment(['HR']),
+  hasRequiredPermission('MANAGE_EMPLOYEES'),
+  validateUpdateEmployee,
+  EmployeeController.update,
+);
+router.delete(
+  '/:id',
+  validateAuthToken,
+  isInAllowedDepartment(['HR']),
+  hasRequiredPermission('MANAGE_EMPLOYEES'),
+  EmployeeController.delete,
+);
 
 export default router;

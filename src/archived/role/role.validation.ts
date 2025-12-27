@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
 import { ApiError } from '../../utils/api-error';
+import { logger } from '../../utils/logger';
 
 const RoleSchema = z.object({
   name: z
@@ -20,7 +21,8 @@ const RoleSchema = z.object({
 const validateRole = async (req: Request, res: Response, next: NextFunction) => {
   const result = RoleSchema.safeParse(req.body);
   if (!result.success) {
-    const errors = result.error.issues.map((_error) => _error.message).join(', ');
+    const errors = result.error.issues.map((_error) => `${_error.path}: ${_error.message}`).join(', ');
+    logger.debug(`RequestId: ${req.requestId}, Validation Error: ${errors}`);
     throw ApiError.badRequest(errors);
   }
 

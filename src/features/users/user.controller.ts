@@ -54,6 +54,19 @@ class UserController {
       }),
     );
   }
+
+  static async update(req: Request, res: Response, next: NextFunction) {
+    const { id } = req.params;
+
+    await UserRepository.update(id, req.body.user);
+
+    res.json(
+      ApiResponse({
+        data: req.body.user,
+        message: 'User updated successfully',
+      }),
+    );
+  }
 }
 
 export { UserController };

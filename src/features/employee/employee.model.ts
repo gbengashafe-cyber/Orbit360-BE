@@ -16,10 +16,9 @@ export class Employee extends Model<InferAttributes<Employee>, InferCreationAttr
   public hireDate!: Date;
   declare terminationDate: CreationOptional<Date>;
   declare nationality: string;
-  public salary!: number;
   declare gender: 'M' | 'F';
   declare supervisorId: ForeignKey<Employee['employeeId']>;
-  declare department: ForeignKey<Department['name']>;
+  declare departmentName: ForeignKey<Department['name']>;
   declare position: ForeignKey<Position['title']>;
   declare status: 'active' | 'inactive' | 'terminated' | 'on_leave';
 }
@@ -34,6 +33,7 @@ Employee.init(
     employeeId: {
       type: DataTypes.STRING(10),
       allowNull: false,
+      unique: 'employeeId',
     },
     firstName: {
       type: DataTypes.STRING(50),
@@ -69,12 +69,8 @@ Employee.init(
     terminationDate: {
       type: DataTypes.DATE,
     },
+    supervisorId: { type: DataTypes.STRING(10), references: { model: Employee, key: 'employee_id' }, allowNull: true },
     nationality: { type: DataTypes.STRING(30) },
-    salary: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: false,
-    },
-
     status: {
       type: DataTypes.ENUM('active', 'inactive', 'terminated', 'on_leave'),
       defaultValue: 'active',
@@ -91,11 +87,27 @@ Employee.init(
   },
 );
 
-Employee.belongsTo(Department, { foreignKey: { name: 'department', allowNull: false }, targetKey: 'name' });
-Department.hasMany(Employee, { foreignKey: { name: 'department', allowNull: false }, sourceKey: 'name' });
+Employee.belongsTo(Department, {
+  foreignKey: { name: 'departmentName', allowNull: false },
+  as: 'department',
+  targetKey: 'name',
+});
+Department.hasMany(Employee, {
+  foreignKey: { name: 'departmentName', allowNull: false },
+  as: 'department',
+  sourceKey: 'name',
+});
 
-Employee.hasOne(EmployeeCompensation, { foreignKey: { name: 'employeeId', allowNull: false }, as: 'employeeBank' });
-EmployeeCompensation.belongsTo(Employee, { foreignKey: { name: 'employeeId', allowNull: false }, as: 'employeeBank' });
+EmployeeCompensation.belongsTo(Employee, {
+  foreignKey: { name: 'employeeId', allowNull: false },
+  as: 'compensation',
+  targetKey: 'employeeId',
+});
+Employee.hasOne(EmployeeCompensation, {
+  foreignKey: { name: 'employeeId', allowNull: false },
+  as: 'compensation',
+  sourceKey: 'employeeId',
+});
 
-Position.hasMany(Employee, { foreignKey: 'positionId', as: 'employees' });
-Employee.belongsTo(Position, { foreignKey: 'positionId', as: 'position' });
+Position.hasMany(Employee, { foreignKey: { name: 'position', allowNull: false }, sourceKey: 'title' });
+Employee.belongsTo(Position, { foreignKey: { name: 'position', allowNull: false }, targetKey: 'title' });

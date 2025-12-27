@@ -12,7 +12,7 @@ if (env.NODE_ENV.toUpperCase() !== 'PRODUCTION') {
     })
     .catch((error) => {
       logger.error('Unable to complete DB sync.');
-      console.log(error);
+      logger.log(error);
       process.exit(0);
     });
 }

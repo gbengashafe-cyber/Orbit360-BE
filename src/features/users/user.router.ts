@@ -9,6 +9,6 @@ const router = Router();
 router.post('/', validateAuthToken, hasRequiredPermission('ADMIN'), validateUser, UserController.create);
 router.get('/', validateAuthToken, hasRequiredPermission('ADMIN'), UserController.get);
 router.get('/:id', validateAuthToken, hasRequiredPermission('ADMIN'), UserController.getById);
-// router.put('/:id', validateAuthToken, hasRequiredRole(['ADMIN']), validateUser, UserController.update);
+router.put('/:id', validateAuthToken, hasRequiredPermission('ADMIN'), validateUser, UserController.update);
 
 export { router as userRoutes };

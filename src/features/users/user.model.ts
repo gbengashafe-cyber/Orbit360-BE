@@ -1,20 +1,19 @@
 import { CreationOptional, DataTypes, ForeignKey, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import { db } from '../../db';
 import { Department } from '../department/department.model';
-import { Employee } from '../employee/employee.model';
 import { Position } from '../position/position.model';
 
 const userStatusOptions = ['active', 'inactive'];
 
 export class User extends Model<InferAttributes<User>, InferCreationAttributes<User>> {
   declare id: CreationOptional<number>;
-  public email!: string;
-  public password!: string;
   public firstName!: string;
   public lastName!: string;
+  public email!: string;
+  public password!: string;
   declare profileImage: CreationOptional<string>;
   declare googleId: CreationOptional<string>;
-  declare employeeId: ForeignKey<Employee['employeeId']>;
+  // Defines what the user can do no the admin platform
   declare systemRole: CreationOptional<'admin' | 'user'>;
   // Defines what the user does for the organization
   declare position: ForeignKey<Position['title']>;

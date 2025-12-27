@@ -1,5 +1,6 @@
 import { globSync } from 'glob';
 import path from 'node:path';
+import { logger } from '../utils/logger';
 
 const loadModels = () => {
   const baseDir = path.join(process.cwd(), 'src');
@@ -12,8 +13,8 @@ const loadModels = () => {
     absolute: true, //
   });
 
-  console.log('Loaded model files:');
-  console.log(files);
+  logger.info('Loaded model files:');
+  console.info(files);
 
   files.forEach((file) => {
     require(file);

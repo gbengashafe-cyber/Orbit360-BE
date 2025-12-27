@@ -10,7 +10,7 @@ const drop = async () => {
 
     process.exit(0);
   } catch (error) {
-    console.error('Error deleting database tables:', error);
+    logger.error('Error deleting database tables:', error);
     process.exit(1);
   }
 };

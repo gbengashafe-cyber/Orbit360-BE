@@ -1,19 +1,19 @@
-import dotenv from "dotenv";
-import { z } from "zod";
+import dotenv from 'dotenv';
+import { z } from 'zod';
 
 dotenv.config();
 
 const envSchema = z.object({
   PORT: z.string(),
-  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
-  LOG_LEVEL: z.enum(["info", "error", "debug"]).default("info"),
+  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  LOG_LEVEL: z.enum(['info', 'error', 'debug']).default('info'),
   DB_NAME: z.string(),
   DB_USER: z.string(),
   DB_PASSWORD: z.string(),
   DB_HOST_NAME: z.string(),
   DB_PORT: z.coerce.number(),
   DB_TYPE: z.string(),
-  NODE_CONFIG_DIR: z.string().default("src/config"),
+  NODE_CONFIG_DIR: z.string().default('src/config'),
   JWT_SECRET: z.string(),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
@@ -22,7 +22,7 @@ const envSchema = z.object({
 const parsed = envSchema.safeParse(process.env);
 
 if (!parsed.success) {
-  console.error("❌ Invalid environment variables:", parsed.error.format());
+  console.error('Invalid environment variables:', parsed.error.format());
   process.exit(1);
 }
 

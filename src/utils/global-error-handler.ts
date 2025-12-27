@@ -3,6 +3,7 @@ import {
   BaseError,
   ConnectionError,
   DatabaseError,
+  EagerLoadingError,
   ForeignKeyConstraintError,
   UniqueConstraintError,
   ValidationError,
@@ -39,6 +40,10 @@ const globalErrorHandler: ErrorRequestHandler = (err, req, res, next): Response 
       case DatabaseError.name:
         message = 'Oops! Looks like something is wrong with the request';
         break;
+      case EagerLoadingError.name:
+        code = 500;
+        message = 'Oops! Something went wrong. Please try again later';
+        break;
 
       default:
         message = 'Oops! Something went wrong. Please try again later';
@@ -50,6 +55,8 @@ const globalErrorHandler: ErrorRequestHandler = (err, req, res, next): Response 
       err = ApiError.internalServerError('Oops! Something went wrong on the server. Please try again later.');
     } else if (code === 409) {
       err = ApiError.conflict(message);
+    } else if (code === 500) {
+      err = ApiError.internalServerError(message);
     } else {
       err = ApiError.badRequest(message);
     }

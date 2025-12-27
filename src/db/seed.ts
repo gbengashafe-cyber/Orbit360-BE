@@ -1,5 +1,4 @@
 import { db } from '.';
-import { Attendance } from '../features/attendance/attendance.model';
 import { Company } from '../features/company/company.model';
 import { Department } from '../features/department/department.model';
 import { Employee } from '../features/employee/employee.model';
@@ -43,8 +42,7 @@ async function seed() {
         email: 'john.doe@example.com',
         phone: '+1234567890',
         hireDate: new Date('2023-01-15'),
-        salary: 75000,
-        department: departments[0].name,
+        departmentName: departments[0].name,
         position: positions[0].title,
         status: 'active',
         employeeId: '1',
@@ -60,8 +58,7 @@ async function seed() {
         email: 'jane.smith@example.com',
         phone: '+1234567891',
         hireDate: new Date('2023-03-20'),
-        salary: 65000,
-        department: departments[0].name,
+        departmentName: departments[0].name,
         position: positions[1].title,
         status: 'active',
         employeeId: '2',
@@ -77,8 +74,7 @@ async function seed() {
         email: 'bob.johnson@example.com',
         phone: '+1234567892',
         hireDate: new Date('2022-06-10'),
-        salary: 60000,
-        department: departments[1].name,
+        departmentName: departments[1].name,
         position: positions[2].title,
         status: 'active',
         employeeId: '3',
@@ -91,23 +87,23 @@ async function seed() {
     ]);
     logger.info('Employees created');
 
-    // Create Attendance Records
-    const today = new Date();
-    await Attendance.bulkCreate([
-      {
-        employeeId: employees[0].id,
-        date: today,
-        checkIn: new Date(),
-        checkOut: new Date(new Date().getTime() + 8 * 60 * 60 * 1000),
-        status: 'present',
-      },
-      {
-        employeeId: employees[1].id,
-        date: today,
-        checkIn: new Date(new Date().getTime() + 1 * 60 * 60 * 1000),
-        status: 'present',
-      },
-    ]);
+    // // Create Attendance Records
+    // const today = new Date();
+    // await Attendance.bulkCreate([
+    //   {
+    //     employeeId: employees[0].id,
+    //     date: today,
+    //     checkIn: new Date(),
+    //     checkOut: new Date(new Date().getTime() + 8 * 60 * 60 * 1000),
+    //     status: 'present',
+    //   },
+    //   {
+    //     employeeId: employees[1].id,
+    //     date: today,
+    //     checkIn: new Date(new Date().getTime() + 1 * 60 * 60 * 1000),
+    //     status: 'present',
+    //   },
+    // ]);
     logger.info('Attendance records created');
 
     // Create Leave Requests
@@ -154,7 +150,6 @@ async function seed() {
         lastName: 'ABIOLA',
         email: 'o@o.com',
         department: departments[0].name,
-        employeeId: '1',
         password: '',
         position: positions[0].title,
       },
@@ -163,7 +158,7 @@ async function seed() {
     logger.info('Database seeding completed successfully');
     process.exit(0);
   } catch (error) {
-    console.error('Error seeding database:', error);
+    logger.error('Error seeding database:', error);
     process.exit(1);
   }
 }
