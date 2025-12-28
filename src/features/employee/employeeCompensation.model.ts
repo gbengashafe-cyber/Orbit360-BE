@@ -10,7 +10,7 @@ export class EmployeeCompensation extends Model<
   declare employeeId: ForeignKey<Employee['employeeId']>;
   declare bankName: string;
   declare bankCode: string;
-  declare bankAccount: string;
+  declare accountNumber: string;
   declare accountName: string;
   declare nhfApplicable: boolean;
   declare annualBasicSalary: number;
@@ -46,7 +46,7 @@ EmployeeCompensation.init(
       type: DataTypes.STRING(30),
       allowNull: false,
     },
-    bankAccount: {
+    accountNumber: {
       type: DataTypes.STRING(20),
       allowNull: false,
     },
@@ -61,11 +61,11 @@ EmployeeCompensation.init(
       type: DataTypes.BOOLEAN,
       allowNull: false,
     },
-    annualBasicSalary: { type: DataTypes.DECIMAL(2), allowNull: false },
-    annualHousingAllowance: { type: DataTypes.DECIMAL(2), allowNull: false },
-    annualTransportAllowance: { type: DataTypes.DECIMAL(2), allowNull: false },
-    annualLeaveAllowance: { type: DataTypes.DECIMAL(2), allowNull: false },
-    otherAllowance: { type: DataTypes.DECIMAL(2), allowNull: false },
+    annualBasicSalary: { type: DataTypes.INTEGER, allowNull: false },
+    annualHousingAllowance: { type: DataTypes.INTEGER, allowNull: false },
+    annualTransportAllowance: { type: DataTypes.INTEGER, allowNull: false },
+    annualLeaveAllowance: { type: DataTypes.INTEGER, allowNull: false },
+    otherAllowance: { type: DataTypes.INTEGER, allowNull: false },
     beneficiaryName: { type: DataTypes.STRING(100) },
     beneficiaryRelationship: { type: DataTypes.STRING(50) },
     beneficiaryPhone: { type: DataTypes.STRING(50) },
@@ -73,11 +73,11 @@ EmployeeCompensation.init(
     nokRelationship: { type: DataTypes.STRING(50) },
     nokPhone: { type: DataTypes.STRING(50) },
     nokAddress: { type: DataTypes.STRING(100) },
-    leaveEntitlement: { type: DataTypes.NUMBER },
+    leaveEntitlement: { type: DataTypes.INTEGER() },
   },
   {
     sequelize: db,
     underscored: true,
-    tableName: 'employeeBanks',
+    tableName: 'employee_compensation',
   },
 );

@@ -1,13 +1,13 @@
 import { NextFunction, Request, Response } from 'express';
-import { Department } from '../../models';
 import { ApiError } from '../../utils/api-error';
 import { ApiResponse } from '../../utils/api-response';
 import { logger } from '../../utils/logger';
+import { Department } from './department.model';
 
 export class DepartmentController {
   static async getAll(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page, rows } = req.body.pagination!;
+      const { page, rows } = req.pagination!;
       const offset = (page - 1) * rows;
 
       const { count, rows: departments } = await Department.findAndCountAll({

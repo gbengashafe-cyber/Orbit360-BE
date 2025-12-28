@@ -1,19 +1,23 @@
-import { NextFunction, Request, Response } from "express";
-import { ApiError } from "../../utils/api-error";
-import { ApiResponse } from "../../utils/api-response";
-import { CompanyRepository } from "./company.repository";
+import { NextFunction, Request, Response } from 'express';
+import { ApiError } from '../../utils/api-error';
+import { ApiResponse } from '../../utils/api-response';
+import { CompanyRepository } from './company.repository';
 
 class CompanyController {
   static create = async (req: Request, res: Response, next: NextFunction) => {
-    req.body.company.createdBy = req.body.authenticatedUser.id;
+    if (!req.user?.id) {
+      throw ApiError.badRequest('Authentication required');
+    }
+
+    req.body.company.createdBy = req.user.id;
 
     const result = await CompanyRepository.add(req.body.company);
-    res.send(ApiResponse({ message: "Company created successfully", data: { id: result.id } }));
+    res.send(ApiResponse({ message: 'Company created successfully', data: { id: result.id } }));
   };
 
   static async get(req: Request, res: Response, next: NextFunction) {
-    const { page, rows } = req.body.pagination!;
-    const query = req.body.query;
+    const { page, rows } = req.pagination!;
+    const query = req.reqQuery;
 
     const { count, rows: companies } = await CompanyRepository.read({
       page,
@@ -22,13 +26,13 @@ class CompanyController {
     });
 
     if (!companies.length) {
-      throw ApiError.notFound("No company found");
+      throw ApiError.notFound('No company found');
     }
 
     res.json(
       ApiResponse({
         data: companies,
-        message: "Companies fetched successfully",
+        message: 'Companies fetched successfully',
         pagination: {
           total: count,
           page,
@@ -45,13 +49,13 @@ class CompanyController {
     const company = await CompanyRepository.readById(id);
 
     if (!company) {
-      throw ApiError.notFound("Company not found");
+      throw ApiError.notFound('Company not found');
     }
 
     res.json(
       ApiResponse({
         data: company,
-        message: "Company fetched successfully",
+        message: 'Company fetched successfully',
       }),
     );
   }
@@ -64,7 +68,7 @@ class CompanyController {
     res.json(
       ApiResponse({
         data: req.body.company,
-        message: "Company updated successfully",
+        message: 'Company updated successfully',
       }),
     );
   }
@@ -75,13 +79,13 @@ class CompanyController {
     const resultCount = await CompanyRepository.delete(id);
 
     if (!resultCount) {
-      throw ApiError.badRequest("Company not found");
+      throw ApiError.badRequest('Company not found');
     }
 
     res.json(
       ApiResponse({
         data: { id },
-        message: "Company deleted successfully",
+        message: 'Company deleted successfully',
       }),
     );
   }

@@ -5,15 +5,15 @@ import express, { Request } from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { randomUUID } from 'node:crypto';
+import authRoutes from './features/authentication/auth.routes';
 import { companyRouter } from './features/company/company.routes';
 import { deductionRouter } from './features/deductions/deduction.routes';
+import departmentRoutes from './features/department/department.routes';
 import employeeRoutes from './features/employee/employee.routes';
-import attendanceRoutes from './routes/attendance.routes';
-import authRoutes from './routes/auth.routes';
-import departmentRoutes from './routes/department.routes';
-import leaveRoutes from './routes/leave.routes';
-import payrollRoutes from './routes/payroll.routes';
-import positionRoutes from './routes/position.routes';
+import { leaveRoutes } from './features/leave/leave.routes';
+import payrollRoutes from './features/payroll/payroll.routes';
+import positionRoutes from './features/position/position.routes';
+import { userRoutes } from './features/users/user.router';
 import { ApiError } from './utils/api-error';
 import { globalErrorHandler } from './utils/global-error-handler';
 import { logger } from './utils/logger';
@@ -90,8 +90,8 @@ app.use(
 
 app.use((req, res, next) => {
   const { page, rows } = req.query;
-  req.body.pagination = parsePageAndLimitNumber(page, rows);
-  req.body.query = parseQueryParams(req.query.q);
+  req.pagination = parsePageAndLimitNumber(page, rows);
+  req.reqQuery = parseQueryParams(req.query.q);
 
   next();
 });
@@ -101,11 +101,11 @@ app.use('/api/auth', authRoutes);
 app.use('/api/v1/departments', departmentRoutes);
 app.use('/api/v1/employees', employeeRoutes);
 app.use('/api/leaves', leaveRoutes);
-app.use('/api/attendance', attendanceRoutes);
 app.use('/api/payroll', payrollRoutes);
 app.use('/api/positions', positionRoutes);
 app.use('/api/v1/companies', companyRouter);
 app.use('/api/v1/deductions', deductionRouter);
+app.use('/api/v1/users', userRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

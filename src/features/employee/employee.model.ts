@@ -1,7 +1,7 @@
 import { CreationOptional, DataTypes, ForeignKey, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import { db } from '../../db';
-import { Position } from '../../models/position.model';
 import { Department } from '../department/department.model';
+import { Position } from '../position/position.model';
 import { EmployeeCompensation } from './employeeCompensation.model';
 
 export class Employee extends Model<InferAttributes<Employee>, InferCreationAttributes<Employee>> {
@@ -9,18 +9,17 @@ export class Employee extends Model<InferAttributes<Employee>, InferCreationAttr
   declare employeeId: string;
   public firstName!: string;
   public lastName!: string;
-  declare dob: string;
+  declare dob: Date;
   public email!: string;
   public phone!: string;
   declare address: string;
   public hireDate!: Date;
-  public terminationDate!: Date;
+  declare terminationDate: CreationOptional<Date>;
   declare nationality: string;
-  public salary!: number;
   declare gender: 'M' | 'F';
-  declare supervisorId: ForeignKey<Employee['id']>;
-  declare departmentId: ForeignKey<Department['id']>;
-  declare positionId: ForeignKey<Position['id']>;
+  declare supervisorId: ForeignKey<Employee['employeeId']>;
+  declare departmentName: ForeignKey<Department['name']>;
+  declare position: ForeignKey<Position['title']>;
   declare status: 'active' | 'inactive' | 'terminated' | 'on_leave';
 }
 
@@ -34,6 +33,7 @@ Employee.init(
     employeeId: {
       type: DataTypes.STRING(10),
       allowNull: false,
+      unique: 'employeeId',
     },
     firstName: {
       type: DataTypes.STRING(50),
@@ -69,14 +69,10 @@ Employee.init(
     terminationDate: {
       type: DataTypes.DATE,
     },
+    supervisorId: { type: DataTypes.STRING(10), references: { model: Employee, key: 'employee_id' }, allowNull: true },
     nationality: { type: DataTypes.STRING(30) },
-    salary: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: false,
-    },
-
     status: {
-      type: DataTypes.ENUM('active', 'inactive', 'terminated', 'on_leaves'),
+      type: DataTypes.ENUM('active', 'inactive', 'terminated', 'on_leave'),
       defaultValue: 'active',
     },
     gender: {
@@ -87,11 +83,31 @@ Employee.init(
     sequelize: db,
     tableName: 'employees',
     paranoid: true,
+    underscored: true,
   },
 );
 
-Employee.belongsTo(Department, { foreignKey: { name: 'departmentId', allowNull: false }, as: 'department' });
-Department.hasMany(Employee, { foreignKey: { name: 'departmentId', allowNull: false }, as: 'employees' });
+Employee.belongsTo(Department, {
+  foreignKey: { name: 'departmentName', allowNull: false },
+  as: 'department',
+  targetKey: 'name',
+});
+Department.hasMany(Employee, {
+  foreignKey: { name: 'departmentName', allowNull: false },
+  as: 'department',
+  sourceKey: 'name',
+});
 
-Employee.hasOne(EmployeeCompensation, { foreignKey: { name: 'employeeId', allowNull: false }, as: 'employeeBank' });
-EmployeeCompensation.belongsTo(Employee, { foreignKey: { name: 'employeeId', allowNull: false }, as: 'employeeBank' });
+EmployeeCompensation.belongsTo(Employee, {
+  foreignKey: { name: 'employeeId', allowNull: false },
+  as: 'compensation',
+  targetKey: 'employeeId',
+});
+Employee.hasOne(EmployeeCompensation, {
+  foreignKey: { name: 'employeeId', allowNull: false },
+  as: 'compensation',
+  sourceKey: 'employeeId',
+});
+
+Position.hasMany(Employee, { foreignKey: { name: 'position', allowNull: false }, sourceKey: 'title' });
+Employee.belongsTo(Position, { foreignKey: { name: 'position', allowNull: false }, targetKey: 'title' });

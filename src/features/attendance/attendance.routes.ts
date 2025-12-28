@@ -1,6 +1,11 @@
 import { Router } from 'express';
-import { AttendanceController } from '../controllers/attendance.controller';
-import { validateCheckIn, validateCheckOut, validateMarkAbsent, validateGetAttendanceByEmployeeParams } from "../features/attendance/attendance.validators";
+import { AttendanceController } from './attendance.controller';
+import {
+  validateCheckIn,
+  validateCheckOut,
+  validateGetAttendanceByEmployeeParams,
+  validateMarkAbsent,
+} from './attendance.validators';
 
 const router = Router();
 
@@ -13,5 +18,3 @@ router.post('/mark-absent', validateMarkAbsent, AttendanceController.markAbsent)
 router.delete('/:id', AttendanceController.delete);
 
 export default router;
-
-router.get('/')

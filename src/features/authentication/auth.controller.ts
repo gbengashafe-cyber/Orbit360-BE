@@ -1,8 +1,8 @@
-import { Request, Response, NextFunction } from 'express';
-import { User } from '../models';
-import { ApiError } from '../utils/api-error';
-import { logger } from '../utils/logger';
-import { generateToken } from '../utils/jwt';
+import { NextFunction, Request, Response } from 'express';
+import { ApiError } from '../../utils/api-error';
+import { generateToken } from '../../utils/jwt';
+import { logger } from '../../utils/logger';
+import { User } from '../users/user.model';
 
 export class AuthController {
   // Google OAuth callback
@@ -81,5 +81,3 @@ export class AuthController {
     }
   }
 }
-
-

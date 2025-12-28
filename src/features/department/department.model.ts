@@ -43,4 +43,4 @@ Department.init(
 );
 
 Department.belongsTo(Company, { foreignKey: { name: 'companyId', allowNull: false }, as: 'company' });
-Company.hasMany(Department, { foreignKey: { name: 'companyId', allowNull: false }, as: 'companies' });
+Company.hasMany(Department, { foreignKey: { name: 'companyId', allowNull: false }, as: 'company' });

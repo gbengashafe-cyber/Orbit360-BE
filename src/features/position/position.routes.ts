@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { PositionController } from '../../src/controllers/position.controller';
-import { validateCreatePosition, validateUpdatePosition } from "../features/position/position.validators";
+import { PositionController } from './position.controller';
+import { validateCreatePosition, validateUpdatePosition } from './position.validators';
 
 const router = Router();
 

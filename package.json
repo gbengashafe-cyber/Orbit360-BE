@@ -12,6 +12,7 @@
     "start": "node dist/index.js",
     "prepare": "husky",
     "seed": "ts-node src/db/seed.ts",
+    "sync": "ts-node src/db/sync.ts",
     "clear-db": "ts-node src/db/purge.ts"
   },
   "keywords": [],
@@ -24,6 +25,7 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
+    "glob": "^13.0.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
     "morgan": "^1.10.1",
@@ -31,7 +33,7 @@
     "sequelize": "^6.37.7",
     "stoppable": "^1.1.0",
     "winston": "^3.19.0",
-    "zod": "^4.1.13"
+    "zod": "^4.2.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
