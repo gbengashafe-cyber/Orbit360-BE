@@ -10,6 +10,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
   public firstName!: string;
   public lastName!: string;
   public email!: string;
+  public role!: 'employee' | 'admin';
   public password!: string;
   declare profileImage: CreationOptional<string>;
   declare googleId: CreationOptional<string>;
@@ -54,11 +55,29 @@ User.init(
       allowNull: true,
       unique: 'googleId',
     },
+    // User's application-level role (employee or admin)
+    role: {
+      type: DataTypes.ENUM('employee', 'admin'),
+      allowNull: false,
+      defaultValue: 'employee',
+    },
     // Determines if the user is a system admin or a regular user (self-service)
-    systemRole: { type: DataTypes.ENUM, values: ['admin', 'user'], defaultValue: 'user' },
+    systemRole: { 
+      type: DataTypes.ENUM('admin', 'user'), 
+      allowNull: false, 
+      defaultValue: 'user' 
+    },
+    position: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    department: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
     status: {
-      type: DataTypes.ENUM,
-      values: userStatusOptions,
+      type: DataTypes.ENUM('active', 'suspended'),
+      allowNull: false,
       defaultValue: 'active',
     },
   },

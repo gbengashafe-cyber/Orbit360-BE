@@ -6,9 +6,9 @@ import { validateRole } from './role.validation';
 
 const router = Router();
 
-router.post('/', validateAuthToken, hasRequiredPermission(['ADMIN']), validateRole, RoleController.create);
-router.get('/', validateAuthToken, hasRequiredPermission(['ADMIN']), RoleController.get);
-router.get('/:id', validateAuthToken, hasRequiredPermission(['ADMIN']), RoleController.getById);
-router.put('/:id', validateAuthToken, hasRequiredPermission(['ADMIN']), validateRole, RoleController.update);
+router.post('/', validateAuthToken, hasRequiredPermission('ADMIN'), validateRole, RoleController.create);
+router.get('/', validateAuthToken, hasRequiredPermission('ADMIN'), RoleController.get);
+router.get('/:id', validateAuthToken, hasRequiredPermission('ADMIN'), RoleController.getById);
+router.put('/:id', validateAuthToken, hasRequiredPermission('ADMIN'), validateRole, RoleController.update);
 
 export { router as roleRoutes };

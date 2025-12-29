@@ -8,7 +8,7 @@ export class AuthController {
   // Google OAuth callback
   static async googleCallback(req: Request, res: Response, next: NextFunction) {
     try {
-      const { googleId, email, firstName, lastName, profileImage } = req.body;
+      const { googleId, email, firstName, lastName, profileImage, role } = req.body;
 
       let user = await User.findOne({ where: { googleId } });
 
@@ -19,8 +19,11 @@ export class AuthController {
           firstName,
           lastName,
           profileImage,
-          role: 'employee',
+          role: 'employee' ,
           status: 'active',
+          position: 'employee',
+          department: 'employee',
+          password: '',
         });
       }
 
