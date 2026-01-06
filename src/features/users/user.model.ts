@@ -3,7 +3,7 @@ import { db } from '../../db';
 import { Department } from '../department/department.model';
 import { Position } from '../position/position.model';
 
-const userStatusOptions = ['active', 'inactive'];
+const userStatusOptions = ['active', 'inactive'] as const;
 
 export class User extends Model<InferAttributes<User>, InferCreationAttributes<User>> {
   declare id: CreationOptional<number>;
@@ -17,8 +17,8 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
   declare systemRole: CreationOptional<'admin' | 'user'>;
   // Defines what the user does for the organization
   declare position: ForeignKey<Position['title']>;
-  declare department: ForeignKey<Department['name']>;
-  declare status: CreationOptional<'active' | 'suspended'>;
+  declare departmentName: ForeignKey<Department['name']>;
+  declare status: CreationOptional<(typeof userStatusOptions)[number]>;
 }
 
 User.init(
@@ -72,7 +72,7 @@ User.init(
 User.belongsTo(Position, { foreignKey: { name: 'position', allowNull: false }, targetKey: 'title' });
 Position.hasMany(User, { foreignKey: { name: 'position', allowNull: false }, sourceKey: 'title' });
 
-User.belongsTo(Department, { foreignKey: { name: 'department', allowNull: false }, targetKey: 'name' });
-Department.hasMany(User, { foreignKey: { name: 'department', allowNull: false }, sourceKey: 'name' });
+User.belongsTo(Department, { foreignKey: { name: 'departmentName', allowNull: false }, targetKey: 'name' });
+Department.hasMany(User, { foreignKey: { name: 'departmentName', allowNull: false }, sourceKey: 'name' });
 
 export { userStatusOptions };

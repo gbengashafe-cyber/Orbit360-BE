@@ -12,12 +12,16 @@ class DeductionRepository {
     return Deduction.findAndCountAll({ where: whereCondition, limit: rows, offset: (page - 1) * rows });
   };
 
+  static readAllActive = () => {
+    return Deduction.findAll({ where: { status: true } });
+  };
+
   static readById = async (id) => {
     return Deduction.findByPk(id);
   };
 
-  static update = async (id, Deduction) => {
-    return Deduction.update(Deduction, { where: { id } });
+  static update = async (id, deduction) => {
+    return Deduction.update(deduction, { where: { id } });
   };
 
   static delete = async (id) => {

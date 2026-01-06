@@ -1,4 +1,4 @@
-import { ApiError } from './api-error';
+import qs from 'qs';
 
 const parsePageAndLimitNumber = (pageNo, limit) => {
   if (!pageNo) {
@@ -13,15 +13,8 @@ const parsePageAndLimitNumber = (pageNo, limit) => {
   return { page, rows };
 };
 
-const ALLOWED_QUERY_LENGTH = 30;
 const parseQueryParams = (query) => {
-  if (!query) return '';
-
-  if (query.length > ALLOWED_QUERY_LENGTH) {
-    throw ApiError.badRequest('Search parameter is longer than allowed characters');
-  }
-  const safeQuery = query.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  return safeQuery;
+  return qs.parse(query, { parameterLimit: 10 });
 };
 
 export { parsePageAndLimitNumber, parseQueryParams };

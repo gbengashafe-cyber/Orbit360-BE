@@ -17,7 +17,7 @@ class CompanyController {
 
   static async get(req: Request, res: Response, next: NextFunction) {
     const { page, rows } = req.pagination!;
-    const query = req.reqQuery;
+    const query = req.parsedQuery;
 
     const { count, rows: companies } = await CompanyRepository.read({
       page,

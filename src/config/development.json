@@ -1,1 +1,1 @@
-{ "allowedOrigins": ["*"] }
+{ "allowedOrigins": ["*"], "useMonthlyLeaveAllowance": true }

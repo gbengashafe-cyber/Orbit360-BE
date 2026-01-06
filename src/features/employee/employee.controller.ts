@@ -2,24 +2,18 @@ import { NextFunction, Request, Response } from 'express';
 import { ApiError } from '../../utils/api-error';
 import { ApiResponse } from '../../utils/api-response';
 import { logger } from '../../utils/logger';
-import { Company } from '../company/company.model';
-import { Department } from '../department/department.model';
 import { Employee } from './employee.model';
 import { EmployeeRepository } from './employee.repository';
-import { EmployeeCompensation } from './employeeCompensation.model';
 
 export class EmployeeController {
   static async getAll(req: Request, res: Response, next: NextFunction) {
     try {
       const { page, rows } = req.pagination!;
-      const offset = (page - 1) * rows;
 
-      const { count, rows: employees } = await Employee.findAndCountAll({
-        attributes: { exclude: ['departmentName'] },
-        limit: rows,
-        offset,
-        include: [{ model: Department, as: 'department', attributes: ['name'] }],
-        order: [['createdAt', 'DESC']],
+      const { count, rows: employees } = await EmployeeRepository.read({
+        rows,
+        page,
+        filters: req.parsedQuery,
       });
 
       if (!count) {
@@ -47,22 +41,7 @@ export class EmployeeController {
   static async getById(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const employee = await Employee.findByPk(id, {
-        attributes: { exclude: ['departmentName'] },
-        include: [
-          {
-            model: Department,
-            as: 'department',
-            attributes: ['name'],
-            include: [{ model: Company, as: 'company', attributes: ['name', 'description'] }],
-          },
-          {
-            model: EmployeeCompensation,
-            as: 'compensation',
-            attributes: { exclude: ['id', 'employeeId', 'createdAt', 'updatedAt'] },
-          },
-        ],
-      });
+      const employee = await Employee.findByPk(id, {});
 
       if (!employee) {
         throw ApiError.notFound('Employee not found');
@@ -91,7 +70,6 @@ export class EmployeeController {
   static async update(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const { firstName, lastName, phone, hireDate, departmentId, positionId: position, status } = req.body;
 
       const employee = await EmployeeRepository.isExist(id);
 
@@ -106,24 +84,6 @@ export class EmployeeController {
       res.json(ApiResponse({ data: updatedEmployee, message: 'Employee updated successfully' }));
     } catch (error) {
       logger.error(`Error updating employee: ${error}`);
-      next(error);
-    }
-  }
-
-  static async delete(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-
-      const employee = await Employee.findByPk(id);
-      if (!employee) {
-        throw ApiError.notFound('Employee not found');
-      }
-
-      await employee.destroy();
-
-      res.json({ message: 'Employee deleted successfully' });
-    } catch (error) {
-      logger.error(`Error deleting employee: ${error}`);
       next(error);
     }
   }

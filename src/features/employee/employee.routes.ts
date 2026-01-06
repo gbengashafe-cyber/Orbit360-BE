@@ -36,12 +36,5 @@ router.put(
   validateUpdateEmployee,
   EmployeeController.update,
 );
-router.delete(
-  '/:id',
-  validateAuthToken,
-  isInAllowedDepartment(['HR']),
-  hasRequiredPermission('MANAGE_EMPLOYEES'),
-  EmployeeController.delete,
-);
 
 export default router;

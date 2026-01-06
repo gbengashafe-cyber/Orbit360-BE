@@ -39,6 +39,7 @@ Department.init(
     sequelize: db,
     underscored: true,
     tableName: 'departments',
+    modelName: 'department',
   },
 );
 

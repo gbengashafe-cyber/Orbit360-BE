@@ -11,7 +11,7 @@ class RoleController {
 
   static async get(req: Request, res: Response, next: NextFunction) {
     const { page, rows } = req.pagination!;
-    const query = req.reqQuery;
+    const query = req.parsedQuery;
 
     const { count, rows: roles } = await RoleRepository.read({
       page,
