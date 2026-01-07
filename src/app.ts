@@ -102,9 +102,9 @@ app.use((req, res, next) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/v1/departments', departmentRoutes);
 app.use('/api/v1/employees', employeeRoutes);
-app.use('/api/leaves', leaveRoutes);
-app.use('/api/exits', exitRoutes);
-app.use('/api/onboardings', onboardingRoutes);
+app.use('/api/v1/leaves', leaveRoutes);
+app.use('/api/v1/exits', exitRoutes);
+app.use('/api/v1/onboardings', onboardingRoutes);
 app.use('/api/v1/payrolls', payrollRoutes);
 app.use('/api/v1/positions', positionRoutes);
 app.use('/api/v1/companies', companyRouter);
