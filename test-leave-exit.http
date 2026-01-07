@@ -1,0 +1,89 @@
+### Leave Management API Tests
+
+@baseUrl = http://localhost:3000/api
+
+### 1. Create Leave Request
+POST {{baseUrl}}/leaves
+Content-Type: application/json
+
+{
+  "employeeId": 1,
+  "startDate": "2024-02-01T00:00:00.000Z",
+  "endDate": "2024-02-05T00:00:00.000Z",
+  "type": "vacation",
+  "reason": "Family vacation"
+}
+
+### 2. Get All Leaves (HR Only)
+GET {{baseUrl}}/leaves?page=1&rows=10
+
+### 3. Get Leaves by Employee
+GET {{baseUrl}}/leaves/employee/1?page=1&rows=10
+
+### 4. Get Leave by ID
+GET {{baseUrl}}/leaves/1
+
+### 5. Get Leave Types
+GET {{baseUrl}}/leaves/types
+
+### 6. Get Leave Balance
+GET {{baseUrl}}/leaves/balance/1?year=2024
+
+### 7. Approve Leave Request (HR Only)
+PATCH {{baseUrl}}/leaves/1/status
+Content-Type: application/json
+
+{
+  "action": "approved"
+}
+
+### 8. Decline Leave Request (HR Only)
+PATCH {{baseUrl}}/leaves/1/status
+Content-Type: application/json
+
+{
+  "action": "rejected"
+}
+
+### 9. Cancel Leave Request
+DELETE {{baseUrl}}/leaves/1
+
+###############################################
+### Exit Management API Tests
+###############################################
+
+### 1. Create Exit Request
+POST {{baseUrl}}/exits
+Content-Type: application/json
+
+{
+  "employeeId": 1,
+  "exitType": "resignation",
+  "exitDate": "2024-03-01T00:00:00.000Z",
+  "reason": "Better opportunity"
+}
+
+### 2. Get All Exits (HR Only)
+GET {{baseUrl}}/exits?page=1&rows=10
+
+### 3. Get Exits by Employee
+GET {{baseUrl}}/exits/employee/1?page=1&rows=10
+
+### 4. Get Exit by ID
+GET {{baseUrl}}/exits/1
+
+### 5. Approve Exit Request (HR Only)
+PATCH {{baseUrl}}/exits/1/approve
+Content-Type: application/json
+
+{
+  "action": "approved"
+}
+
+### 6. Reject Exit Request (HR Only)
+PATCH {{baseUrl}}/exits/1/approve
+Content-Type: application/json
+
+{
+  "action": "rejected"
+}

@@ -514,3 +514,140 @@ DB_HOST_NAME=localhost
 DB_PORT=3306
 DB_TYPE=mysql
 ```
+
+---
+
+## Leave Management (Updated)
+
+### Get All Leave Requests (HR Only)
+
+```
+GET /leaves?page=1&rows=10
+```
+
+Requires: HR Department + MANAGE_LEAVES permission
+
+### Get Employee Leave Requests
+
+```
+GET /leaves/employee/:employeeId?page=1&rows=10
+```
+
+### Get Leave Request by ID
+
+```
+GET /leaves/:id
+```
+
+### Get Leave Types
+
+```
+GET /leaves/types
+```
+
+Returns all active leave types with configurations.
+
+### Get Leave Balance
+
+```
+GET /leaves/balance/:employeeId?year=2024
+```
+
+Returns employee leave balance by type for the specified year (defaults to current year).
+
+### Create Leave Request
+
+```
+POST /leaves
+Content-Type: application/json
+
+{
+  "employeeId": 1,
+  "startDate": "2024-02-01T00:00:00.000Z",
+  "endDate": "2024-02-05T00:00:00.000Z",
+  "type": "vacation",
+  "reason": "Family vacation"
+}
+```
+
+Allowed types: `sick`, `vacation`, `personal`, `maternity`, `paternity`
+
+### Approve/Decline Leave Request (HR Only)
+
+```
+PATCH /leaves/:id/status
+Content-Type: application/json
+
+{
+  "action": "approved"
+}
+```
+
+Requires: HR Department + APPROVE_LEAVES permission
+Action values: `approved`, `rejected`
+
+### Cancel Leave Request
+
+```
+DELETE /leaves/:id
+```
+
+Note: Cannot cancel approved leave requests.
+
+---
+
+## Exit Management
+
+### Get All Exit Requests (HR Only)
+
+```
+GET /exits?page=1&rows=10
+```
+
+Requires: HR Department + MANAGE_EXITS permission
+
+### Get Employee Exit Requests
+
+```
+GET /exits/employee/:employeeId?page=1&rows=10
+```
+
+### Get Exit Request by ID
+
+```
+GET /exits/:id
+```
+
+### Create Exit Request
+
+```
+POST /exits
+Content-Type: application/json
+
+{
+  "employeeId": 1,
+  "exitType": "resignation",
+  "exitDate": "2024-03-01T00:00:00.000Z",
+  "reason": "Better opportunity"
+}
+```
+
+Allowed exit types: `resignation`, `termination`, `retirement`, `contract_end`
+
+### Approve/Reject Exit Request (HR Only)
+
+```
+PATCH /exits/:id/approve
+Content-Type: application/json
+
+{
+  "action": "approved"
+}
+```
+
+Requires: HR Department + APPROVE_EXITS permission
+Action values: `approved`, `rejected`
+
+Response includes `approvedBy` and `approvedAt` fields.
+
+---
