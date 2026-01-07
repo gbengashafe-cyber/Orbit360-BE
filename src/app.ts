@@ -91,7 +91,7 @@ app.use(
 app.use((req, res, next) => {
   const { page, rows } = req.query;
   req.pagination = parsePageAndLimitNumber(page, rows);
-  req.reqQuery = parseQueryParams(req.query.q);
+  req.parsedQuery = parseQueryParams(req.query);
 
   next();
 });
@@ -101,8 +101,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/v1/departments', departmentRoutes);
 app.use('/api/v1/employees', employeeRoutes);
 app.use('/api/leaves', leaveRoutes);
-app.use('/api/payroll', payrollRoutes);
-app.use('/api/positions', positionRoutes);
+app.use('/api/v1/payrolls', payrollRoutes);
+app.use('/api/v1/positions', positionRoutes);
 app.use('/api/v1/companies', companyRouter);
 app.use('/api/v1/deductions', deductionRouter);
 app.use('/api/v1/users', userRoutes);

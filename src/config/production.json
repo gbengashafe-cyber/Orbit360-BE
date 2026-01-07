@@ -1,0 +1,11 @@
+{
+  "taxBrackets": [
+    { "min": 0, "max": 800000, "rate": 0 },
+    { "min": 800000, "max": 3000000, "rate": 15 },
+    { "min": 3000000, "max": 12000000, "rate": 18 },
+    { "min": 12000000, "max": 25000000, "rate": 21 },
+    { "min": 25000000, "max": 50000000, "rate": 23 },
+    { "min": 50000000, "max": null, "rate": 25 }
+  ],
+  "useMonthlyLeaveAllowance": true
+}

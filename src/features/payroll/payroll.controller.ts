@@ -1,14 +1,22 @@
 import { NextFunction, Request, Response } from 'express';
+import { db } from '../../db';
 import { ApiError } from '../../utils/api-error';
+import { ApiResponse } from '../../utils/api-response';
 import { logger } from '../../utils/logger';
 import { Employee } from '../employee/employee.model';
+import { EmployeeRepository } from '../employee/employee.repository';
 import { Payroll } from './payroll.model';
+import { PayrollRepository } from './payroll.repository';
+import { calculatePayroll } from './payroll.utils';
 
 export class PayrollController {
+  currentPeriod = new Date(new Date().setDate(1));
+
   static async getAll(req: Request, res: Response, next: NextFunction) {
     try {
       const { page, rows } = req.pagination;
       const offset = (page - 1) * rows;
+
       const { count, rows: payrolls } = await Payroll.findAndCountAll({
         limit: rows,
         offset,
@@ -80,25 +88,79 @@ export class PayrollController {
     }
   }
 
-  static async create(req: Request, res: Response, next: NextFunction) {
+  static async getByPayPeriod(req: Request, res: Response, next: NextFunction) {
+    const { payPeriod } = req.params;
+
+    const payroll = await Payroll.findAll({
+      where: { payPeriod },
+      include: [{ model: Employee, as: 'employee', attributes: ['employeeId', 'firstName', 'lastName', 'email'] }],
+    });
+
+    if (!payroll.length) {
+      throw ApiError.notFound('Payroll record not found');
+    }
+
+    res.json(ApiResponse({ data: payroll, message: 'Payroll record(s) fetched successfully' }));
+  }
+
+  static generatePayroll = async (req: Request, res: Response, next: NextFunction) => {
+    const { payPeriod } = req.body.validated.payroll;
+    const overwrite = req.parsedQuery?.overwrite === 'true';
+    const CHUNK_SIZE = 500; // Manageable size to prevent OOM
+
     try {
-      const { employeeId, month, year, baseSalary, allowances = 0, deductions = 0 } = req.body;
+      const payPeriodExist = await PayrollRepository.payPeriodExist(payPeriod);
 
-      const netSalary = baseSalary + allowances - deductions;
+      if (payPeriodExist && !overwrite) {
+        throw ApiError.badRequest('Payroll for this period already exists. Kindly use overwrite to regenerate.');
+      }
 
-      const payroll = await Payroll.create({
-        employeeId,
-        month,
-        year,
-        baseSalary,
-        allowances,
-        deductions,
-        netSalary,
-        status: 'pending',
+      await db.transaction(async (transaction) => {
+        if (payPeriodExist && overwrite) {
+          await PayrollRepository.deleteByPayPeriod(payPeriod, transaction);
+        }
+
+        const pensionRate = 0.08;
+        let page = 1;
+        let hasMore = true;
+
+        while (hasMore) {
+          let activeEmployees = await EmployeeRepository.activeEmployeesCompensation({ rows: CHUNK_SIZE, page });
+
+          if (!activeEmployees || activeEmployees.length === 0) {
+            hasMore = false;
+            break;
+          }
+          const payrollData = activeEmployees.map((_employee) => ({
+            ...calculatePayroll(_employee, pensionRate).payRoll,
+            payPeriod,
+            employeeId: _employee.employeeId,
+          }));
+
+          await PayrollRepository.bulkCreate(payrollData, transaction);
+
+          if (activeEmployees.length < CHUNK_SIZE) {
+            hasMore = false;
+          }
+
+          page++;
+
+          (activeEmployees as any) = null;
+        }
       });
 
+      res.status(201).json(ApiResponse({ data: {}, message: 'Payroll generated successfully' }));
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  static async create(req: Request, res: Response, next: NextFunction) {
+    try {
+      const payroll = await Payroll.create(Object.assign(req.body.validated.payroll, { status: 'pending' }));
+
       const createdPayroll = await Payroll.findByPk(payroll.id, {
-        include: [{ model: Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'email'] }],
+        include: [{ model: Employee, as: 'employee', attributes: ['employeeId', 'firstName', 'lastName', 'email'] }],
       });
 
       res.status(201).json({ data: createdPayroll, message: 'Payroll created successfully' });
@@ -111,20 +173,18 @@ export class PayrollController {
   static async update(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const { baseSalary, allowances = 0, deductions = 0 } = req.body;
+      const { basicSalary, allowances = 0, deductions = 0 } = req.body;
 
       const payroll = await Payroll.findByPk(id);
+
       if (!payroll) {
         throw ApiError.notFound('Payroll record not found');
       }
 
-      const netSalary = (baseSalary || payroll.baseSalary) + allowances - deductions;
+      const netSalary = (basicSalary || payroll.basicSalary) + allowances - deductions;
 
       await payroll.update({
-        baseSalary,
-        allowances,
-        deductions,
-        netSalary,
+        basicSalary,
       });
 
       const updatedPayroll = await Payroll.findByPk(id, {
@@ -143,6 +203,7 @@ export class PayrollController {
       const { id } = req.params;
 
       const payroll = await Payroll.findByPk(id);
+
       if (!payroll) {
         throw ApiError.notFound('Payroll record not found');
       }

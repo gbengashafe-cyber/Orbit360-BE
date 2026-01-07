@@ -3,10 +3,13 @@ import { db } from '../../db';
 
 export class Deduction extends Model<InferAttributes<Deduction>, InferCreationAttributes<Deduction>> {
   declare id: CreationOptional<number>;
-  declare type: string;
-  declare rate: number;
+  declare name: string;
+  declare annualRate: number;
   declare isPercentage: boolean;
   declare isOptional: boolean;
+  declare optionalFieldLink: string;
+  declare compensationFields: string;
+  declare status: boolean;
 }
 
 Deduction.init(
@@ -16,15 +19,16 @@ Deduction.init(
       autoIncrement: true,
       primaryKey: true,
     },
-    type: {
+    name: {
       type: DataTypes.STRING(50),
       allowNull: false,
+      unique: 'active_deduction',
       set(value: string) {
-        this.setDataValue('type', value.toUpperCase());
+        this.setDataValue('name', value.toUpperCase());
       },
     },
-    rate: {
-      type: DataTypes.DECIMAL(2),
+    annualRate: {
+      type: DataTypes.DECIMAL(12, 5),
       allowNull: false,
     },
     isPercentage: {
@@ -34,6 +38,14 @@ Deduction.init(
     isOptional: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
+    },
+    optionalFieldLink: { type: DataTypes.STRING(50) },
+    compensationFields: { type: DataTypes.TEXT },
+    status: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      unique: 'active_deduction',
     },
   },
   {

@@ -1,14 +1,40 @@
 import { Router } from 'express';
-import { hasRequiredPermission } from '../../utils/check-permission';
+import { hasRequiredPermission, isInAllowedDepartment } from '../../utils/check-permission';
 import { validateAuthToken } from '../authentication/auth.middleware';
 import { DeductionController } from './deduction.controller';
+import { validateDeduction } from './deduction.validators';
 
 const router = Router();
 
-router.post('/', validateAuthToken, hasRequiredPermission(['HR_ADMIN']), DeductionController.create);
-router.get('/', validateAuthToken, hasRequiredPermission(['HR_ADMIN']), DeductionController.get);
-router.get('/:id', validateAuthToken, hasRequiredPermission(['HR_ADMIN']), DeductionController.getById);
-router.put('/:id', validateAuthToken, hasRequiredPermission(['HR_ADMIN']), DeductionController.update);
-router.delete('/:id', validateAuthToken, hasRequiredPermission(['HR_ADMIN']), DeductionController.delete);
+router.post(
+  '/',
+  validateAuthToken,
+  isInAllowedDepartment(['HR']),
+  hasRequiredPermission('MANAGE_PAYROLL'),
+  validateDeduction,
+  DeductionController.create,
+);
+router.get(
+  '/',
+  validateAuthToken,
+  isInAllowedDepartment(['HR']),
+  hasRequiredPermission('MANAGE_PAYROLL'),
+  DeductionController.get,
+);
+router.get(
+  '/:id',
+  validateAuthToken,
+  isInAllowedDepartment(['HR']),
+  hasRequiredPermission('MANAGE_PAYROLL'),
+  DeductionController.getById,
+);
+router.put(
+  '/:id',
+  validateAuthToken,
+  isInAllowedDepartment(['HR']),
+  hasRequiredPermission('MANAGE_PAYROLL'),
+  validateDeduction,
+  DeductionController.update,
+);
 
 export { router as deductionRouter };

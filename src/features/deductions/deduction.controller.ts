@@ -1,11 +1,11 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { ApiError } from '../../utils/api-error';
 import { ApiResponse } from '../../utils/api-response';
 import { DeductionRepository } from './deduction.repository';
 
 class DeductionController {
   static create = async (req: Request, res: Response, next) => {
-    const deduction = req.body.deduction;
+    const deduction = req.body.validated.deduction;
 
     const result = await DeductionRepository.add(deduction);
     res.status(201).json(ApiResponse({ message: 'Deduction created successfully', data: result.id }));
@@ -13,7 +13,7 @@ class DeductionController {
 
   static async get(req: Request, res: Response, next) {
     const { page, rows } = req.pagination!;
-    const query = req.reqQuery;
+    const query = req.parsedQuery;
 
     const { count, rows: deductions } = await DeductionRepository.read({
       page,
@@ -57,32 +57,19 @@ class DeductionController {
     );
   }
 
-  static async update(req: Request, res: Response, next) {
+  static async update(req: Request, res: Response, next: NextFunction) {
     const { id } = req.params;
 
-    await DeductionRepository.update(id, req.body.deduction);
+    const [count] = await DeductionRepository.update(id, req.body.validated.deduction);
+
+    if (!count) {
+      throw ApiError.notFound('Deduction not found');
+    }
 
     res.json(
       ApiResponse({
         data: req.body.deduction,
         message: 'Deduction updated successfully',
-      }),
-    );
-  }
-
-  static async delete(req: Request, res: Response, next) {
-    const { id } = req.params;
-
-    const resultCount = await DeductionRepository.delete(id);
-
-    if (!resultCount) {
-      throw ApiError.badRequest('Deduction not found');
-    }
-
-    res.json(
-      ApiResponse({
-        data: { id },
-        message: 'Deduction deleted successfully',
       }),
     );
   }

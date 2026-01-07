@@ -1,7 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
-import { ApiError } from '../../utils/api-error';
-import { logger } from '../../utils/logger';
+import { validateOrThrow } from '../../utils/zod-validation-utils';
 import { userStatusOptions } from './user.model';
 
 const userSchema = z.object({
@@ -37,11 +36,7 @@ const validateUser = async (req: Request, res: Response, next: NextFunction) => 
 
   const result = schema.safeParse(req.body);
 
-  if (!result.success) {
-    const errors = result.error.issues.map((_error) => `${_error.path}: ${_error.message}`).join(', ');
-    logger.debug(`RequestId: ${req.requestId}, Validation Error: ${errors}`);
-    throw ApiError.badRequest(errors);
-  }
+  validateOrThrow(result, req.requestId);
 
   req.body.user = result.data;
   next();
