@@ -18,7 +18,9 @@ const employeeIdParamSchema = z.object({
   employeeId: z.string().refine((val) => !isNaN(Number(val)), { message: "Employee ID must be a number" }).transform(Number),
 });
 
-type CreateLeaveBody = z.infer<typeof createLeaveSchema>;
+const approveDeclineSchema = z.object({
+  action: z.enum(["approved", "rejected"], { message: "Action must be either 'approved' or 'rejected'" }),
+});
 
 const validate = (schema: z.ZodObject<any>, source: "body" | "params" | "query" = "body") =>
   (req: Request, res: Response, next: NextFunction) => {
@@ -33,9 +35,11 @@ const validate = (schema: z.ZodObject<any>, source: "body" | "params" | "query" 
 const validateCreateLeave = validate(createLeaveSchema, "body");
 const validateLeaveIdParam = validate(leaveIdParamSchema, "params");
 const validateEmployeeIdParam = validate(employeeIdParamSchema, "params");
+const validateApproveDecline = validate(approveDeclineSchema, "body");
 
 export {
   validateCreateLeave,
   validateLeaveIdParam,
   validateEmployeeIdParam,
+  validateApproveDecline,
 };
