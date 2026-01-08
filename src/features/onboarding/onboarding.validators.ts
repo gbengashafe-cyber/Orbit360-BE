@@ -4,14 +4,15 @@ import { ApiError } from '../../utils/api-error';
 
 const createOnboardingSchema = z.object({
   employeeId: z.number().int('Employee ID must be an integer').min(1, 'Employee ID is required'),
-  startDate: z.string().datetime('Invalid start date format'),
-  assignedTo: z.number().int('Assigned To must be an integer').optional().nullable(),
+  documentType: z.string().min(1, 'Document type is required'),
+  documentName: z.string().min(1, 'Document name is required'),
+  documentUrl: z.string().url('Invalid document URL').optional().nullable(),
   notes: z.string().optional().nullable(),
 });
 
 const updateOnboardingSchema = z.object({
-  status: z.enum(['pending', 'in_progress', 'completed', 'cancelled'], { message: 'Invalid status' }),
-  completionDate: z.string().datetime('Invalid completion date format').optional().nullable(),
+  status: z.enum(['pending', 'submitted', 'approved', 'rejected'], { message: 'Invalid status' }),
+  documentUrl: z.string().url('Invalid document URL').optional().nullable(),
   notes: z.string().optional().nullable(),
 });
 

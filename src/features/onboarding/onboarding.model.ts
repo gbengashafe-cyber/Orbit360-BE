@@ -5,20 +5,26 @@ import { Employee } from '../employee/employee.model';
 export interface OnboardingAttributes {
   id?: number;
   employeeId: number;
-  startDate: Date;
-  status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
-  assignedTo?: number;
-  completionDate?: Date;
+  documentType: string;
+  documentName: string;
+  documentUrl?: string;
+  status: 'pending' | 'submitted' | 'approved' | 'rejected';
+  submittedAt?: Date;
+  reviewedBy?: number;
+  reviewedAt?: Date;
   notes?: string;
 }
 
 export class Onboarding extends Model<OnboardingAttributes> implements OnboardingAttributes {
   public id!: number;
   public employeeId!: number;
-  public startDate!: Date;
-  public status!: 'pending' | 'in_progress' | 'completed' | 'cancelled';
-  public assignedTo!: number;
-  public completionDate!: Date;
+  public documentType!: string;
+  public documentName!: string;
+  public documentUrl!: string;
+  public status!: 'pending' | 'submitted' | 'approved' | 'rejected';
+  public submittedAt!: Date;
+  public reviewedBy!: number;
+  public reviewedAt!: Date;
   public notes!: string;
 }
 
@@ -33,19 +39,31 @@ Onboarding.init(
       type: DataTypes.INTEGER,
       allowNull: false,
     },
-    startDate: {
-      type: DataTypes.DATE,
+    documentType: {
+      type: DataTypes.STRING(100),
       allowNull: false,
     },
+    documentName: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+    },
+    documentUrl: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
     status: {
-      type: DataTypes.ENUM('pending', 'in_progress', 'completed', 'cancelled'),
+      type: DataTypes.ENUM('pending', 'submitted', 'approved', 'rejected'),
       defaultValue: 'pending',
     },
-    assignedTo: {
+    submittedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    reviewedBy: {
       type: DataTypes.INTEGER,
       allowNull: true,
     },
-    completionDate: {
+    reviewedAt: {
       type: DataTypes.DATE,
       allowNull: true,
     },
