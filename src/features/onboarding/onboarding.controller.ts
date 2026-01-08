@@ -7,12 +7,13 @@ import { Onboarding } from './onboarding.model';
 export class OnboardingController {
   static async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const { employeeId, startDate, assignedTo, notes } = req.body;
+      const { employeeId, documentType, documentName, documentUrl, notes } = req.body;
 
       const onboarding = await Onboarding.create({
         employeeId,
-        startDate,
-        assignedTo,
+        documentType,
+        documentName,
+        documentUrl,
         notes,
         status: 'pending',
       });
@@ -21,9 +22,9 @@ export class OnboardingController {
         include: [{ model: Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'email'] }],
       });
 
-      res.status(201).json({ data: createdOnboarding, message: 'Onboarding created successfully' });
+      res.status(201).json({ data: createdOnboarding, message: 'Document created successfully' });
     } catch (error) {
-      logger.error(`Error creating onboarding: ${error}`);
+      logger.error(`Error creating onboarding document: ${error}`);
       next(error);
     }
   }
@@ -104,26 +105,31 @@ export class OnboardingController {
   static async update(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const { status, completionDate, notes } = req.body;
+      const { status, documentUrl, notes } = req.body;
 
       const onboarding = await Onboarding.findByPk(id);
       if (!onboarding) {
-        throw ApiError.notFound('Onboarding not found');
+        throw ApiError.notFound('Document not found');
       }
 
-      await onboarding.update({
-        status,
-        completionDate,
-        notes,
-      });
+      const updateData: any = { status, notes };
+      
+      if (documentUrl) updateData.documentUrl = documentUrl;
+      if (status === 'submitted') updateData.submittedAt = new Date();
+      if (status === 'approved' || status === 'rejected') {
+        updateData.reviewedBy = req.user?.id;
+        updateData.reviewedAt = new Date();
+      }
+
+      await onboarding.update(updateData);
 
       const updatedOnboarding = await Onboarding.findByPk(id, {
         include: [{ model: Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'email'] }],
       });
 
-      res.json({ data: updatedOnboarding, message: 'Onboarding updated successfully' });
+      res.json({ data: updatedOnboarding, message: 'Document updated successfully' });
     } catch (error) {
-      logger.error(`Error updating onboarding: ${error}`);
+      logger.error(`Error updating onboarding document: ${error}`);
       next(error);
     }
   }

@@ -5,6 +5,8 @@ import express, { Request } from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { randomUUID } from 'node:crypto';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './config/swagger';
 import authRoutes from './features/authentication/auth.routes';
 import { companyRouter } from './features/company/company.routes';
 import { deductionRouter } from './features/deductions/deduction.routes';
@@ -110,6 +112,12 @@ app.use('/api/v1/positions', positionRoutes);
 app.use('/api/v1/companies', companyRouter);
 app.use('/api/v1/deductions', deductionRouter);
 app.use('/api/v1/users', userRoutes);
+
+// Swagger Documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'Orbit360 HR API Docs',
+}));
 
 // Health check
 app.get('/api/health', (req, res) => {

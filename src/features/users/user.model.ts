@@ -71,7 +71,7 @@ User.init(
       type: DataTypes.STRING,
       allowNull: false,
     },
-    department: {
+    departmentName: {
       type: DataTypes.STRING,
       allowNull: false,
     },
@@ -88,10 +88,10 @@ User.init(
   },
 );
 
-User.belongsTo(Position, { foreignKey: { name: 'position', allowNull: false }, targetKey: 'title' });
-Position.hasMany(User, { foreignKey: { name: 'position', allowNull: false }, sourceKey: 'title' });
+User.belongsTo(Position, { foreignKey: { name: 'position', allowNull: false }, targetKey: 'title', as: 'userPosition' });
+Position.hasMany(User, { foreignKey: { name: 'position', allowNull: false }, sourceKey: 'title', as: 'users' });
 
-User.belongsTo(Department, { foreignKey: { name: 'departmentName', allowNull: false }, targetKey: 'name' });
-Department.hasMany(User, { foreignKey: { name: 'departmentName', allowNull: false }, sourceKey: 'name' });
+User.belongsTo(Department, { foreignKey: { name: 'departmentName', allowNull: false }, targetKey: 'name', as: 'department' });
+Department.hasMany(User, { foreignKey: { name: 'departmentName', allowNull: false }, sourceKey: 'name', as: 'users' });
 
 export { userStatusOptions };

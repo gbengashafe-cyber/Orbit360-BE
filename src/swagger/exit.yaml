@@ -1,0 +1,107 @@
+paths:
+  /api/v1/exits:
+    post:
+      tags:
+        - Exit Management
+      summary: Create exit request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - employeeId
+                - exitType
+                - exitDate
+              properties:
+                employeeId:
+                  type: integer
+                exitType:
+                  type: string
+                  enum: [resignation, termination, retirement, contract_end]
+                exitDate:
+                  type: string
+                  format: date-time
+                reason:
+                  type: string
+      responses:
+        201:
+          description: Exit request created successfully
+    get:
+      tags:
+        - Exit Management
+      summary: Get all exit requests (HR Only)
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: rows
+          schema:
+            type: integer
+            default: 10
+      responses:
+        200:
+          description: List of exit requests
+
+  /api/v1/exits/employee/{employeeId}:
+    get:
+      tags:
+        - Exit Management
+      summary: Get exits by employee
+      parameters:
+        - in: path
+          name: employeeId
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Employee exit requests
+
+  /api/v1/exits/{id}:
+    get:
+      tags:
+        - Exit Management
+      summary: Get exit by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Exit details
+        404:
+          description: Exit not found
+
+  /api/v1/exits/{id}/approve:
+    patch:
+      tags:
+        - Exit Management
+      summary: Approve or reject exit (HR Only)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - action
+              properties:
+                action:
+                  type: string
+                  enum: [approved, rejected]
+      responses:
+        200:
+          description: Exit status updated
