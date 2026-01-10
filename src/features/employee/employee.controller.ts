@@ -2,13 +2,12 @@ import { NextFunction, Request, Response } from 'express';
 import { ApiError } from '../../utils/api-error';
 import { ApiResponse } from '../../utils/api-response';
 import { logger } from '../../utils/logger';
-import { Employee } from './employee.model';
 import { EmployeeRepository } from './employee.repository';
 
 export class EmployeeController {
   static async getAll(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page, rows } = req.pagination!;
+      const { page, rows } = req.pagination;
 
       const { count, rows: employees } = await EmployeeRepository.read({
         rows,
@@ -41,7 +40,7 @@ export class EmployeeController {
   static async getById(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const employee = await Employee.findByPk(id, {});
+      const employee = await EmployeeRepository.readById(id);
 
       if (!employee) {
         throw ApiError.notFound('Employee not found');

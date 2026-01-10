@@ -1,10 +1,13 @@
 import { NextFunction, Request, Response } from 'express';
+import { CreationAttributes } from 'sequelize';
 import { db } from '../../db';
 import { ApiError } from '../../utils/api-error';
 import { ApiResponse } from '../../utils/api-response';
 import { logger } from '../../utils/logger';
 import { Employee } from '../employee/employee.model';
 import { EmployeeRepository } from '../employee/employee.repository';
+import { LoanPayment } from '../loans/loan-payment.model';
+import { LoanRepository } from '../loans/loan.repository';
 import { Payroll } from './payroll.model';
 import { PayrollRepository } from './payroll.repository';
 import { calculatePayroll } from './payroll.utils';
@@ -24,15 +27,18 @@ export class PayrollController {
         order: [['createdAt', 'DESC']],
       });
 
-      res.json({
-        data: payrolls,
-        pagination: {
-          total: count,
-          page,
-          rows,
-          pages: Math.ceil(count / rows),
-        },
-      });
+      res.json(
+        ApiResponse({
+          data: payrolls,
+          message: 'Payroll record(s) fetched successfully',
+          pagination: {
+            total: count,
+            page,
+            rows,
+            pages: Math.ceil(count / rows),
+          },
+        }),
+      );
     } catch (error) {
       logger.error(`Error fetching payrolls: ${error}`);
       next(error);
@@ -46,7 +52,7 @@ export class PayrollController {
       const offset = (page - 1) * rows;
 
       const { count, rows: payrolls } = await Payroll.findAndCountAll({
-        where: { employeeId },
+        where: { employeeId: employeeId },
         limit: rows,
         offset,
         order: [
@@ -55,15 +61,18 @@ export class PayrollController {
         ],
       });
 
-      res.json({
-        data: payrolls,
-        pagination: {
-          total: count,
-          page,
-          rows,
-          pages: Math.ceil(count / rows),
-        },
-      });
+      res.json(
+        ApiResponse({
+          data: payrolls,
+          message: 'Payroll record(s) fetched successfully',
+          pagination: {
+            total: count,
+            page,
+            rows,
+            pages: Math.ceil(count / rows),
+          },
+        }),
+      );
     } catch (error) {
       logger.error(`Error fetching employee payroll: ${error}`);
       next(error);
@@ -81,7 +90,7 @@ export class PayrollController {
         throw ApiError.notFound('Payroll record not found');
       }
 
-      res.json({ data: payroll });
+      res.json(ApiResponse({ data: payroll, message: 'Payroll record fetched successfully' }));
     } catch (error) {
       logger.error(`Error fetching payroll: ${error}`);
       next(error);
@@ -103,10 +112,10 @@ export class PayrollController {
     res.json(ApiResponse({ data: payroll, message: 'Payroll record(s) fetched successfully' }));
   }
 
-  static generatePayroll = async (req: Request, res: Response, next: NextFunction) => {
+  static readonly generatePayroll = async (req: Request, res: Response, next: NextFunction) => {
     const { payPeriod } = req.body.validated.payroll;
     const overwrite = req.parsedQuery?.overwrite === 'true';
-    const CHUNK_SIZE = 500; // Manageable size to prevent OOM
+    const CHUNK_SIZE = 500;
 
     try {
       const payPeriodExist = await PayrollRepository.payPeriodExist(payPeriod);
@@ -117,6 +126,7 @@ export class PayrollController {
 
       await db.transaction(async (transaction) => {
         if (payPeriodExist && overwrite) {
+          await LoanRepository.deleteRepaymentByPayPeriod(payPeriod, transaction);
           await PayrollRepository.deleteByPayPeriod(payPeriod, transaction);
         }
 
@@ -125,27 +135,55 @@ export class PayrollController {
         let hasMore = true;
 
         while (hasMore) {
-          let activeEmployees = await EmployeeRepository.activeEmployeesCompensation({ rows: CHUNK_SIZE, page });
+          const activeEmployees = await EmployeeRepository.activeEmployeesCompensation({ rows: CHUNK_SIZE, page });
 
-          if (!activeEmployees || activeEmployees.length === 0) {
-            hasMore = false;
+          if (!activeEmployees?.length) {
             break;
           }
-          const payrollData = activeEmployees.map((_employee) => ({
-            ...calculatePayroll(_employee, pensionRate).payRoll,
-            payPeriod,
-            employeeId: _employee.employeeId,
-          }));
 
-          await PayrollRepository.bulkCreate(payrollData, transaction);
+          // Fetch all loans for this chunk at once to avoid N+1 performance issues
+          const employeeIds = activeEmployees.map((e) => e.id);
+          const allLoansForChunk = await LoanRepository.readEmployeesActiveLoans(employeeIds);
 
-          if (activeEmployees.length < CHUNK_SIZE) {
-            hasMore = false;
+          const payrollData = [] as CreationAttributes<Payroll>[];
+          const loanPaymentsData = [] as CreationAttributes<LoanPayment>[];
+
+          for (const _employee of activeEmployees) {
+            const employeeActiveLoans = allLoansForChunk.filter((l) => l.employeeId === _employee.id);
+
+            const { payRoll, applicableLoansForPeriod } = calculatePayroll({
+              employee: _employee,
+              payPeriod,
+              pensionRate,
+              activeLoans: employeeActiveLoans,
+            });
+
+            // 1. Prepare Payroll record
+            payrollData.push({
+              ...payRoll,
+              payPeriod,
+              employeeId: _employee.id,
+            });
+
+            // 2. Prepare Loan Payment records with payPeriod instead of payrollId
+            if (applicableLoansForPeriod.length > 0) {
+              const mappedLoans = applicableLoansForPeriod.map((loan) => ({
+                ...loan,
+                payPeriod,
+              }));
+              loanPaymentsData.push(...mappedLoans);
+            }
           }
 
-          page++;
+          // 3. Batch insert both for maximum performance
+          await PayrollRepository.bulkCreate(payrollData, transaction);
 
-          (activeEmployees as any) = null;
+          if (loanPaymentsData.length > 0) {
+            await LoanRepository.createLoanPayment(loanPaymentsData, transaction);
+          }
+
+          if (activeEmployees.length < CHUNK_SIZE) hasMore = false;
+          page++;
         }
       });
 
@@ -181,7 +219,7 @@ export class PayrollController {
         throw ApiError.notFound('Payroll record not found');
       }
 
-      const netSalary = (basicSalary || payroll.basicSalary) + allowances - deductions;
+      // const netSalary = (basicSalary || payroll.basicSalary) + allowances - deductions;
 
       await payroll.update({
         basicSalary,

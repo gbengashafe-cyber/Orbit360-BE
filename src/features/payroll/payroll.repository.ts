@@ -3,19 +3,19 @@ import { ReadAllProps } from '../employee/employee.repository';
 import { Payroll, payrollStatus } from './payroll.model';
 
 export class PayrollRepository {
-  static create = (payroll: CreationAttributes<Payroll>, transaction: Transaction) => {
+  static readonly create = (payroll: CreationAttributes<Payroll>, transaction: Transaction) => {
     return Payroll.create(payroll, { transaction });
   };
 
-  static bulkCreate = (payrollData: CreationAttributes<Payroll>[], transaction: Transaction) => {
+  static readonly bulkCreate = (payrollData: CreationAttributes<Payroll>[], transaction: Transaction) => {
     return Payroll.bulkCreate(payrollData, { transaction });
   };
 
-  static payPeriodExist = (payPeriod: string) => {
+  static readonly payPeriodExist = (payPeriod: string) => {
     return Payroll.findOne({ where: { payPeriod } });
   };
 
-  static read = ({ rows, page, filters, orderBy = 'createdAt', orderDirection = 'ASC' }: ReadAllProps) => {
+  static readonly read = ({ rows, page, filters, orderBy = 'createdAt', orderDirection = 'ASC' }: ReadAllProps) => {
     const offset = (page - 1) * rows;
 
     const where: any = {};
@@ -31,7 +31,7 @@ export class PayrollRepository {
     });
   };
 
-  static updateByPayPeriod = (
+  static readonly updateByPayPeriod = (
     payPeriod: string,
     payroll: { status: (typeof payrollStatus)[number] },
     transaction: Transaction,
@@ -39,7 +39,7 @@ export class PayrollRepository {
     return Payroll.update(payroll, { where: { payPeriod }, transaction });
   };
 
-  static deleteByPayPeriod = (payPeriod: string, transaction: Transaction) => {
+  static readonly deleteByPayPeriod = (payPeriod: string, transaction: Transaction) => {
     return Payroll.destroy({ where: { payPeriod }, transaction });
   };
 }

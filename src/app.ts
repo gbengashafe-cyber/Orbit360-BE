@@ -14,6 +14,7 @@ import departmentRoutes from './features/department/department.routes';
 import employeeRoutes from './features/employee/employee.routes';
 import { exitRoutes } from './features/exit/exit.routes';
 import { leaveRoutes } from './features/leave/leave.routes';
+import { loanRoutes } from './features/loans/loan.routes';
 import { onboardingRoutes } from './features/onboarding/onboarding.routes';
 import payrollRoutes from './features/payroll/payroll.routes';
 import positionRoutes from './features/position/position.routes';
@@ -112,16 +113,21 @@ app.use('/api/v1/positions', positionRoutes);
 app.use('/api/v1/companies', companyRouter);
 app.use('/api/v1/deductions', deductionRouter);
 app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/loans', loanRoutes);
 
 // Swagger Documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: 'Orbit360 HR API Docs',
-}));
+app.use(
+  '/api-docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'Orbit360 HR API Docs',
+  }),
+);
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({ status: 'ok', success: true, timestamp: new Date().toISOString() });
 });
 
 app.use((req, res, next) => {

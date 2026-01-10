@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { validateOrThrow } from '../../utils/zod-validation-utils';
 
 const createPayrollSchema = z.object({
-  employeeId: z.number().int('Employee ID must be an integer').min(1, 'Employee ID is required'),
+  employee: z.number().int('Employee ID must be an integer'),
   month: z
     .number()
     .int('Month must be an integer')
@@ -26,14 +26,14 @@ const updatePayrollSchema = z
 const payrollIdParamSchema = z.object({
   id: z
     .string()
-    .refine((val) => !isNaN(Number(val)), { message: 'Payroll ID must be a number' })
+    .refine((val) => !Number.isNaN(Number(val)), { message: 'Payroll ID must be a number' })
     .transform(Number),
 });
 
 const employeeIdParamSchema = z.object({
   employeeId: z
     .string()
-    .refine((val) => !isNaN(Number(val)), { message: 'Employee ID must be a number' })
+    .refine((val) => !Number.isNaN(Number(val)), { message: 'Employee ID must be a number' })
     .transform(Number),
 });
 
@@ -51,8 +51,10 @@ const validate =
     next();
   };
 
+export const payPeriodRegex = /^20\d{2}-(0[1-9]|1[0-2])$/;
+
 const generatePayrollSchema = z.object({
-  payPeriod: z.string().regex(/^20\d{2}-(0[1-9]|1[0-2])$/, { error: 'Invalid payPeriod format. The allowed format is YYYY-MM' }),
+  payPeriod: z.string().regex(payPeriodRegex, { error: 'Invalid payPeriod format. The allowed format is YYYY-MM' }),
 });
 
 const validateGeneratePayroll = (req: Request, res: Response, next: NextFunction) => {

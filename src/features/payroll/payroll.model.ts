@@ -6,7 +6,7 @@ export const payrollStatus = ['generated', 'processed', 'paid', 'failed', 'cance
 
 export class Payroll extends Model<InferAttributes<Payroll>, InferCreationAttributes<Payroll>> {
   declare id: CreationOptional<number>;
-  declare employeeId: ForeignKey<Employee['employeeId']>;
+  declare employeeId: ForeignKey<Employee['id']>;
   declare payPeriod: string;
   public basicSalary: number;
   declare grossSalary: number;
@@ -30,14 +30,14 @@ Payroll.init(
     },
     payPeriod: { type: DataTypes.STRING(7), allowNull: false, unique: 'employee_payPeriod' },
     employeeId: {
-      type: DataTypes.STRING(10),
-      references: { model: Employee, key: 'employee_id' },
+      type: DataTypes.INTEGER,
+      references: { model: Employee, key: 'id' },
       allowNull: false,
       unique: 'employee_payPeriod',
     },
 
     grossSalary: {
-      type: DataTypes.DOUBLE(15, 2),
+      type: DataTypes.DECIMAL(15, 2),
       allowNull: false,
     },
     basicSalary: {
@@ -96,5 +96,5 @@ Payroll.init(
   },
 );
 
-Payroll.belongsTo(Employee, { foreignKey: 'employeeId', targetKey: 'employeeId', as: 'employee' });
+Payroll.belongsTo(Employee, { foreignKey: 'employeeId', as: 'employee' });
 Employee.hasMany(Payroll, { foreignKey: 'employeeId', as: 'payrolls' });

@@ -57,9 +57,10 @@ export class EmployeeRepository {
     return Employee.findByPk(id, { paranoid: false });
   };
 
-  static readById = (id: string | number) => {
+  static readonly readById = (id: string | number) => {
     return Employee.findByPk(id, {
       paranoid: false,
+      include: [{ association: 'loans' }],
     });
   };
 

@@ -23,7 +23,7 @@ const globalErrorHandler: ErrorRequestHandler = (err, req, res, next): Response 
 
   if (err instanceof BaseError) {
     let message = '',
-      code;
+      code: number;
     switch (err.constructor.name) {
       case UniqueConstraintError.name:
         code = 409;
@@ -35,7 +35,7 @@ const globalErrorHandler: ErrorRequestHandler = (err, req, res, next): Response 
         message = 'Missing/invalid association field.';
         break;
       case ValidationError.name:
-        message = 'Oops! Looks like something is wrong with the request';
+        message = err.message ?? 'Oops! Looks like something is wrong with the request';
         break;
       case DatabaseError.name:
         message = 'Oops! Looks like something is wrong with the request';
@@ -66,17 +66,7 @@ const globalErrorHandler: ErrorRequestHandler = (err, req, res, next): Response 
     err = ApiError.internalServerError('Oops! Something went wrong on the server. Please try again later');
   }
 
-  logger.error(
-    Object.assign(
-      {},
-      {
-        method: req?.method,
-        path: req?.requestPath,
-        requestId: req?.requestId,
-      },
-      err,
-    ),
-  );
+  logger.error({ method: req?.method, path: req?.requestPath, requestId: req?.requestId, ...err });
 
   return res.status(err.code || 500).json({ success: false, message: err.message, data: {} });
 };
