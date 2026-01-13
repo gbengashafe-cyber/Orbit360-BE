@@ -8,6 +8,7 @@ import { randomUUID } from 'node:crypto';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger';
 import authRoutes from './features/authentication/auth.routes';
+import { complaintRoutes } from './features/complaints/complaint.routes';
 import { companyRouter } from './features/company/company.routes';
 import { deductionRouter } from './features/deductions/deduction.routes';
 import departmentRoutes from './features/department/department.routes';
@@ -104,6 +105,7 @@ app.use((req, res, next) => {
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/v1/complaints', complaintRoutes);
 app.use('/api/v1/departments', departmentRoutes);
 app.use('/api/v1/employees', employeeRoutes);
 app.use('/api/v1/leaves', leaveRoutes);

@@ -9,6 +9,13 @@
 6. [Database Setup](#database-setup)
 7. [API Documentation](#api-documentation)
 8. [Features](#features)
+   - 8.1 [Leave Management](#1-leave-management)
+   - 8.2 [Exit Management](#2-exit-management)
+   - 8.3 [Onboarding](#3-onboarding-document-tracking)
+   - 8.4 [Employee Management](#4-employee-management)
+   - 8.5 [Payroll Management](#5-payroll-management)
+   - 8.6 [Recruitment Management](#6-recruitment-management)
+   - 8.7 [Staff Complaint Management](#7-staff-complaint-management)
 9. [Authentication & Authorization](#authentication--authorization)
 10. [Development Guidelines](#development-guidelines)
 11. [Deployment](#deployment)
@@ -28,6 +35,8 @@ Orbit360 is a comprehensive HR Management System designed to streamline employee
 - Department & Position Management
 - Role-Based Access Control (RBAC)
 - Attendance Tracking
+- Recruitment & Job Postings
+- Staff Complaint Management
 
 ---
 
@@ -86,6 +95,8 @@ Orbit360-BE/
 │   │   ├── position/        # Position management
 │   │   ├── company/         # Company management
 │   │   ├── deductions/      # Payroll deductions
+│   │   ├── recruitment/     # Job postings & recruitment
+│   │   ├── complaints/      # Staff complaint management
 │   │   └── users/           # User management
 │   ├── swagger/             # API documentation
 │   │   ├── leave.yaml
@@ -228,6 +239,9 @@ The system uses the following main tables:
 - **payrolls** - Payroll records
 - **deductions** - Payroll deductions
 - **attendance** - Attendance records
+- **job_postings** - Job openings and postings
+- **job_applications** - Candidate applications
+- **complaints** - Staff complaints and grievances
 
 ### Database Commands
 
@@ -370,6 +384,79 @@ http://localhost:3000/api/v1
 - `PUT /api/v1/payrolls/:id` - Update payroll
 - `POST /api/v1/payrolls/:id/process` - Mark as processed
 - `POST /api/v1/payrolls/:id/pay` - Mark as paid
+
+### 6. Recruitment Management
+
+**Endpoints:**
+
+**Job Postings:**
+- `POST /api/v1/recruitment/postings` - Create job posting (HR only)
+- `GET /api/v1/recruitment/postings` - List all postings
+- `GET /api/v1/recruitment/postings/:id` - Get posting by ID
+- `PUT /api/v1/recruitment/postings/:id` - Update posting (HR only)
+- `POST /api/v1/recruitment/postings/:id/approve` - Approve posting (MD only)
+- `POST /api/v1/recruitment/postings/:id/reject` - Reject posting (MD only)
+- `POST /api/v1/recruitment/postings/:id/close` - Close posting (HR only)
+- `DELETE /api/v1/recruitment/postings/:id` - Delete posting (HR only)
+
+**Job Applications:**
+- `POST /api/v1/recruitment/applications` - Submit application
+- `GET /api/v1/recruitment/applications` - List all applications (HR only)
+- `GET /api/v1/recruitment/applications/:id` - Get application details
+- `GET /api/v1/recruitment/applications/by-posting/:jobPostingId` - Get applications for a job
+- `PUT /api/v1/recruitment/applications/:id/status` - Update status & rating (HR only)
+- `POST /api/v1/recruitment/applications/:id/schedule-interview` - Schedule interview (HR only)
+- `POST /api/v1/recruitment/applications/:id/send-offer` - Send offer (HR only)
+- `POST /api/v1/recruitment/applications/:id/hire` - Hire candidate (HR only)
+- `POST /api/v1/recruitment/applications/:id/reject` - Reject candidate (HR only)
+- `DELETE /api/v1/recruitment/applications/:id` - Delete application (HR only)
+
+**Dashboard:**
+- `GET /api/v1/recruitment/dashboard/stats` - Get recruitment KPIs
+
+**Job Posting Status Flow:**
+`draft` → `pending_approval` → `active` / `rejected` → `closed` / `on_hold`
+
+**Application Status Flow:**
+`applied` → `under_review` → `interview_scheduled` → `interviewed` → `offered` → `hired` / `rejected`
+
+See detailed documentation: [RECRUITMENT_QUICK_START.md](RECRUITMENT_QUICK_START.md)
+
+### 7. Staff Complaint Management
+
+**Endpoints:**
+- `POST /api/v1/complaints` - Create complaint (employees)
+- `GET /api/v1/complaints` - List all complaints (HR only, with filtering)
+- `GET /api/v1/complaints/:id` - Get complaint details
+- `PUT /api/v1/complaints/:id` - Update complaint (HR only)
+- `POST /api/v1/complaints/:id/resolve` - Resolve complaint (HR only)
+- `POST /api/v1/complaints/:id/close` - Close complaint (HR only)
+- `DELETE /api/v1/complaints/:id` - Delete complaint (HR only)
+
+**Complaint Types:**
+- Harassment
+- Discrimination
+- Safety
+- Wage Dispute
+- Working Conditions
+- Other
+
+**Severity Levels:**
+- Low
+- Medium
+- High
+- Critical
+
+**Status Flow:**
+`open` → `under_review` → `resolved` → `closed`
+
+**HR Dashboard Filtering:**
+- Filter by status (open, under_review, resolved, closed)
+- Filter by severity (low, medium, high, critical)
+- Filter by complaint type
+- Filter by employee
+
+See detailed documentation: [COMPLAINTS_API.md](COMPLAINTS_API.md)
 
 ---
 
@@ -618,3 +705,15 @@ For issues, questions, or contributions:
 - Employee Management
 - Payroll Processing
 - Swagger Documentation
+- Recruitment & Job Postings Management
+  - Job posting creation with MD approval workflow
+  - Job application tracking
+  - Interview scheduling
+  - Offer management
+  - Recruitment dashboard with KPIs
+- Staff Complaint Management
+  - Employee complaint submission
+  - HR dashboard for complaint tracking
+  - Multi-type complaint support (harassment, discrimination, safety, wage dispute, working conditions)
+  - Severity-based categorization
+  - Complaint resolution workflow
