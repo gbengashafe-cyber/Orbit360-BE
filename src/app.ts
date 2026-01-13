@@ -19,6 +19,7 @@ import { onboardingRoutes } from './features/onboarding/onboarding.routes';
 import payrollRoutes from './features/payroll/payroll.routes';
 import positionRoutes from './features/position/position.routes';
 import { userRoutes } from './features/users/user.router';
+import { recruitmentRoutes } from './features/recruitment/recruitment.routes';
 import { ApiError } from './utils/api-error';
 import { globalErrorHandler } from './utils/global-error-handler';
 import { logger } from './utils/logger';
@@ -114,6 +115,7 @@ app.use('/api/v1/companies', companyRouter);
 app.use('/api/v1/deductions', deductionRouter);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/loans', loanRoutes);
+app.use('/api/v1/recruitment', recruitmentRoutes);
 
 // Swagger Documentation
 app.use(
