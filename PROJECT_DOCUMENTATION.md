@@ -16,6 +16,7 @@
    - 8.5 [Payroll Management](#5-payroll-management)
    - 8.6 [Recruitment Management](#6-recruitment-management)
    - 8.7 [Staff Complaint Management](#7-staff-complaint-management)
+   - 8.8 [Performance Management](#8-performance-management)
 9. [Authentication & Authorization](#authentication--authorization)
 10. [Development Guidelines](#development-guidelines)
 11. [Deployment](#deployment)
@@ -37,6 +38,8 @@ Orbit360 is a comprehensive HR Management System designed to streamline employee
 - Attendance Tracking
 - Recruitment & Job Postings
 - Staff Complaint Management
+- Performance Management & Goal Tracking
+- Employee Appraisals
 
 ---
 
@@ -91,6 +94,7 @@ Orbit360-BE/
 │   │   ├── exit/            # Exit management
 │   │   ├── onboarding/      # Onboarding documents
 │   │   ├── payroll/         # Payroll processing
+│   │   ├── performance/     # Goals, appraisals, reviews
 │   │   ├── department/      # Department management
 │   │   ├── position/        # Position management
 │   │   ├── company/         # Company management
@@ -242,6 +246,9 @@ The system uses the following main tables:
 - **job_postings** - Job openings and postings
 - **job_applications** - Candidate applications
 - **complaints** - Staff complaints and grievances
+- **goals** - Employee performance goals
+- **appraisal_cycles** - Performance appraisal cycles
+- **appraisals** - Employee appraisal records
 
 ### Database Commands
 
@@ -457,6 +464,57 @@ See detailed documentation: [RECRUITMENT_QUICK_START.md](RECRUITMENT_QUICK_START
 - Filter by employee
 
 See detailed documentation: [COMPLAINTS_API.md](COMPLAINTS_API.md)
+
+### 8. Performance Management
+
+**Endpoints:**
+
+**Dashboard:**
+- `GET /api/v1/performance/dashboard` - Get performance KPIs
+
+**Goals:**
+- `GET /api/v1/performance/goals` - List all goals
+- `GET /api/v1/performance/goals/:id` - Get goal by ID
+- `POST /api/v1/performance/goals` - Create goal
+- `PUT /api/v1/performance/goals/:id` - Update goal
+- `PATCH /api/v1/performance/goals/:id/progress` - Update goal progress
+- `DELETE /api/v1/performance/goals/:id` - Delete goal
+
+**Appraisal Cycles:**
+- `GET /api/v1/performance/cycles` - List appraisal cycles
+- `GET /api/v1/performance/cycles/:id` - Get cycle details
+- `POST /api/v1/performance/cycles` - Create appraisal cycle
+- `PUT /api/v1/performance/cycles/:id` - Update cycle
+- `POST /api/v1/performance/cycles/:id/activate` - Activate cycle
+- `POST /api/v1/performance/cycles/:id/close` - Close cycle
+
+**Appraisals:**
+- `GET /api/v1/performance/appraisals` - List appraisals
+- `GET /api/v1/performance/appraisals/:id` - Get appraisal details
+- `POST /api/v1/performance/appraisals` - Create/submit appraisal
+- `PUT /api/v1/performance/appraisals/:id` - Update appraisal
+- `POST /api/v1/performance/appraisals/:id/submit` - Submit for review
+- `POST /api/v1/performance/appraisals/:id/review` - Complete review with ratings
+- `DELETE /api/v1/performance/appraisals/:id` - Delete appraisal
+
+**Goal Status:**
+`not_started` → `in_progress` / `on_hold` → `completed` / `failed`
+
+**Appraisal Cycle Status:**
+`planning` → `active` → `review` → `completed` / `closed`
+
+**Appraisal Status:**
+`pending` → `in_progress` → `submitted` → `reviewed` / `completed`
+
+**Dashboard Metrics:**
+- Active appraisal cycles
+- Pending appraisals
+- Completed appraisals (YTD)
+- Active goals
+- Average goal completion percentage
+- Average appraisal rating
+
+See detailed documentation: [PERFORMANCE_API.md](PERFORMANCE_API.md)
 
 ---
 
@@ -717,3 +775,10 @@ For issues, questions, or contributions:
   - Multi-type complaint support (harassment, discrimination, safety, wage dispute, working conditions)
   - Severity-based categorization
   - Complaint resolution workflow
+- Performance Management
+  - Employee goal setting and tracking
+  - Progress monitoring with completion percentages
+  - Appraisal cycle management
+  - Employee performance reviews
+  - Rating and achievement tracking
+  - Performance dashboard with KPIs
