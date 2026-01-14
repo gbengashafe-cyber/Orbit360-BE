@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import { ApiError } from '../../utils/api-error';
 import { logger } from '../../utils/logger';
 import { JobRole } from './job-role.model';
+import { JobRoleRepository } from './job-role.repository';
 
 export class JobRoleController {
   static async getAll(req: Request, res: Response, next: NextFunction) {
@@ -33,7 +34,7 @@ export class JobRoleController {
   static async getById(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const position = await JobRole.findByPk(id);
+      const position = await JobRoleRepository.readById(id);
 
       if (!position) {
         throw ApiError.notFound('Position not found');
@@ -67,7 +68,7 @@ export class JobRoleController {
       const { id } = req.params;
       const { title, description } = req.body;
 
-      const position = await JobRole.findByPk(id);
+      const position = await JobRoleRepository.readById(id);
       if (!position) {
         throw ApiError.notFound('Position not found');
       }

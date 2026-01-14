@@ -14,8 +14,7 @@ const updateJobRoleSchema = z
   })
   .refine((data) => Object.values(data).some((val) => val !== undefined), { message: 'At least one property must be defined' });
 
-type CreatePositionBody = z.infer<typeof createJobRoleSchema>;
-type UpdatePositionBody = z.infer<typeof updateJobRoleSchema>;
+const createJobRolePermissionSchema = z.array(z.string('Permission name is required'));
 
 const validate = (schema: z.ZodObject<any>) => (req: Request, res: Response, next: NextFunction) => {
   const result = schema.safeParse(req.body);
@@ -23,7 +22,15 @@ const validate = (schema: z.ZodObject<any>) => (req: Request, res: Response, nex
   next();
 };
 
-const validateJobRolePosition = validate(createJobRoleSchema);
+const validateJobRole = validate(createJobRoleSchema);
 const validateUpdateJobRole = validate(updateJobRoleSchema);
 
-export { validateJobRolePosition, validateUpdateJobRole };
+const validateJobRolePermissions = (req: Request, res: Response, next: NextFunction) => {
+  const result = createJobRolePermissionSchema.safeParse(req.body);
+  validateOrThrow(result, req.requestId);
+
+  req.validatedBody = { jobRolePermissions: result.data };
+  next();
+};
+
+export { validateJobRole, validateJobRolePermissions, validateUpdateJobRole };

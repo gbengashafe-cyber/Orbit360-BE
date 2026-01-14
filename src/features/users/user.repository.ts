@@ -1,17 +1,33 @@
 import { InferAttributes, InferCreationAttributes, Op } from 'sequelize';
 import { User } from './user.model';
+import { JobRole } from '../job-role/job-role.model';
+import { JobRolePermissions } from '../permissions/permission.model';
 
 class UserRepository {
   static create = (user: InferCreationAttributes<User>) => {
     return User.create(user);
   };
 
-  static read = async ({ page, rows, query }) => {
-    const whereCondition = query ? { name: { [Op.substring]: query } } : {};
+  static readonly read = async ({ page, rows, filters }) => {
+    const whereCondition: any = {};
 
+    if (filters?.search) {
+      whereCondition[Op.or] = [
+        { firstName: { [Op.like]: `%${filters.search}%` } },
+        { lastName: { [Op.like]: `%${filters.search}%` } },
+        { email: { [Op.like]: `%${filters.search}%` } },
+      ];
+    }
     return User.findAndCountAll({
       attributes: { exclude: ['password', 'createdAt', 'updatedAt'] },
       where: whereCondition,
+      limit: rows,
+      offset: (page - 1) * rows,
+    });
+  };
+  static readonly readJobRoles = async ({ page, rows, filters }) => {
+    return JobRole.findAndCountAll({
+      include: [{ model: JobRolePermissions }],
       limit: rows,
       offset: (page - 1) * rows,
     });

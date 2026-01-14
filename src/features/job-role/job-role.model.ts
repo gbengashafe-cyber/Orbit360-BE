@@ -35,6 +35,6 @@ JobRole.init(
   },
   {
     sequelize: db,
-    tableName: 'job-roles',
+    tableName: 'job_roles',
   },
 );

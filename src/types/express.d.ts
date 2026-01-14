@@ -6,9 +6,10 @@ declare module 'express-serve-static-core' {
     requestId: string;
     requestIp?: string;
     requestPath?: string;
-    user?: { id: number | string; position: string; role: string; department: string };
+    user?: { id: number | string; jobRole: string; role: string; department: string };
     pagination: { page: number; rows: number };
     parsedQuery: ParsedQs;
+    validatedBody?: { [key: string]: any };
   }
 }
 

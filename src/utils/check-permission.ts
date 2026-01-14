@@ -1,25 +1,25 @@
 import { NextFunction, Request, Response } from 'express';
-import { PositionRepository } from '../features/job-role/job-role.repository';
+import { JobRoleRepository } from '../features/job-role/job-role.repository';
 import { ApiError } from './api-error';
 import { logger } from './logger';
 
 const hasRequiredPermission = (requiredPermission: string) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     logger.debug(`Checking required permission: RequestId: ${req.requestId}: RequiredPermission: ${requiredPermission}`);
-    logger.debug(`Checking required permission: RequestId: ${req.requestId}: User position: ${req.user?.position}`);
-    if (!req.user?.position) {
+    logger.debug(`Checking required permission: RequestId: ${req.requestId}: User job role: ${req.user?.jobRole}`);
+    if (!req.user?.jobRole) {
       throw ApiError.forbidden('Missing/incomplete authorization header. You are not authorized to perform this action.');
     }
 
-    const userPositionPermissions = await PositionRepository.getPermissionsByTitle(req.user.position);
+    const userJobRolePermissions = await JobRoleRepository.getPermissionsByTitle(req.user.jobRole);
 
-    if (!userPositionPermissions) {
-      throw ApiError.internalServerError('No permission found for this position');
+    if (!userJobRolePermissions) {
+      throw ApiError.internalServerError('No permission found for this job role');
     }
 
     const userHasRequiredPermission =
       req.user.role === 'ADMIN' ||
-      userPositionPermissions.find((_result) => _result.permission.toUpperCase() === requiredPermission.toUpperCase());
+      userJobRolePermissions.find((_result) => _result.permission.toUpperCase() === requiredPermission.toUpperCase());
 
     if (!userHasRequiredPermission) {
       throw ApiError.forbidden('You are not authorized to perform this action');

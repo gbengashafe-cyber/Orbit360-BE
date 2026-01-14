@@ -32,13 +32,13 @@ Permission.init(
   },
 );
 
-class PositionPermissions extends Model<InferAttributes<PositionPermissions>, InferCreationAttributes<PositionPermissions>> {
+class JobRolePermissions extends Model<InferAttributes<JobRolePermissions>, InferCreationAttributes<JobRolePermissions>> {
   declare id: CreationOptional<number>;
-  declare position: ForeignKey<JobRole['title']>;
+  declare job_role: ForeignKey<JobRole['title']>;
   declare permission: ForeignKey<Permission['name']>;
 }
 
-PositionPermissions.init(
+JobRolePermissions.init(
   {
     id: {
       type: DataTypes.INTEGER,
@@ -50,18 +50,24 @@ PositionPermissions.init(
 );
 
 Permission.belongsToMany(JobRole, {
-  through: PositionPermissions,
+  through: JobRolePermissions,
   sourceKey: 'name',
   foreignKey: 'permission',
   targetKey: 'title',
-  otherKey: 'position',
+  otherKey: 'job_role',
 });
 JobRole.belongsToMany(Permission, {
-  through: PositionPermissions,
+  through: JobRolePermissions,
   sourceKey: 'title',
-  foreignKey: 'position',
+  foreignKey: 'job_role',
   targetKey: 'name',
   otherKey: 'permission',
 });
 
-export { Permission, PositionPermissions };
+JobRolePermissions.belongsTo(Permission, { foreignKey: 'permission' });
+Permission.hasMany(JobRolePermissions, { foreignKey: 'permission' });
+
+JobRolePermissions.belongsTo(JobRole, { foreignKey: 'jobRole' });
+JobRole.hasMany(JobRolePermissions, { foreignKey: 'jobRole' });
+
+export { JobRolePermissions, Permission };
