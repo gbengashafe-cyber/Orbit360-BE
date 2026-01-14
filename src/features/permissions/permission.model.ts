@@ -1,6 +1,6 @@
 import { CreationOptional, DataTypes, ForeignKey, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import { db } from '../../db';
-import { Position } from '../position/position.model';
+import { JobRole } from '../job-role/job-role.model';
 
 class Permission extends Model<InferAttributes<Permission>, InferCreationAttributes<Permission>> {
   declare id: CreationOptional<number>;
@@ -34,7 +34,7 @@ Permission.init(
 
 class PositionPermissions extends Model<InferAttributes<PositionPermissions>, InferCreationAttributes<PositionPermissions>> {
   declare id: CreationOptional<number>;
-  declare position: ForeignKey<Position['title']>;
+  declare position: ForeignKey<JobRole['title']>;
   declare permission: ForeignKey<Permission['name']>;
 }
 
@@ -49,14 +49,14 @@ PositionPermissions.init(
   { sequelize: db, underscored: true },
 );
 
-Permission.belongsToMany(Position, {
+Permission.belongsToMany(JobRole, {
   through: PositionPermissions,
   sourceKey: 'name',
   foreignKey: 'permission',
   targetKey: 'title',
   otherKey: 'position',
 });
-Position.belongsToMany(Permission, {
+JobRole.belongsToMany(Permission, {
   through: PositionPermissions,
   sourceKey: 'title',
   foreignKey: 'position',

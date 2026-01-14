@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
-import { PositionRepository } from '../features/position/position.repository';
+import { PositionRepository } from '../features/job-role/job-role.repository';
 import { ApiError } from './api-error';
 import { logger } from './logger';
 

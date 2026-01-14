@@ -1,7 +1,7 @@
 import { CreationOptional, DataTypes, ForeignKey, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import { db } from '../../db';
 import { Department } from '../department/department.model';
-import { Position } from '../position/position.model';
+import { JobRole } from '../job-role/job-role.model';
 
 const userStatusOptions = ['active', 'inactive'] as const;
 
@@ -17,8 +17,8 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
   // Defines what the user can do no the admin platform
   declare systemRole: CreationOptional<'admin' | 'user'>;
   // Defines what the user does for the organization
-  declare position: ForeignKey<Position['title']>;
-  declare departmentName: ForeignKey<Department['name']>;
+  declare jobRole: ForeignKey<JobRole['title']>;
+  declare department: ForeignKey<Department['name']>;
   declare status: CreationOptional<(typeof userStatusOptions)[number]>;
 }
 
@@ -61,18 +61,22 @@ User.init(
       allowNull: false,
       defaultValue: 'employee',
     },
+
     // Determines if the user is a system admin or a regular user (self-service)
-    systemRole: { 
-      type: DataTypes.ENUM('admin', 'user'), 
-      allowNull: false, 
-      defaultValue: 'user' 
+    // admin = full platform access, can manage users, see all data
+    // user = standard employee access, restricted to self-service features
+    systemRole: {
+      type: DataTypes.ENUM('admin', 'user'),
+      allowNull: false,
+      defaultValue: 'user',
     },
-    position: {
+    jobRole: {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    departmentName: {
+    department: {
       type: DataTypes.STRING,
+      references: { model: Department, key: 'name' },
       allowNull: false,
     },
     status: {
@@ -88,10 +92,10 @@ User.init(
   },
 );
 
-User.belongsTo(Position, { foreignKey: { name: 'position', allowNull: false }, targetKey: 'title', as: 'userPosition' });
-Position.hasMany(User, { foreignKey: { name: 'position', allowNull: false }, sourceKey: 'title', as: 'users' });
+User.belongsTo(JobRole, { foreignKey: { name: 'jobRole', allowNull: false }, targetKey: 'title', as: 'userJobRole' });
+JobRole.hasMany(User, { foreignKey: { name: 'jobRole', allowNull: false }, sourceKey: 'title', as: 'users' });
 
-User.belongsTo(Department, { foreignKey: { name: 'departmentName', allowNull: false }, targetKey: 'name', as: 'department' });
-Department.hasMany(User, { foreignKey: { name: 'departmentName', allowNull: false }, sourceKey: 'name', as: 'users' });
+User.belongsTo(Department, { foreignKey: { name: 'department', allowNull: false }, targetKey: 'name', as: 'userDepartment' });
+Department.hasMany(User, { foreignKey: { name: 'department', allowNull: false }, sourceKey: 'name', as: 'users' });
 
 export { userStatusOptions };

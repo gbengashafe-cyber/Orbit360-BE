@@ -19,9 +19,9 @@ export class AuthController {
           firstName,
           lastName,
           profileImage,
-          role: 'employee' ,
+          role: 'employee',
           status: 'active',
-          position: 'employee',
+          jobRole: 'employee',
           department: 'employee',
           password: '',
         });

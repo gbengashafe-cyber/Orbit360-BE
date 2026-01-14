@@ -1,15 +1,15 @@
 import { NextFunction, Request, Response } from 'express';
 import { ApiError } from '../../utils/api-error';
 import { logger } from '../../utils/logger';
-import { Position } from './position.model';
+import { JobRole } from './job-role.model';
 
-export class PositionController {
+export class JobRoleController {
   static async getAll(req: Request, res: Response, next: NextFunction) {
     try {
       const { page, rows } = req.pagination;
       const offset = (page - 1) * rows;
 
-      const { count, rows: positions } = await Position.findAndCountAll({
+      const { count, rows: positions } = await JobRole.findAndCountAll({
         limit: rows,
         offset,
         order: [['createdAt', 'DESC']],
@@ -33,9 +33,7 @@ export class PositionController {
   static async getById(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const position = await Position.findByPk(id, {
-        include: [{ association: 'employees', attributes: ['id', 'firstName', 'lastName', 'email'] }],
-      });
+      const position = await JobRole.findByPk(id);
 
       if (!position) {
         throw ApiError.notFound('Position not found');
@@ -52,7 +50,7 @@ export class PositionController {
     try {
       const { title, description } = req.body;
 
-      const position = await Position.create({
+      const position = await JobRole.create({
         title,
         description,
       });
@@ -69,7 +67,7 @@ export class PositionController {
       const { id } = req.params;
       const { title, description } = req.body;
 
-      const position = await Position.findByPk(id);
+      const position = await JobRole.findByPk(id);
       if (!position) {
         throw ApiError.notFound('Position not found');
       }
@@ -87,7 +85,7 @@ export class PositionController {
     try {
       const { id } = req.params;
 
-      const position = await Position.findByPk(id);
+      const position = await JobRole.findByPk(id);
       if (!position) {
         throw ApiError.notFound('Position not found');
       }

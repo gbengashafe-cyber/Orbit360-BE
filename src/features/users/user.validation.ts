@@ -21,10 +21,10 @@ const userSchema = z.object({
   department: z.string().min(1, 'User department is required'),
 });
 
-const UpdateUserSchema = userSchema.extend({ status: z.enum(userStatusOptions) });
+const UpdateUserSchema = userSchema.extend({ status: z.enum(userStatusOptions) }).optional();
 
 const validateUser = async (req: Request, res: Response, next: NextFunction) => {
-  let schema: z.ZodObject;
+  let schema: z.ZodObject | z.ZodOptional;
 
   const isCreation = req.method === 'POST';
 

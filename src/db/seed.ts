@@ -2,9 +2,9 @@ import { db } from '.';
 import { Company } from '../features/company/company.model';
 import { Department } from '../features/department/department.model';
 import { Employee } from '../features/employee/employee.model';
+import { JobRole } from '../features/job-role/job-role.model';
 import { Leave } from '../features/leave/leave.model';
 import { Payroll } from '../features/payroll/payroll.model';
-import { Position } from '../features/position/position.model';
 import { User } from '../features/users/user.model';
 import { logger } from '../utils/logger';
 
@@ -25,7 +25,7 @@ async function seed() {
     logger.info('Departments created');
 
     // Create Positions
-    const positions = await Position.bulkCreate([
+    const positions = await JobRole.bulkCreate([
       { title: 'senior_developer', description: 'Senior Software Developer' },
       { title: 'junior_developer', description: 'Junior Software Developer' },
       { title: 'hr_manager', description: 'HR Manager' },
@@ -43,7 +43,7 @@ async function seed() {
         phone: '+1234567890',
         hireDate: new Date('2023-01-15'),
         departmentName: departments[0].name,
-        position: positions[0].title,
+        jobRole: positions[0].title,
         status: 'active',
         employeeId: '1',
         dob: new Date('1990-05-15'),
@@ -59,7 +59,7 @@ async function seed() {
         phone: '+1234567891',
         hireDate: new Date('2023-03-20'),
         departmentName: departments[0].name,
-        position: positions[1].title,
+        jobRole: positions[1].title,
         status: 'active',
         employeeId: '2',
         dob: new Date('1992-08-25'),
@@ -75,7 +75,7 @@ async function seed() {
         phone: '+1234567892',
         hireDate: new Date('2022-06-10'),
         departmentName: departments[1].name,
-        position: positions[2].title,
+        jobRole: positions[2].title,
         status: 'active',
         employeeId: '3',
         dob: new Date('1988-11-12'),
@@ -151,7 +151,7 @@ async function seed() {
         email: 'o@o.com',
         department: departments[0].name,
         password: '',
-        position: positions[0].title,
+        jobRole: positions[0].title,
       },
     ]);
 
