@@ -17,7 +17,7 @@ const userSchema = z.object({
   email: z.email().max(100, 'Only 100 characters are allowed for user email address'),
   profileImage: z.string().nullable().optional(),
   googleId: z.string().nullable().optional(),
-  position: z.string().min(1, 'User position is required'),
+  jobRole: z.string('User job role is required').min(1, 'User job role is required'),
   department: z.string().min(1, 'User department is required'),
 });
 
