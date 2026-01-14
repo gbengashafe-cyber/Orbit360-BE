@@ -1,28 +1,22 @@
-import { NextFunction, Request, Response } from "express";
-import { z } from "zod";
-import { ApiError } from "../../utils/api-error";
+import { NextFunction, Request, Response } from 'express';
+import { z } from 'zod';
+import { validateOrThrow } from '../../utils/zod-validation-utils';
 
 const createCompanySchema = z.object({
-  name: z.string().min(1, "Name is required").max(100, "Name cannot exceed 100 characters"),
+  name: z.string().min(1, 'Name is required').max(100, 'Name cannot exceed 100 characters'),
   description: z.string().optional().nullable(),
 });
 
 const updateCompanySchema = z.object({
-  name: z.string().min(1, "Name is required").max(100, "Name cannot exceed 100 characters").optional(),
+  name: z.string().min(1, 'Name is required').max(100, 'Name cannot exceed 100 characters').optional(),
   description: z.string().optional().nullable(),
 });
 
-type CreateCompanyBody = z.infer<typeof createCompanySchema>;
-type UpdateCompanyBody = z.infer<typeof updateCompanySchema>;
-
 const validate = (schema: z.ZodObject<any>) => (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const parsedBody = schema.parse(req.body);
-    req.body.company = parsedBody;
-    next();
-  } catch (error: any) {
-    next(ApiError.badRequest(error.errors[0].message || "Validation Error"));
-  }
+  const result = schema.safeParse(req.body);
+  validateOrThrow(result, req.requestId);
+  req.body.validated = { company: result.data };
+  next();
 };
 
 const validateCreateCompany = validate(createCompanySchema);
