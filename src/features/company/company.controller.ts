@@ -4,19 +4,19 @@ import { ApiResponse } from '../../utils/api-response';
 import { CompanyRepository } from './company.repository';
 
 class CompanyController {
-  static create = async (req: Request, res: Response, next: NextFunction) => {
+  static readonly create = async (req: Request, res: Response, next: NextFunction) => {
     if (!req.user?.id) {
       throw ApiError.badRequest('Authentication required');
     }
+    const { company } = req.body.validated;
+    company.createdBy = req.user.id;
 
-    req.body.company.createdBy = req.user.id;
-
-    const result = await CompanyRepository.add(req.body.company);
+    const result = await CompanyRepository.add(company);
     res.send(ApiResponse({ message: 'Company created successfully', data: { id: result.id } }));
   };
 
   static async get(req: Request, res: Response, next: NextFunction) {
-    const { page, rows } = req.pagination!;
+    const { page, rows } = req.pagination;
     const query = req.parsedQuery;
 
     const { count, rows: companies } = await CompanyRepository.read({

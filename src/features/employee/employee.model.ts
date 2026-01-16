@@ -1,7 +1,7 @@
 import { CreationOptional, DataTypes, ForeignKey, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import { db } from '../../db';
 import { Department } from '../department/department.model';
-import { Position } from '../position/position.model';
+import { JobRole } from '../job-role/job-role.model';
 
 export const employeeStatus = ['active', 'suspended', 'terminated', 'on_leave'];
 
@@ -20,7 +20,7 @@ export class Employee extends Model<InferAttributes<Employee>, InferCreationAttr
   // Employment details
   public hireDate!: Date;
   declare departmentName: ForeignKey<Department['name']>;
-  declare position: ForeignKey<Position['title']>;
+  declare jobRole: ForeignKey<JobRole['title']>;
   declare status: (typeof employeeStatus)[number];
   declare terminationDate: CreationOptional<Date>;
   // Reporting Line
@@ -162,5 +162,5 @@ Department.hasMany(Employee, {
   sourceKey: 'name',
 });
 
-Employee.belongsTo(Position, { foreignKey: { name: 'position', allowNull: false }, targetKey: 'title' });
-Position.hasMany(Employee, { foreignKey: { name: 'position', allowNull: false }, sourceKey: 'title' });
+Employee.belongsTo(JobRole, { foreignKey: { name: 'jobRole', allowNull: false }, targetKey: 'title' });
+JobRole.hasMany(Employee, { foreignKey: { name: 'jobRole', allowNull: false }, sourceKey: 'title' });

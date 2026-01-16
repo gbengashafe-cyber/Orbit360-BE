@@ -1,24 +1,49 @@
 import { CreationOptional, DataTypes, ForeignKey, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import { db } from '../../db';
 import { Department } from '../department/department.model';
-import { Position } from '../position/position.model';
+import { JobRole } from '../job-role/job-role.model';
 
-const userStatusOptions = ['active', 'inactive'] as const;
+/* 
+role (Built-in, System-level):
+
+Values: admin or user
+Purpose: Core system access level
+admin = full platform access, can manage users, see all data
+user = standard employee access, restricted to self-service features
+
+job_role (Descriptive):
+
+Values: Specific job titles (e.g., 'human_resources_manager', 'finance_officer', 'loan_officer')
+Purpose: Defines what the person actually does in the organization
+Used for UI display, reporting, and potentially mapping to permissions
+
+department (Organizational):
+
+Values: hr, finance, operations, it, sales, etc.
+Purpose: Groups users by business unit
+Used for filtering data, routing approvals, and reporting
+
+In Practice:
+
+A user might be role='user', job_role='human_resources_manager', department='hr', with permissions=['manage_employees', 'process_payroll', 'approve_leave_requests']
+This gives them HR-specific access without full admin privileges
+*/
+export const userStatusOptions = ['active', 'inactive'] as const;
+export const userRoleOptions = ['admin', 'user'] as const;
 
 export class User extends Model<InferAttributes<User>, InferCreationAttributes<User>> {
   declare id: CreationOptional<number>;
   public firstName!: string;
   public lastName!: string;
   public email!: string;
-  public role!: 'employee' | 'admin';
   public password!: string;
   declare profileImage: CreationOptional<string>;
   declare googleId: CreationOptional<string>;
   // Defines what the user can do no the admin platform
-  declare systemRole: CreationOptional<'admin' | 'user'>;
+  declare role: CreationOptional<(typeof userRoleOptions)[number]>;
   // Defines what the user does for the organization
-  declare position: ForeignKey<Position['title']>;
-  declare departmentName: ForeignKey<Department['name']>;
+  declare jobRole: ForeignKey<JobRole['title']>;
+  declare department: ForeignKey<Department['name']>;
   declare status: CreationOptional<(typeof userStatusOptions)[number]>;
 }
 
@@ -55,24 +80,20 @@ User.init(
       allowNull: true,
       unique: 'googleId',
     },
-    // User's application-level role (employee or admin)
     role: {
-      type: DataTypes.ENUM('employee', 'admin'),
+      type: DataTypes.ENUM,
+      values: userRoleOptions,
       allowNull: false,
-      defaultValue: 'employee',
+      defaultValue: 'user',
     },
-    // Determines if the user is a system admin or a regular user (self-service)
-    systemRole: { 
-      type: DataTypes.ENUM('admin', 'user'), 
-      allowNull: false, 
-      defaultValue: 'user' 
-    },
-    position: {
-      type: DataTypes.STRING,
+    jobRole: {
+      type: DataTypes.STRING(100),
+      references: { model: JobRole, key: 'title' },
       allowNull: false,
     },
-    departmentName: {
+    department: {
       type: DataTypes.STRING,
+      references: { model: Department, key: 'name' },
       allowNull: false,
     },
     status: {
@@ -88,10 +109,8 @@ User.init(
   },
 );
 
-User.belongsTo(Position, { foreignKey: { name: 'position', allowNull: false }, targetKey: 'title', as: 'userPosition' });
-Position.hasMany(User, { foreignKey: { name: 'position', allowNull: false }, sourceKey: 'title', as: 'users' });
+User.belongsTo(JobRole, { foreignKey: { name: 'jobRole', allowNull: false }, targetKey: 'title', as: 'userJobRole' });
+JobRole.hasMany(User, { foreignKey: { name: 'jobRole', allowNull: false }, sourceKey: 'title', as: 'users' });
 
-User.belongsTo(Department, { foreignKey: { name: 'departmentName', allowNull: false }, targetKey: 'name', as: 'department' });
-Department.hasMany(User, { foreignKey: { name: 'departmentName', allowNull: false }, sourceKey: 'name', as: 'users' });
-
-export { userStatusOptions };
+User.belongsTo(Department, { foreignKey: { name: 'department', allowNull: false }, targetKey: 'name', as: 'userDepartment' });
+Department.hasMany(User, { foreignKey: { name: 'department', allowNull: false }, sourceKey: 'name', as: 'users' });

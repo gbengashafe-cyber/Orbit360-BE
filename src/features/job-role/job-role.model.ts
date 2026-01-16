@@ -1,19 +1,19 @@
 import { DataTypes, Model } from 'sequelize';
 import { db } from '../../db';
 
-export interface PositionAttributes {
+export interface JobRoleAttributes {
   id?: number;
   title: string;
   description?: string;
 }
 
-export class Position extends Model<PositionAttributes> implements PositionAttributes {
+export class JobRole extends Model<JobRoleAttributes> implements JobRoleAttributes {
   public id!: number;
   public title!: string;
   public description!: string;
 }
 
-Position.init(
+JobRole.init(
   {
     id: {
       type: DataTypes.INTEGER,
@@ -24,6 +24,9 @@ Position.init(
       type: DataTypes.STRING(100),
       allowNull: false,
       unique: 'title',
+      set(value: string) {
+        this.setDataValue('title', value.toUpperCase());
+      },
     },
     description: {
       type: DataTypes.TEXT,
@@ -32,6 +35,6 @@ Position.init(
   },
   {
     sequelize: db,
-    tableName: 'positions',
+    tableName: 'job_roles',
   },
 );

@@ -2,9 +2,9 @@ import { db } from '.';
 import { Company } from '../features/company/company.model';
 import { Department } from '../features/department/department.model';
 import { Employee } from '../features/employee/employee.model';
+import { JobRole } from '../features/job-role/job-role.model';
 import { Leave } from '../features/leave/leave.model';
 import { Payroll } from '../features/payroll/payroll.model';
-import { Position } from '../features/position/position.model';
 import { User } from '../features/users/user.model';
 import { logger } from '../utils/logger';
 
@@ -25,7 +25,7 @@ async function seed() {
     logger.info('Departments created');
 
     // Create Positions
-    const positions = await Position.bulkCreate([
+    const jobRoles = await JobRole.bulkCreate([
       { title: 'senior_developer', description: 'Senior Software Developer' },
       { title: 'junior_developer', description: 'Junior Software Developer' },
       { title: 'hr_manager', description: 'HR Manager' },
@@ -37,20 +37,38 @@ async function seed() {
     // Create Employees
     const employees = await Employee.bulkCreate([
       {
+        employeeId: '1',
         firstName: 'John',
         lastName: 'Doe',
         email: 'john.doe@example.com',
         phone: '+1234567890',
         hireDate: new Date('2023-01-15'),
         departmentName: departments[0].name,
-        position: positions[0].title,
+        jobRole: jobRoles[0].title,
         status: 'active',
-        employeeId: '1',
         dob: new Date('1990-05-15'),
         address: '123 Main St, Cityville',
         nationality: '',
         gender: 'M',
         supervisorId: '',
+        annualBasicSalary: 200000,
+        annualHousingAllowance: 200000,
+        annualLeaveAllowance: 200000,
+        annualTransportAllowance: 200000,
+        otherAllowance: 200000,
+        bankName: 'MFB',
+        bankCode: '20001',
+        accountNumber: '200023123',
+        accountName: 'John Doe',
+        beneficiaryName: 'Smith Doe',
+        beneficiaryRelationship: 'son',
+        beneficiaryPhone: '',
+        nokName: 'Smith Doe',
+        nokRelationship: 'son',
+        nokAddress: 'Same as employee',
+        nokPhone: '',
+        leaveEntitlement: 22,
+        nhfApplicable: false,
       },
       {
         firstName: 'Jane',
@@ -59,7 +77,7 @@ async function seed() {
         phone: '+1234567891',
         hireDate: new Date('2023-03-20'),
         departmentName: departments[0].name,
-        position: positions[1].title,
+        jobRole: jobRoles[1].title,
         status: 'active',
         employeeId: '2',
         dob: new Date('1992-08-25'),
@@ -75,7 +93,7 @@ async function seed() {
         phone: '+1234567892',
         hireDate: new Date('2022-06-10'),
         departmentName: departments[1].name,
-        position: positions[2].title,
+        jobRole: jobRoles[2].title,
         status: 'active',
         employeeId: '3',
         dob: new Date('1988-11-12'),
@@ -123,9 +141,7 @@ async function seed() {
     await Payroll.bulkCreate([
       {
         employeeId: employees[0].id,
-        month: 1,
-        year: 2024,
-        baseSalary: 75000,
+        basicSalary: 75000,
         allowances: 5000,
         deductions: 3000,
         netSalary: 77000,
@@ -151,7 +167,7 @@ async function seed() {
         email: 'o@o.com',
         department: departments[0].name,
         password: '',
-        position: positions[0].title,
+        jobRole: jobRoles[0].title,
       },
     ]);
 

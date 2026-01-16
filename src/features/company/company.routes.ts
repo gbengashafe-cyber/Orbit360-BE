@@ -12,4 +12,4 @@ router.get('/', validateAuthToken, hasRequiredPermission('ADMIN'), CompanyContro
 router.put('/:id', validateAuthToken, hasRequiredPermission('ADMIN'), validateUpdateCompany, CompanyController.update);
 router.delete('/:id', validateAuthToken, hasRequiredPermission('ADMIN'), CompanyController.delete);
 
-export { router as companyRouter };
+export { router as companyRoutes };

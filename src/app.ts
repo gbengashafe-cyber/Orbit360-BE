@@ -1,27 +1,26 @@
 import compression from 'compression';
 import config from 'config';
 import cors from 'cors';
-import express, { Request } from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { randomUUID } from 'node:crypto';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger';
 import authRoutes from './features/authentication/auth.routes';
+import { companyRoutes } from './features/company/company.routes';
 import { complaintRoutes } from './features/complaints/complaint.routes';
-import { companyRouter } from './features/company/company.routes';
-import { deductionRouter } from './features/deductions/deduction.routes';
 import departmentRoutes from './features/department/department.routes';
 import employeeRoutes from './features/employee/employee.routes';
 import { exitRoutes } from './features/exit/exit.routes';
+import { jobRoleRoutes } from './features/job-role/job-role.routes';
 import { leaveRoutes } from './features/leave/leave.routes';
 import { loanRoutes } from './features/loans/loan.routes';
 import { onboardingRoutes } from './features/onboarding/onboarding.routes';
 import payrollRoutes from './features/payroll/payroll.routes';
 import { performanceRoutes } from './features/performance/performance.routes';
-import positionRoutes from './features/position/position.routes';
-import { userRoutes } from './features/users/user.router';
 import { recruitmentRoutes } from './features/recruitment/recruitment.routes';
+import { userRoutes } from './features/users/user.router';
 import { ApiError } from './utils/api-error';
 import { globalErrorHandler } from './utils/global-error-handler';
 import { logger } from './utils/logger';
@@ -36,8 +35,8 @@ app.disable('x-powered-by');
 app.use(compression());
 app.disable('etag');
 
-/* Assign unique Id to all requests to match requests to responses in the log */
-app.use((req, res, next) => {
+// Assign unique Id to all requests to match requests to responses in the log
+app.use((req: Request, res, next) => {
   req.requestId = randomUUID();
   next();
 });
@@ -47,7 +46,7 @@ const parseIp = (req: Request) =>
     ?.split(',')
     .shift() || req.socket?.remoteAddress;
 
-app.use(function (req, res, next) {
+app.use(function (req: Request, res: Response, next: NextFunction) {
   req.requestIp = parseIp(req);
   req.requestPath = req?.baseUrl + req?.path;
   next();
@@ -83,7 +82,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // handle case where request body is empty
-app.use((req, res, next) => {
+app.use((req: Request, res: Response, next: NextFunction) => {
   req.body = req.body ?? {};
   next();
 });
@@ -96,7 +95,7 @@ app.use(
   }),
 );
 
-app.use((req, res, next) => {
+app.use((req: Request, res: Response, next: NextFunction) => {
   const { page, rows } = req.query;
   req.pagination = parsePageAndLimitNumber(page, rows);
   req.parsedQuery = parseQueryParams(req.query);
@@ -112,14 +111,13 @@ app.use('/api/v1/employees', employeeRoutes);
 app.use('/api/v1/leaves', leaveRoutes);
 app.use('/api/v1/exits', exitRoutes);
 app.use('/api/v1/onboardings', onboardingRoutes);
+app.use('/api/v1/recruitments', recruitmentRoutes);
 app.use('/api/v1/payrolls', payrollRoutes);
 app.use('/api/v1/performance', performanceRoutes);
-app.use('/api/v1/positions', positionRoutes);
-app.use('/api/v1/companies', companyRouter);
-app.use('/api/v1/deductions', deductionRouter);
+app.use('/api/v1/job-roles', jobRoleRoutes);
+app.use('/api/v1/companies', companyRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/loans', loanRoutes);
-app.use('/api/v1/recruitment', recruitmentRoutes);
 
 // Swagger Documentation
 app.use(
@@ -132,11 +130,11 @@ app.use(
 );
 
 // Health check
-app.get('/api/health', (req, res) => {
+app.get('/api/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', success: true, timestamp: new Date().toISOString() });
 });
 
-app.use((req, res, next) => {
+app.use((req: Request, res: Response, next: NextFunction) => {
   next(ApiError.notFound('Resource not found'));
 });
 

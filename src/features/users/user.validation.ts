@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
 import { validateOrThrow } from '../../utils/zod-validation-utils';
-import { userStatusOptions } from './user.model';
+import { userRoleOptions, userStatusOptions } from './user.model';
 
 const userSchema = z.object({
   firstName: z
@@ -17,14 +17,15 @@ const userSchema = z.object({
   email: z.email().max(100, 'Only 100 characters are allowed for user email address'),
   profileImage: z.string().nullable().optional(),
   googleId: z.string().nullable().optional(),
-  position: z.string().min(1, 'User position is required'),
+  role: z.enum(userRoleOptions),
+  jobRole: z.string('User job role is required').min(1, 'User job role is required'),
   department: z.string().min(1, 'User department is required'),
 });
 
-const UpdateUserSchema = userSchema.extend({ status: z.enum(userStatusOptions) });
+const UpdateUserSchema = userSchema.extend({ status: z.enum(userStatusOptions).optional() }).optional();
 
 const validateUser = async (req: Request, res: Response, next: NextFunction) => {
-  let schema: z.ZodObject;
+  let schema: z.ZodObject | z.ZodOptional;
 
   const isCreation = req.method === 'POST';
 
@@ -38,7 +39,7 @@ const validateUser = async (req: Request, res: Response, next: NextFunction) => 
 
   validateOrThrow(result, req.requestId);
 
-  req.body.user = result.data;
+  req.validatedBody = { user: result.data };
   next();
 };
 
