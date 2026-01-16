@@ -131,6 +131,7 @@ app.use(
 
 // Health check
 app.get('/api/health', (req: Request, res: Response) => {
+  // eslint-disable-next-line custom/enforce-standard-response
   res.json({ status: 'ok', success: true, timestamp: new Date().toISOString() });
 });
 

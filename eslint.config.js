@@ -1,40 +1,28 @@
-import tsPlugin from '@typescript-eslint/eslint-plugin';
-import tsParser from '@typescript-eslint/parser';
+import eslint from '@eslint/js';
 import prettierConfig from 'eslint-config-prettier';
 import prettierPlugin from 'eslint-plugin-prettier';
 import sonarjs from 'eslint-plugin-sonarjs';
-import { globalIgnores } from 'eslint/config';
+import { defineConfig, globalIgnores } from 'eslint/config';
+import tseslint from 'typescript-eslint';
 import standardResponsePlugin from './eslint-rules/enforce-standard-response.cjs';
 
-export default [
+export default defineConfig(
   globalIgnores(['dist/']),
   sonarjs.configs.recommended,
+  prettierConfig,
+  eslint.configs.recommended,
+  tseslint.configs.recommended,
 
   {
-    // 3. Files and Language Options (Replacement for 'env' and 'parserOptions')
     files: ['**/*.ts', '**/*.tsx', '**/*.js'],
-    languageOptions: {
-      parser: tsParser,
-      ecmaVersion: 'latest',
-      sourceType: 'module',
-      globals: {
-        // Replacement for env: { node: true }
-        process: 'readonly',
-        __dirname: 'readonly',
-      },
-    },
     plugins: {
-      '@typescript-eslint': tsPlugin,
       prettier: prettierPlugin,
       custom: standardResponsePlugin,
     },
     rules: {
-      ...tsPlugin.configs.recommended.rules,
       'prettier/prettier': ['error', { endOfLine: 'auto' }],
       'custom/enforce-standard-response': 'error',
       '@typescript-eslint/no-explicit-any': 'off',
     },
   },
-
-  prettierConfig,
-];
+);
