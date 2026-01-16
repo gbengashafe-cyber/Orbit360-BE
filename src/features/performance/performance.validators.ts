@@ -34,7 +34,7 @@ const createAppraisalCycleSchema = z.object({
   start_date: z.string().datetime('Invalid start date format'),
   end_date: z.string().datetime('Invalid end date format'),
   review_deadline: z.string().datetime('Invalid review deadline format'),
-  created_by: z.string().min(1, 'Created by is required'),
+  created_by: z.string().min(1, 'Created by is required').optional(),
   department: z.string().optional(),
 });
 

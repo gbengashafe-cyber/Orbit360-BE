@@ -1,0 +1,58 @@
+### Get Dashboard
+GET http://localhost:3000/api/v1/performance/dashboard
+
+### Create Goal
+POST http://localhost:3000/api/v1/performance/goals
+Content-Type: application/json
+
+{
+  "employee_id": 5,
+  "title": "Increase Sales by 20%",
+  "description": "Achieve Q1 sales target of 20% growth",
+  "target_value": 100000,
+  "start_date": "2024-01-01T00:00:00Z",
+  "end_date": "2024-03-31T23:59:59Z",
+  "assigned_by": "manager@example.com"
+}
+
+### List Goals
+GET http://localhost:3000/api/v1/performance/goals?page=1&rows=10
+
+### Get Goal by ID
+GET http://localhost:3000/api/v1/performance/goals/1
+
+### Create Appraisal Cycle
+POST http://localhost:3000/api/v1/performance/cycles
+Content-Type: application/json
+
+{
+  "cycle_name": "Annual Appraisal 2024",
+  "description": "Comprehensive performance review",
+  "start_date": "2024-01-01T00:00:00Z",
+  "end_date": "2024-12-31T23:59:59Z",
+  "review_deadline": "2024-12-15T23:59:59Z",
+  "created_by": "hr_manager@example.com",
+  "department": "Engineering"
+}
+
+### Submit Appraisal
+POST http://localhost:3000/api/v1/performance/appraisals
+Content-Type: application/json
+
+{
+  "appraisal_cycle_id": 1,
+  "employee_id": 5,
+  "manager_id": 2,
+  "performance_summary": "Strong performer",
+  "strengths": "Leadership, Problem-solving",
+  "areas_for_improvement": "Time management"
+}
+
+### Review Appraisal
+POST http://localhost:3000/api/v1/performance/appraisals/1/review
+Content-Type: application/json
+
+{
+  "overall_rating": 4.5,
+  "goals_achievement": 90
+}

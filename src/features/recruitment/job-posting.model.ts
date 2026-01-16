@@ -109,3 +109,4 @@ JobPosting.init(
     tableName: 'job_postings',
   }
 );
+
