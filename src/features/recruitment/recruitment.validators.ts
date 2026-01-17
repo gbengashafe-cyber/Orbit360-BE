@@ -34,8 +34,9 @@ const createJobApplicationSchema = z.object({
   applicant_name: z.string().min(2, 'Applicant name must be at least 2 characters'),
   applicant_email: z.email('Invalid email format'),
   applicant_phone: z.string().min(7, 'Phone number must be at least 7 characters'),
-  resume_url: z.url('Invalid URL format'),
+  resume_url: z.url('Invalid URL format').optional().nullable(),
   cover_letter: z.string().optional().nullable(),
+  salary_expectation: z.number().positive('Salary expectation must be positive').optional().nullable(),
 });
 
 const updateApplicationStatusSchema = z.object({

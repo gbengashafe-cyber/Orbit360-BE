@@ -9,6 +9,7 @@ export interface JobApplicationAttributes {
   applicant_phone: string;
   resume_url?: string;
   cover_letter?: string;
+  salary_expectation?: number;
   applied_date: Date;
   status: 'applied' | 'under_review' | 'interview_scheduled' | 'interviewed' | 'offered' | 'hired' | 'rejected';
   interview_date?: Date;
@@ -24,6 +25,7 @@ export class JobApplication extends Model<JobApplicationAttributes> implements J
   public applicant_phone!: string;
   public resume_url!: string;
   public cover_letter!: string;
+  public salary_expectation!: number;
   public applied_date!: Date;
   public status!: 'applied' | 'under_review' | 'interview_scheduled' | 'interviewed' | 'offered' | 'hired' | 'rejected';
   public interview_date!: Date;
@@ -60,6 +62,10 @@ JobApplication.init(
     },
     cover_letter: {
       type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    salary_expectation: {
+      type: DataTypes.DECIMAL(12, 2),
       allowNull: true,
     },
     applied_date: {

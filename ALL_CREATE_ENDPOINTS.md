@@ -266,11 +266,13 @@
   "title": "Improve Code Quality",
   "description": "Reduce code defects by implementing comprehensive unit testing across all modules",
   "target_value": 95,
-  "start_date": "2024-01-01T00:00:00Z",
-  "end_date": "2024-12-31T23:59:59Z",
+  "start_date": "2024-01-01",
+  "end_date": "2024-12-31",
   "assigned_by": "Manager Name"
 }
 ```
+
+**Date Format:** `YYYY-MM-DD` (or ISO 8601: `2024-01-01T14:00:00Z`)
 
 ---
 
@@ -281,13 +283,15 @@
 {
   "cycle_name": "Annual Performance Review 2024",
   "description": "Comprehensive annual performance appraisal cycle",
-  "start_date": "2024-01-01T00:00:00Z",
-  "end_date": "2024-12-31T23:59:59Z",
-  "review_deadline": "2024-12-15T23:59:59Z",
+  "start_date": "2024-01-01",
+  "end_date": "2024-12-31",
+  "review_deadline": "2024-12-15",
   "created_by": "HR Admin",
   "department": "Engineering"
 }
 ```
+
+**Date Format:** `YYYY-MM-DD` (or ISO 8601: `2024-01-01T14:00:00Z`)
 
 ---
 
