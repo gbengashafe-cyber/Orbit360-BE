@@ -1,10 +1,10 @@
-import { Request, Response, NextFunction } from 'express';
-import { Op } from 'sequelize';
-import { JobPosting } from './job-posting.model';
-import { JobApplication } from './job-application.model';
-import { Applicant } from './applicant.model';
+import { NextFunction, Request, Response } from 'express';
 import { ApiError } from '../../utils/api-error';
+import { ApiResponse } from '../../utils/api-response';
 import { logger } from '../../utils/logger';
+import { Applicant } from './applicant.model';
+import { JobApplication } from './job-application.model';
+import { JobPosting } from './job-posting.model';
 
 // ============ Job Posting Controller ============
 export class JobPostingController {
@@ -24,10 +24,13 @@ export class JobPostingController {
         order: [['posted_date', 'DESC']],
       });
 
-      res.json({
-        data: postings,
-        pagination: { total: count, page, rows, pages: Math.ceil(count / (rows as number)) },
-      });
+      res.json(
+        ApiResponse({
+          data: postings,
+          message: '',
+          pagination: { total: count, page, rows, pages: Math.ceil(count / (rows as number)) },
+        }),
+      );
     } catch (error) {
       logger.error(`Error fetching job postings: ${error}`);
       next(error);
@@ -40,7 +43,7 @@ export class JobPostingController {
       const posting = await JobPosting.findByPk(id);
 
       if (!posting) throw ApiError.notFound(`Job posting with ID ${id} not found`);
-      res.json({ data: posting });
+      res.json(ApiResponse({ data: posting, message: '' }));
     } catch (error) {
       logger.error(`Error fetching job posting: ${error}`);
       next(error);
@@ -81,7 +84,9 @@ export class JobPostingController {
         created_by,
       });
 
-      res.status(201).json({ data: posting, message: `Job posting '${title}' created successfully and is pending approval` });
+      res
+        .status(201)
+        .json(ApiResponse({ data: posting, message: `Job posting '${title}' created successfully and is pending approval` }));
     } catch (error) {
       logger.error(`Error creating job posting: ${error}`);
       next(error);
@@ -100,10 +105,7 @@ export class JobPostingController {
 
       const oldTitle = posting.title;
       await posting.update(req.body);
-      res.json({
-        data: posting,
-        message: `Job posting '${oldTitle}' updated successfully`,
-      });
+      res.json(ApiResponse({ data: posting, message: `Job posting '${oldTitle}' updated successfully` }));
     } catch (error) {
       logger.error(`Error updating job posting: ${error}`);
       next(error);
@@ -129,10 +131,7 @@ export class JobPostingController {
         approved_by,
         approved_date: new Date(),
       });
-      res.json({
-        data: posting,
-        message: `Job posting '${posting.title}' approved and is now active`,
-      });
+      res.json(ApiResponse({ data: posting, message: `Job posting '${posting.title}' approved and is now active` }));
     } catch (error) {
       logger.error(`Error approving job posting: ${error}`);
       next(error);
@@ -150,10 +149,7 @@ export class JobPostingController {
       }
 
       await posting.update({ status: 'rejected' });
-      res.json({
-        data: posting,
-        message: `Job posting '${posting.title}' rejected successfully`,
-      });
+      res.json(ApiResponse({ data: posting, message: `Job posting '${posting.title}' rejected successfully` }));
     } catch (error) {
       logger.error(`Error rejecting job posting: ${error}`);
       next(error);
@@ -171,10 +167,7 @@ export class JobPostingController {
       }
 
       await posting.update({ status: 'closed', closedDate: new Date() });
-      res.json({
-        data: posting,
-        message: `Job posting '${posting.title}' closed successfully`,
-      });
+      res.json(ApiResponse({ data: posting, message: `Job posting '${posting.title}' closed successfully` }));
     } catch (error) {
       logger.error(`Error closing job role: ${error}`);
       next(error);
@@ -193,9 +186,7 @@ export class JobPostingController {
 
       const postingTitle = posting.title;
       await posting.destroy();
-      res.json({
-        message: `Job posting '${postingTitle}' deleted successfully`,
-      });
+      res.json(ApiResponse({ message: `Job posting '${postingTitle}' deleted successfully`, data: {} }));
     } catch (error) {
       logger.error(`Error deleting job posting: ${error}`);
       next(error);
@@ -224,15 +215,18 @@ export class JobPostingController {
 
       const hireRate = totalApplications > 0 ? Math.round((hiredCount / totalApplications) * 100) : 0;
 
-      res.json({
-        data: {
-          activeJobs,
-          totalApplications,
-          pendingInterviews,
-          hireRate,
-          hiredCount,
-        },
-      });
+      res.json(
+        ApiResponse({
+          data: {
+            activeJobs,
+            totalApplications,
+            pendingInterviews,
+            hireRate,
+            hiredCount,
+          },
+          message: '',
+        }),
+      );
     } catch (error) {
       logger.error(`Error fetching recruitment dashboard stats: ${error}`);
       next(error);
@@ -259,10 +253,13 @@ export class JobApplicationController {
         order: [['applied_date', 'DESC']],
       });
 
-      res.json({
-        data: applications,
-        pagination: { total: count, page, rows, pages: Math.ceil(count / (rows as number)) },
-      });
+      res.json(
+        ApiResponse({
+          data: applications,
+          message: '',
+          pagination: { total: count, page, rows, pages: Math.ceil(count / (rows as number)) },
+        }),
+      );
     } catch (error) {
       logger.error(`Error fetching job applications: ${error}`);
       next(error);
@@ -274,7 +271,7 @@ export class JobApplicationController {
       const { id } = req.params;
       const application = await JobApplication.findByPk(id);
       if (!application) throw ApiError.notFound('Job application not found');
-      res.json({ data: application });
+      res.json(ApiResponse({ data: application, message: '' }));
     } catch (error) {
       logger.error(`Error fetching job application: ${error}`);
       next(error);
@@ -295,10 +292,13 @@ export class JobApplicationController {
         order: [['applied_date', 'DESC']],
       });
 
-      res.json({
-        data: applications,
-        pagination: { total: count, page, rows, pages: Math.ceil(count / (rows as number)) },
-      });
+      res.json(
+        ApiResponse({
+          data: applications,
+          message: '',
+          pagination: { total: count, page, rows, pages: Math.ceil(count / (rows as number)) },
+        }),
+      );
     } catch (error) {
       logger.error(`Error fetching job applications: ${error}`);
       next(error);
@@ -384,10 +384,12 @@ export class JobApplicationController {
         status: 'applied',
       });
 
-      res.status(201).json({
-        data: { ...application.toJSON(), applicant },
-        message: 'Applicant added successfully',
-      });
+      res.status(201).json(
+        ApiResponse({
+          data: { ...application.toJSON(), applicant },
+          message: 'Applicant added successfully',
+        }),
+      );
     } catch (error) {
       logger.error(`Error creating job application: ${error}`);
       next(error);
@@ -412,10 +414,12 @@ export class JobApplicationController {
       const oldStatus = application.status;
       await application.update({ status });
 
-      res.json({
-        data: application,
-        message: `Applicant status updated from '${oldStatus}' to '${status}' successfully`,
-      });
+      res.json(
+        ApiResponse({
+          data: application,
+          message: `Applicant status updated from '${oldStatus}' to '${status}' successfully`,
+        }),
+      );
     } catch (error) {
       logger.error(`Error updating job application: ${error}`);
       next(error);
@@ -437,10 +441,12 @@ export class JobApplicationController {
       }
 
       await application.update({ status: 'interview_scheduled', interview_date, interview_notes });
-      res.json({
-        data: application,
-        message: `Interview scheduled for ${new Date(interview_date).toLocaleDateString()} successfully`,
-      });
+      res.json(
+        ApiResponse({
+          data: application,
+          message: `Interview scheduled for ${new Date(interview_date).toLocaleDateString()} successfully`,
+        }),
+      );
     } catch (error) {
       logger.error(`Error scheduling interview: ${error}`);
       next(error);
@@ -458,10 +464,12 @@ export class JobApplicationController {
       }
 
       await application.update({ status: 'offered' });
-      res.json({
-        data: application,
-        message: `Offer sent to ${application.applicant_name} successfully`,
-      });
+      res.json(
+        ApiResponse({
+          data: application,
+          message: `Offer sent to ${application.applicant_name} successfully`,
+        }),
+      );
     } catch (error) {
       logger.error(`Error sending offer: ${error}`);
       next(error);
@@ -479,10 +487,12 @@ export class JobApplicationController {
       }
 
       await application.update({ status: 'hired' });
-      res.json({
-        data: application,
-        message: `${application.applicant_name} hired successfully`,
-      });
+      res.json(
+        ApiResponse({
+          data: application,
+          message: `${application.applicant_name} hired successfully`,
+        }),
+      );
     } catch (error) {
       logger.error(`Error hiring applicant: ${error}`);
       next(error);
@@ -500,10 +510,12 @@ export class JobApplicationController {
       }
 
       await application.update({ status: 'rejected' });
-      res.json({
-        data: application,
-        message: `${application.applicant_name} rejected successfully`,
-      });
+      res.json(
+        ApiResponse({
+          data: application,
+          message: `${application.applicant_name} rejected successfully`,
+        }),
+      );
     } catch (error) {
       logger.error(`Error rejecting applicant: ${error}`);
       next(error);
@@ -522,9 +534,12 @@ export class JobApplicationController {
 
       const applicantName = application.applicant_name;
       await application.destroy();
-      res.json({
-        message: `Application for ${applicantName} deleted successfully`,
-      });
+      res.json(
+        ApiResponse({
+          message: `Application for ${applicantName} deleted successfully`,
+          data: {},
+        }),
+      );
     } catch (error) {
       logger.error(`Error deleting job application: ${error}`);
       next(error);
@@ -555,22 +570,25 @@ export class JobApplicationController {
         interview_scheduled: applications.filter((app) => app.status === 'interview_scheduled'),
       };
 
-      res.json({
-        data: {
-          jobPosting: {
-            id: jobPosting.id,
-            title: jobPosting.title,
+      res.json(
+        ApiResponse({
+          data: {
+            jobPosting: {
+              id: jobPosting.id,
+              title: jobPosting.title,
+            },
+            pipeline,
+            summary: {
+              submitted: pipeline.submitted.length,
+              under_review: pipeline.under_review.length,
+              shortlisted: pipeline.shortlisted.length,
+              interview_scheduled: pipeline.interview_scheduled.length,
+              total: applications.length,
+            },
           },
-          pipeline,
-          summary: {
-            submitted: pipeline.submitted.length,
-            under_review: pipeline.under_review.length,
-            shortlisted: pipeline.shortlisted.length,
-            interview_scheduled: pipeline.interview_scheduled.length,
-            total: applications.length,
-          },
-        },
-      });
+          message: '',
+        }),
+      );
     } catch (error) {
       logger.error(`Error fetching application pipeline: ${error}`);
       next(error);
