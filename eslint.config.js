@@ -19,6 +19,12 @@ export default defineConfig(
       prettier: prettierPlugin,
       custom: standardResponsePlugin,
     },
+    languageOptions: {
+      parserOptions: {
+        project: './tsconfig.json',
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
     rules: {
       'prettier/prettier': ['error', { endOfLine: 'auto' }],
       'custom/enforce-standard-response': 'error',

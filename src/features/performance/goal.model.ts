@@ -81,5 +81,5 @@ Goal.init(
     sequelize: db,
     modelName: 'Goal',
     tableName: 'goals',
-  }
+  },
 );

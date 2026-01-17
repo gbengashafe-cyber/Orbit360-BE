@@ -69,20 +69,22 @@ export class AuthController {
         role: user.role,
       });
 
-      res.json({
-        data: {
-          user: {
-            id: user.id,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            profileImage: user.profileImage,
-            role: user.role,
+      res.json(
+        ApiResponse({
+          data: {
+            user: {
+              id: user.id,
+              email: user.email,
+              firstName: user.firstName,
+              lastName: user.lastName,
+              profileImage: user.profileImage,
+              role: user.role,
+            },
+            token,
           },
-          token,
-        },
-        message: 'Logged in successfully',
-      });
+          message: 'Logged in successfully',
+        }),
+      );
     } catch (error) {
       logger.error(`Error in Google callback: ${error}`);
       next(error);
@@ -102,7 +104,7 @@ export class AuthController {
         throw ApiError.notFound('User not found');
       }
 
-      res.json({ data: user });
+      res.json(ApiResponse({ data: user, message: 'Fetched current user successfully' }));
     } catch (error) {
       logger.error(`Error fetching user: ${error}`);
       next(error);

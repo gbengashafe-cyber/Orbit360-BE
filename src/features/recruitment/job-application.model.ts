@@ -89,5 +89,5 @@ JobApplication.init(
     sequelize: db,
     modelName: 'JobApplication',
     tableName: 'job_applications',
-  }
+  },
 );

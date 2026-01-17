@@ -1,45 +1,44 @@
-import { NextFunction, Request, Response } from "express";
-import { z } from "zod";
-import { ApiError } from "../../utils/api-error";
+import { NextFunction, Request, Response } from 'express';
+import { z } from 'zod';
+import { validateOrThrow } from '../../utils/zod-validation-utils';
 
 const createLeaveSchema = z.object({
-  employeeId: z.number().int("Employee ID must be an integer").min(1, "Employee ID is required"),
-  startDate: z.string().datetime("Invalid start date format"),
-  endDate: z.string().datetime("Invalid end date format"),
-  type: z.enum(["sick", "vacation", "personal", "maternity", "paternity"], { message: "Invalid leave type" }),
+  employeeId: z.number().int('Employee ID must be an integer').min(1, 'Employee ID is required'),
+  startDate: z.iso.date('Invalid start date format'),
+  endDate: z.iso.date('Invalid end date format'),
+  type: z.enum(['sick', 'vacation', 'personal', 'maternity', 'paternity'], { message: 'Invalid leave type' }),
   reason: z.string().optional().nullable(),
 });
 
 const leaveIdParamSchema = z.object({
-  id: z.string().refine((val) => !isNaN(Number(val)), { message: "Leave ID must be a number" }).transform(Number),
+  id: z
+    .string()
+    .refine((val) => !isNaN(Number(val)), { message: 'Leave ID must be a number' })
+    .transform(Number),
 });
 
 const employeeIdParamSchema = z.object({
-  employeeId: z.string().refine((val) => !isNaN(Number(val)), { message: "Employee ID must be a number" }).transform(Number),
+  employeeId: z
+    .string()
+    .refine((val) => !isNaN(Number(val)), { message: 'Employee ID must be a number' })
+    .transform(Number),
 });
 
 const approveDeclineSchema = z.object({
-  action: z.enum(["approved", "rejected"], { message: "Action must be either 'approved' or 'rejected'" }),
+  action: z.enum(['approved', 'rejected'], { message: "Action must be either 'approved' or 'rejected'" }),
 });
 
-const validate = (schema: z.ZodObject<any>, source: "body" | "params" | "query" = "body") =>
+const validate =
+  (schema: z.ZodObject<any>, source: 'body' | 'params' | 'query' = 'body') =>
   (req: Request, res: Response, next: NextFunction) => {
-    try {
-      schema.parse(req[source]);
-      next();
-    } catch (error: any) {
-      next(ApiError.badRequest(error.errors[0].message || "Validation Error"));
-    }
+    const result = schema.safeParse(req[source]);
+    validateOrThrow(result, req.requestId);
+    next();
   };
 
-const validateCreateLeave = validate(createLeaveSchema, "body");
-const validateLeaveIdParam = validate(leaveIdParamSchema, "params");
-const validateEmployeeIdParam = validate(employeeIdParamSchema, "params");
-const validateApproveDecline = validate(approveDeclineSchema, "body");
+const validateCreateLeave = validate(createLeaveSchema, 'body');
+const validateLeaveIdParam = validate(leaveIdParamSchema, 'params');
+const validateEmployeeIdParam = validate(employeeIdParamSchema, 'params');
+const validateApproveDecline = validate(approveDeclineSchema, 'body');
 
-export {
-  validateCreateLeave,
-  validateLeaveIdParam,
-  validateEmployeeIdParam,
-  validateApproveDecline,
-};
+export { validateApproveDecline, validateCreateLeave, validateEmployeeIdParam, validateLeaveIdParam };

@@ -1,10 +1,10 @@
-import { NextFunction, Request, Response } from 'express';
+import { Request, Response } from 'express';
 import { ApiError } from '../../utils/api-error';
 import { ApiResponse } from '../../utils/api-response';
 import { UserRepository } from './user.repository';
 
 class UserController {
-  static readonly create = async (req: Request, res: Response, next: NextFunction) => {
+  static readonly create = async (req: Request, res: Response) => {
     const user = req.validatedBody?.user;
     Object.assign(user, { password: '' });
 
@@ -12,7 +12,7 @@ class UserController {
     return res.send(ApiResponse({ message: 'User created successfully', data: { id: result.id } }));
   };
 
-  static async get(req: Request, res: Response, next: NextFunction) {
+  static async get(req: Request, res: Response) {
     const { page, rows } = req.pagination;
 
     const { count, rows: users } = await UserRepository.read({
@@ -40,7 +40,7 @@ class UserController {
     );
   }
 
-  static async getById(req: Request, res: Response, next: NextFunction) {
+  static async getById(req: Request, res: Response) {
     const { id } = req.params;
     const user = await UserRepository.readById(id);
 
@@ -56,7 +56,7 @@ class UserController {
     );
   }
 
-  static readonly getJobRoles = async (req: Request, res: Response, next: NextFunction) => {
+  static readonly getJobRoles = async (req: Request, res: Response) => {
     const { page, rows } = req.pagination;
     const user = await UserRepository.readJobRoles({ page, rows, filters: req.parsedQuery });
 
@@ -72,7 +72,7 @@ class UserController {
     );
   };
 
-  static async update(req: Request, res: Response, next: NextFunction) {
+  static async update(req: Request, res: Response) {
     const { id } = req.params;
 
     const user = await UserRepository.readById(id);

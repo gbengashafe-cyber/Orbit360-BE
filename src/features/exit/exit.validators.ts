@@ -1,11 +1,11 @@
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
-import { ApiError } from '../../utils/api-error';
+import { validateOrThrow } from '../../utils/zod-validation-utils';
 
 const createExitSchema = z.object({
   employeeId: z.number().int('Employee ID must be an integer').min(1, 'Employee ID is required'),
   exitType: z.enum(['resignation', 'termination', 'retirement', 'contract_end'], { message: 'Invalid exit type' }),
-  exitDate: z.string().datetime('Invalid exit date format'),
+  exitDate: z.iso.date('Invalid exit date format'),
   reason: z.string().optional().nullable(),
 });
 
@@ -30,12 +30,9 @@ const approveExitSchema = z.object({
 const validate =
   (schema: z.ZodObject<any>, source: 'body' | 'params' | 'query' = 'body') =>
   (req: Request, res: Response, next: NextFunction) => {
-    try {
-      schema.parse(req[source]);
-      next();
-    } catch (error: any) {
-      next(ApiError.badRequest(error.errors[0].message || 'Validation Error'));
-    }
+    const result = schema.safeParse(req[source]);
+    validateOrThrow(result, req.requestId);
+    next();
   };
 
 const validateCreateExit = validate(createExitSchema, 'body');
@@ -43,4 +40,4 @@ const validateExitIdParam = validate(exitIdParamSchema, 'params');
 const validateEmployeeIdParam = validate(employeeIdParamSchema, 'params');
 const validateApproveExit = validate(approveExitSchema, 'body');
 
-export { validateCreateExit, validateExitIdParam, validateEmployeeIdParam, validateApproveExit };
+export { validateApproveExit, validateCreateExit, validateEmployeeIdParam, validateExitIdParam };

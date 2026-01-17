@@ -32,11 +32,7 @@ const accessTransport = new transports.File({
 
 const logger: WinstonLogger = winston.createLogger({
   level: process.env.LOG_LEVEL?.toLowerCase() || 'info',
-  format: combine(
-    errors({ stack: true }),
-    timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS A' }),
-    printf(jsonPrintFormat),
-  ),
+  format: combine(errors({ stack: true }), timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS A' }), printf(jsonPrintFormat)),
   transports: [errorTransport, infoTransport, accessTransport],
 });
 
@@ -49,10 +45,7 @@ function jsonPrintFormat(log: TransformableInfo) {
     return log.message;
   }
 
-  let output: Record<string, any> = Object.assign(
-    {},
-    { timestamp: log.timestamp, level: log.level, message: log.message },
-  );
+  let output: Record<string, any> = Object.assign({}, { timestamp: log.timestamp, level: log.level, message: log.message });
 
   function appendLogKeyValue(prop: string, logMessageObject: Record<string, any>) {
     if (log[prop]) {
@@ -63,23 +56,12 @@ function jsonPrintFormat(log: TransformableInfo) {
     return logMessageObject;
   }
 
-  const logStandardProps = [
-    'requestId',
-    'ip',
-    'code',
-    'name',
-    'path',
-    'method',
-    'origin',
-    'referer',
-    'stack',
-  ];
+  const logStandardProps = ['requestId', 'ip', 'code', 'name', 'path', 'method', 'origin', 'referer', 'stack'];
 
   // Useful for tracking non-standard log props
   let logCopy: Record<string, any> = {};
 
-  const logHasNonStandardProps =
-    Object.keys(log).length > logStandardProps.length;
+  const logHasNonStandardProps = Object.keys(log).length > logStandardProps.length;
   if (logHasNonStandardProps) {
     logCopy = Object.assign({}, log);
   }

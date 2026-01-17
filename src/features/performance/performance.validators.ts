@@ -1,14 +1,14 @@
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
-import { ApiError } from '../../utils/api-error';
+import { validateOrThrow } from '../../utils/zod-validation-utils';
 
 const createGoalSchema = z.object({
   employee_id: z.number().int('Employee ID must be an integer').min(1, 'Employee ID is required'),
   title: z.string().min(3, 'Title must be at least 3 characters').max(255, 'Title must be at most 255 characters'),
   description: z.string().min(10, 'Description must be at least 10 characters'),
   target_value: z.number().positive('Target value must be positive').optional(),
-  start_date: z.string().datetime('Invalid start date format'),
-  end_date: z.string().datetime('Invalid end date format'),
+  start_date: z.iso.date('Invalid start date format'),
+  end_date: z.iso.date('Invalid end date format'),
   assigned_by: z.string().optional(),
 });
 
@@ -16,34 +16,40 @@ const updateGoalSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters').max(255, 'Title must be at most 255 characters').optional(),
   description: z.string().min(10, 'Description must be at least 10 characters').optional(),
   target_value: z.number().positive('Target value must be positive').optional(),
-  start_date: z.string().datetime('Invalid start date format').optional(),
-  end_date: z.string().datetime('Invalid end date format').optional(),
+  start_date: z.iso.date('Invalid start date format').optional(),
+  end_date: z.iso.date('Invalid end date format').optional(),
 });
 
 const updateGoalProgressSchema = z.object({
   current_progress: z.number().min(0, 'Progress cannot be negative').optional(),
-  completion_percentage: z.number().min(0, 'Completion percentage cannot be negative').max(100, 'Completion percentage cannot exceed 100').optional(),
-  status: z
-    .enum(['not_started', 'in_progress', 'completed', 'failed', 'on_hold'], { message: 'Invalid goal status' })
+  completion_percentage: z
+    .number()
+    .min(0, 'Completion percentage cannot be negative')
+    .max(100, 'Completion percentage cannot exceed 100')
     .optional(),
+  status: z.enum(['not_started', 'in_progress', 'completed', 'failed', 'on_hold'], { message: 'Invalid goal status' }).optional(),
 });
 
 const createAppraisalCycleSchema = z.object({
   cycle_name: z.string().min(3, 'Cycle name must be at least 3 characters').max(255, 'Cycle name must be at most 255 characters'),
   description: z.string().optional(),
-  start_date: z.string().datetime('Invalid start date format'),
-  end_date: z.string().datetime('Invalid end date format'),
-  review_deadline: z.string().datetime('Invalid review deadline format'),
+  start_date: z.iso.date('Invalid start date format'),
+  end_date: z.iso.date('Invalid end date format'),
+  review_deadline: z.iso.date('Invalid review deadline format'),
   created_by: z.string().min(1, 'Created by is required').optional(),
   department: z.string().optional(),
 });
 
 const updateAppraisalCycleSchema = z.object({
-  cycle_name: z.string().min(3, 'Cycle name must be at least 3 characters').max(255, 'Cycle name must be at most 255 characters').optional(),
+  cycle_name: z
+    .string()
+    .min(3, 'Cycle name must be at least 3 characters')
+    .max(255, 'Cycle name must be at most 255 characters')
+    .optional(),
   description: z.string().optional(),
-  start_date: z.string().datetime('Invalid start date format').optional(),
-  end_date: z.string().datetime('Invalid end date format').optional(),
-  review_deadline: z.string().datetime('Invalid review deadline format').optional(),
+  start_date: z.iso.date('Invalid start date format').optional(),
+  end_date: z.iso.date('Invalid end date format').optional(),
+  review_deadline: z.iso.date('Invalid review deadline format').optional(),
   department: z.string().optional(),
 });
 
@@ -88,14 +94,12 @@ const appraisalIdParamSchema = z.object({
     .transform(Number),
 });
 
-const validate = (schema: z.ZodObject<any>, source: 'body' | 'params' | 'query' = 'body') =>
+const validate =
+  (schema: z.ZodObject<any>, source: 'body' | 'params' | 'query' = 'body') =>
   (req: Request, res: Response, next: NextFunction) => {
-    try {
-      schema.parse(req[source]);
-      next();
-    } catch (error: any) {
-      next(ApiError.badRequest(error.errors[0].message || 'Validation Error'));
-    }
+    const result = schema.safeParse(req[source]);
+    validateOrThrow(result, req.requestId);
+    next();
   };
 
 const validateCreateGoal = validate(createGoalSchema, 'body');
@@ -111,15 +115,15 @@ const validateUpdateAppraisal = validate(updateAppraisalSchema, 'body');
 const validateAppraisalIdParam = validate(appraisalIdParamSchema, 'params');
 
 export {
+  validateAppraisalCycleIdParam,
+  validateAppraisalIdParam,
+  validateCreateAppraisalCycle,
   validateCreateGoal,
+  validateGoalIdParam,
+  validateReviewAppraisal,
+  validateSubmitAppraisal,
+  validateUpdateAppraisal,
+  validateUpdateAppraisalCycle,
   validateUpdateGoal,
   validateUpdateGoalProgress,
-  validateGoalIdParam,
-  validateCreateAppraisalCycle,
-  validateUpdateAppraisalCycle,
-  validateAppraisalCycleIdParam,
-  validateSubmitAppraisal,
-  validateReviewAppraisal,
-  validateUpdateAppraisal,
-  validateAppraisalIdParam,
 };
