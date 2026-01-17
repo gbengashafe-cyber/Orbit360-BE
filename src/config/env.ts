@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import { z } from 'zod';
+import { logger } from '../utils/logger';
 
 dotenv.config();
 
@@ -17,13 +18,17 @@ const envSchema = z.object({
   JWT_SECRET: z.string(),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
+  LDAPS_URL: z.string().optional(),
 });
 
-const parsed = envSchema.safeParse(process.env);
+const result = envSchema.safeParse(process.env);
 
-if (!parsed.success) {
-  console.error('Invalid environment variables:', parsed.error.format());
+if (!result.success) {
+  const errors = result.error.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`).join(', ');
+
+  logger.debug(`Invalid environment variables: ${errors}`);
+
   process.exit(1);
 }
 
-export const env = parsed.data;
+export const env = result.data;

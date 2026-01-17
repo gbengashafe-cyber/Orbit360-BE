@@ -1,30 +1,14 @@
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
-import { ApiError } from '../../utils/api-error';
-
-// Flexible date validation: accepts YYYY-MM-DD or ISO 8601 datetime
-const flexibleDateValidation = z.string().refine(
-  (date) => {
-    // Accept YYYY-MM-DD format
-    if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      return !isNaN(Date.parse(date));
-    }
-    // Accept ISO 8601 datetime format
-    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(date)) {
-      return !isNaN(Date.parse(date));
-    }
-    return false;
-  },
-  { message: 'Invalid date format. Use YYYY-MM-DD or ISO 8601 (e.g., 2024-01-15 or 2024-01-15T14:00:00Z)' },
-);
+import { validateOrThrow } from '../../utils/zod-validation-utils';
 
 const createGoalSchema = z.object({
   employee_id: z.number().int('Employee ID must be an integer').min(1, 'Employee ID is required'),
   title: z.string().min(3, 'Title must be at least 3 characters').max(255, 'Title must be at most 255 characters'),
   description: z.string().min(10, 'Description must be at least 10 characters'),
   target_value: z.number().positive('Target value must be positive').optional(),
-  start_date: flexibleDateValidation,
-  end_date: flexibleDateValidation,
+  start_date: z.iso.date('Invalid start date format'),
+  end_date: z.iso.date('Invalid end date format'),
   assigned_by: z.string().optional(),
 });
 
@@ -32,8 +16,8 @@ const updateGoalSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters').max(255, 'Title must be at most 255 characters').optional(),
   description: z.string().min(10, 'Description must be at least 10 characters').optional(),
   target_value: z.number().positive('Target value must be positive').optional(),
-  start_date: flexibleDateValidation.optional(),
-  end_date: flexibleDateValidation.optional(),
+  start_date: z.iso.date('Invalid start date format').optional(),
+  end_date: z.iso.date('Invalid end date format').optional(),
 });
 
 const updateGoalProgressSchema = z.object({
@@ -49,9 +33,9 @@ const updateGoalProgressSchema = z.object({
 const createAppraisalCycleSchema = z.object({
   cycle_name: z.string().min(3, 'Cycle name must be at least 3 characters').max(255, 'Cycle name must be at most 255 characters'),
   description: z.string().optional(),
-  start_date: flexibleDateValidation,
-  end_date: flexibleDateValidation,
-  review_deadline: flexibleDateValidation,
+  start_date: z.iso.date('Invalid start date format'),
+  end_date: z.iso.date('Invalid end date format'),
+  review_deadline: z.iso.date('Invalid review deadline format'),
   created_by: z.string().min(1, 'Created by is required').optional(),
   department: z.string().optional(),
 });
@@ -63,9 +47,9 @@ const updateAppraisalCycleSchema = z.object({
     .max(255, 'Cycle name must be at most 255 characters')
     .optional(),
   description: z.string().optional(),
-  start_date: flexibleDateValidation.optional(),
-  end_date: flexibleDateValidation.optional(),
-  review_deadline: flexibleDateValidation.optional(),
+  start_date: z.iso.date('Invalid start date format').optional(),
+  end_date: z.iso.date('Invalid end date format').optional(),
+  review_deadline: z.iso.date('Invalid review deadline format').optional(),
   department: z.string().optional(),
 });
 
@@ -113,12 +97,9 @@ const appraisalIdParamSchema = z.object({
 const validate =
   (schema: z.ZodObject<any>, source: 'body' | 'params' | 'query' = 'body') =>
   (req: Request, res: Response, next: NextFunction) => {
-    try {
-      schema.parse(req[source]);
-      next();
-    } catch (error: any) {
-      next(ApiError.badRequest(error.errors[0].message || 'Validation Error'));
-    }
+    const result = schema.safeParse(req[source]);
+    validateOrThrow(result, req.requestId);
+    next();
   };
 
 const validateCreateGoal = validate(createGoalSchema, 'body');
@@ -134,15 +115,15 @@ const validateUpdateAppraisal = validate(updateAppraisalSchema, 'body');
 const validateAppraisalIdParam = validate(appraisalIdParamSchema, 'params');
 
 export {
+  validateAppraisalCycleIdParam,
+  validateAppraisalIdParam,
+  validateCreateAppraisalCycle,
   validateCreateGoal,
+  validateGoalIdParam,
+  validateReviewAppraisal,
+  validateSubmitAppraisal,
+  validateUpdateAppraisal,
+  validateUpdateAppraisalCycle,
   validateUpdateGoal,
   validateUpdateGoalProgress,
-  validateGoalIdParam,
-  validateCreateAppraisalCycle,
-  validateUpdateAppraisalCycle,
-  validateAppraisalCycleIdParam,
-  validateSubmitAppraisal,
-  validateReviewAppraisal,
-  validateUpdateAppraisal,
-  validateAppraisalIdParam,
 };

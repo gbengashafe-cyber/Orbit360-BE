@@ -1,10 +1,45 @@
 import { NextFunction, Request, Response } from 'express';
 import { ApiError } from '../../utils/api-error';
+import { ApiResponse } from '../../utils/api-response';
 import { generateToken } from '../../utils/jwt';
 import { logger } from '../../utils/logger';
 import { User } from '../users/user.model';
+import { UserRepository } from '../users/user.repository';
+import { authenticateLDAPS } from './auth.utils';
 
 export class AuthController {
+  static readonly ldapLogin = async (req: Request, res: Response) => {
+    const { email, password } = req.body;
+
+    const isAuthenticated = await authenticateLDAPS(email, password);
+
+    if (!isAuthenticated) {
+      throw ApiError.unauthenticated('AD Authentication failed');
+    }
+
+    // Get user's details
+    const userRecord = await UserRepository.readByEmail(email);
+
+    if (!userRecord) {
+      throw ApiError.unauthenticated('Authentication failed');
+    }
+
+    const token = generateToken({
+      userId: userRecord.id,
+      email: userRecord.email,
+      role: userRecord.role,
+    });
+
+    res.json(
+      ApiResponse({
+        data: {
+          user: userRecord,
+          token,
+        },
+        message: 'Logged in successfully',
+      }),
+    );
+  };
   // Google OAuth callback
   static async googleCallback(req: Request, res: Response, next: NextFunction) {
     try {
@@ -19,7 +54,7 @@ export class AuthController {
           firstName,
           lastName,
           profileImage,
-          role: 'employee',
+          role,
           status: 'active',
           jobRole: 'employee',
           department: 'employee',
@@ -34,20 +69,22 @@ export class AuthController {
         role: user.role,
       });
 
-      res.json({
-        data: {
-          user: {
-            id: user.id,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            profileImage: user.profileImage,
-            role: user.role,
+      res.json(
+        ApiResponse({
+          data: {
+            user: {
+              id: user.id,
+              email: user.email,
+              firstName: user.firstName,
+              lastName: user.lastName,
+              profileImage: user.profileImage,
+              role: user.role,
+            },
+            token,
           },
-          token,
-        },
-        message: 'Logged in successfully',
-      });
+          message: 'Logged in successfully',
+        }),
+      );
     } catch (error) {
       logger.error(`Error in Google callback: ${error}`);
       next(error);
@@ -67,7 +104,7 @@ export class AuthController {
         throw ApiError.notFound('User not found');
       }
 
-      res.json({ data: user });
+      res.json(ApiResponse({ data: user, message: 'Fetched current user successfully' }));
     } catch (error) {
       logger.error(`Error fetching user: ${error}`);
       next(error);

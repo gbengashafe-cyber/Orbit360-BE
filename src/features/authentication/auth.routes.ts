@@ -11,5 +11,6 @@ router.get('/me', AuthController.getCurrentUser);
 
 // Logout
 router.post('/logout', AuthController.logout);
+router.post('/user', AuthController.ldapLogin);
 
 export default router;

@@ -1,7 +1,7 @@
 import { InferAttributes, InferCreationAttributes, Op } from 'sequelize';
-import { User } from './user.model';
 import { JobRole } from '../job-role/job-role.model';
 import { JobRolePermissions } from '../permissions/permission.model';
+import { User } from './user.model';
 
 class UserRepository {
   static create = (user: InferCreationAttributes<User>) => {
@@ -35,6 +35,9 @@ class UserRepository {
 
   static readById = async (id) => {
     return User.findByPk(id);
+  };
+  static readonly readByEmail = async (email: string) => {
+    return User.findOne({ attributes: ['id', 'email', 'first_name', 'profile_image', 'role'], where: { email } });
   };
 
   static update = async (id, role: InferAttributes<User>) => {

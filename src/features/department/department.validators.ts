@@ -13,9 +13,6 @@ const updateDepartmentSchema = z.object({
   description: z.string().optional().nullable(),
 });
 
-type CreateDepartmentBody = z.infer<typeof createDepartmentSchema>;
-type UpdateDepartmentBody = z.infer<typeof updateDepartmentSchema>;
-
 const validate = (schema: z.ZodObject<any>) => (req: Request, res: Response, next: NextFunction) => {
   const result = schema.safeParse(req.body);
   validateOrThrow(result, req.requestId);

@@ -365,8 +365,7 @@ export class AppraisalController {
 
   static async submitAppraisal(req: Request, res: Response, next: NextFunction) {
     try {
-      const { appraisal_cycle_id, employee_id, manager_id, performance_summary, strengths, areas_for_improvement } =
-        req.body;
+      const { appraisal_cycle_id, employee_id, manager_id, performance_summary, strengths, areas_for_improvement } = req.body;
 
       const appraisal = await Appraisal.create({
         appraisal_cycle_id,

@@ -13,10 +13,8 @@ interface ApiResponseDataType {
 
 const ApiResponse = ({ message, data, ...meta }: ApiResponseDataType) => {
   if (typeof data === 'object' && !Array.isArray(data)) {
-    data?.password && delete data.password;
-    data?.updatedAt && delete data.updatedAt;
-    data?.createdBy && delete data.createdBy;
-    data?.lastModifiedBy && delete data.lastModifiedBy;
+    // Ensures password prop is not sent to frontend
+    if (data?.password) delete data.password;
   }
 
   return { success: true, message, data, ...meta };

@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
-import { ApiError } from '../../utils/api-error';
+import { validateOrThrow } from '../../utils/zod-validation-utils';
 
 const createJobPostingSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters').max(255, 'Title must be at most 255 characters'),
@@ -32,9 +32,9 @@ const approveJobPostingSchema = z.object({
 const createJobApplicationSchema = z.object({
   job_posting_id: z.number().int('Job posting ID must be an integer').min(1, 'Job posting ID is required'),
   applicant_name: z.string().min(2, 'Applicant name must be at least 2 characters'),
-  applicant_email: z.string().email('Invalid email format'),
+  applicant_email: z.email('Invalid email format'),
   applicant_phone: z.string().min(7, 'Phone number must be at least 7 characters'),
-  resume_url: z.string().url('Invalid URL format').optional().nullable(),
+  resume_url: z.url('Invalid URL format').optional().nullable(),
   cover_letter: z.string().optional().nullable(),
   salary_expectation: z.number().positive('Salary expectation must be positive').optional().nullable(),
 });
@@ -49,7 +49,7 @@ const updateApplicationStatusSchema = z.object({
 });
 
 const scheduleInterviewSchema = z.object({
-  interview_date: z.string().datetime('Invalid interview date format'),
+  interview_date: z.iso.date('Invalid interview date format'),
   interview_notes: z.string().optional(),
 });
 
@@ -77,12 +77,9 @@ const jobPostingIdRouteParamSchema = z.object({
 const validate =
   (schema: z.ZodObject<any>, source: 'body' | 'params' | 'query' = 'body') =>
   (req: Request, res: Response, next: NextFunction) => {
-    try {
-      schema.parse(req[source]);
-      next();
-    } catch (error: any) {
-      next(ApiError.badRequest(error?.errors?.[0]?.message || 'Validation Error'));
-    }
+    const result = schema.safeParse(req[source]);
+    validateOrThrow(result, req.requestId);
+    next();
   };
 
 const validateCreateJobPosting = validate(createJobPostingSchema, 'body');
@@ -96,13 +93,13 @@ const validateJobApplicationIdParam = validate(jobApplicationIdParamSchema, 'par
 const validateJobPostingIdRouteParam = validate(jobPostingIdRouteParamSchema, 'params');
 
 export {
-  validateCreateJobPosting,
-  validateUpdateJobPosting,
   validateApproveJobPosting,
-  validateJobPostingIdParam,
   validateCreateJobApplication,
-  validateUpdateApplicationStatus,
-  validateScheduleInterview,
+  validateCreateJobPosting,
   validateJobApplicationIdParam,
+  validateJobPostingIdParam,
   validateJobPostingIdRouteParam,
+  validateScheduleInterview,
+  validateUpdateApplicationStatus,
+  validateUpdateJobPosting,
 };

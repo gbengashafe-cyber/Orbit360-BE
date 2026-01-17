@@ -1,18 +1,18 @@
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
-import { ApiError } from '../../utils/api-error';
+import { validateOrThrow } from '../../utils/zod-validation-utils';
 
 const createOnboardingSchema = z.object({
   employeeId: z.number().int('Employee ID must be an integer').min(1, 'Employee ID is required'),
   documentType: z.string().min(1, 'Document type is required'),
   documentName: z.string().min(1, 'Document name is required'),
-  documentUrl: z.string().url('Invalid document URL').optional().nullable(),
+  documentUrl: z.url('Invalid document URL').optional().nullable(),
   notes: z.string().optional().nullable(),
 });
 
 const updateOnboardingSchema = z.object({
   status: z.enum(['pending', 'submitted', 'approved', 'rejected'], { message: 'Invalid status' }),
-  documentUrl: z.string().url('Invalid document URL').optional().nullable(),
+  documentUrl: z.url('Invalid document URL').optional().nullable(),
   notes: z.string().optional().nullable(),
 });
 
@@ -33,12 +33,9 @@ const employeeIdParamSchema = z.object({
 const validate =
   (schema: z.ZodObject<any>, source: 'body' | 'params' | 'query' = 'body') =>
   (req: Request, res: Response, next: NextFunction) => {
-    try {
-      schema.parse(req[source]);
-      next();
-    } catch (error: any) {
-      next(ApiError.badRequest(error.errors[0].message || 'Validation Error'));
-    }
+    const result = schema.safeParse(req[source]);
+    validateOrThrow(result, req.requestId);
+    next();
   };
 
 const validateCreateOnboarding = validate(createOnboardingSchema, 'body');
@@ -46,9 +43,4 @@ const validateUpdateOnboarding = validate(updateOnboardingSchema, 'body');
 const validateOnboardingIdParam = validate(onboardingIdParamSchema, 'params');
 const validateEmployeeIdParam = validate(employeeIdParamSchema, 'params');
 
-export {
-  validateCreateOnboarding,
-  validateUpdateOnboarding,
-  validateOnboardingIdParam,
-  validateEmployeeIdParam,
-};
+export { validateCreateOnboarding, validateEmployeeIdParam, validateOnboardingIdParam, validateUpdateOnboarding };

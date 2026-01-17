@@ -1,13 +1,12 @@
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
-import { ApiError } from '../../utils/api-error';
+import { validateOrThrow } from '../../utils/zod-validation-utils';
 
 const createComplaintSchema = z.object({
   employee_id: z.number().int('Employee ID must be an integer').min(1, 'Employee ID is required'),
-  complaint_type: z.enum(
-    ['harassment', 'discrimination', 'safety', 'wage_dispute', 'working_conditions', 'other'],
-    { message: 'Invalid complaint type' }
-  ),
+  complaint_type: z.enum(['harassment', 'discrimination', 'safety', 'wage_dispute', 'working_conditions', 'other'], {
+    message: 'Invalid complaint type',
+  }),
   title: z.string().min(3, 'Title must be at least 3 characters').max(255, 'Title must be at most 255 characters'),
   description: z.string().min(10, 'Description must be at least 10 characters'),
   severity: z.enum(['low', 'medium', 'high', 'critical'], { message: 'Invalid severity level' }).optional(),
@@ -41,14 +40,12 @@ const complaintIdParamSchema = z.object({
     .transform(Number),
 });
 
-const validate = (schema: z.ZodObject<any>, source: 'body' | 'params' | 'query' = 'body') =>
+const validate =
+  (schema: z.ZodObject<any>, source: 'body' | 'params' | 'query' = 'body') =>
   (req: Request, res: Response, next: NextFunction) => {
-    try {
-      schema.parse(req[source]);
-      next();
-    } catch (error: any) {
-      next(ApiError.badRequest(error.errors[0].message || 'Validation Error'));
-    }
+    const result = schema.safeParse(req[source]);
+    validateOrThrow(result, req.requestId);
+    next();
   };
 
 const validateCreateComplaint = validate(createComplaintSchema, 'body');
@@ -56,4 +53,4 @@ const validateUpdateComplaint = validate(updateComplaintSchema, 'body');
 const validateResolveComplaint = validate(resolveComplaintSchema, 'body');
 const validateComplaintIdParam = validate(complaintIdParamSchema, 'params');
 
-export { validateCreateComplaint, validateUpdateComplaint, validateResolveComplaint, validateComplaintIdParam };
+export { validateComplaintIdParam, validateCreateComplaint, validateResolveComplaint, validateUpdateComplaint };

@@ -1,4 +1,4 @@
-import { ErrorRequestHandler, Response } from 'express';
+import { ErrorRequestHandler, NextFunction, Request, Response } from 'express';
 import {
   BaseError,
   ConnectionError,
@@ -12,18 +12,21 @@ import { env } from '../config/env';
 import { ApiError } from './api-error';
 import { logger } from './logger';
 
-const globalErrorHandler: ErrorRequestHandler = (err, req, res, next): Response => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const globalErrorHandler: ErrorRequestHandler = (err, req: Request, res: Response, next: NextFunction): Response => {
   logger.debug(err);
 
-  ['development', 'test'].includes(env.NODE_ENV) && console.log('GLOBAL ERROR HANDLER:\n RequestID: ', req?.requestId, '\n', err);
+  if (['development', 'test'].includes(env.NODE_ENV)) {
+    console.log('GLOBAL ERROR HANDLER:\n RequestID: ', req?.requestId, '\n', err);
+  }
 
   err.ip = req.requestIp;
   err.origin = req.headers.origin || 'undefined';
   err.referer = req.headers.referer || 'undefined';
 
   if (err instanceof BaseError) {
-    let message = '',
-      code: number;
+    let code: number = 400;
+    let message = '';
     switch (err.constructor.name) {
       case UniqueConstraintError.name:
         code = 409;

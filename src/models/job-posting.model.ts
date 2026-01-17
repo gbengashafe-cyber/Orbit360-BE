@@ -107,5 +107,5 @@ JobPosting.init(
     sequelize: db,
     modelName: 'JobPosting',
     tableName: 'job_postings',
-  }
+  },
 );
