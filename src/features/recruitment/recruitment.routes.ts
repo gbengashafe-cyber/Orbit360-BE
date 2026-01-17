@@ -31,9 +31,20 @@ router.delete('/postings/:id', validateJobPostingIdParam, JobPostingController.d
 router.get('/applications', JobApplicationController.getAll);
 router.get('/applications/:id', validateJobApplicationIdParam, JobApplicationController.getById);
 router.get('/applications/by-posting/:jobPostingId', validateJobPostingIdRouteParam, JobApplicationController.getByJobPosting);
+router.get('/applications/pipeline/:jobPostingId', validateJobPostingIdRouteParam, JobApplicationController.getPipeline);
 router.post('/applications', validateCreateJobApplication, JobApplicationController.create);
-router.put('/applications/:id/status', validateJobApplicationIdParam, validateUpdateApplicationStatus, JobApplicationController.updateStatus);
-router.post('/applications/:id/schedule-interview', validateJobApplicationIdParam, validateScheduleInterview, JobApplicationController.scheduleInterview);
+router.put(
+  '/applications/:id/status',
+  validateJobApplicationIdParam,
+  validateUpdateApplicationStatus,
+  JobApplicationController.updateStatus,
+);
+router.post(
+  '/applications/:id/schedule-interview',
+  validateJobApplicationIdParam,
+  validateScheduleInterview,
+  JobApplicationController.scheduleInterview,
+);
 router.post('/applications/:id/send-offer', validateJobApplicationIdParam, JobApplicationController.sendOffer);
 router.post('/applications/:id/hire', validateJobApplicationIdParam, JobApplicationController.hire);
 router.post('/applications/:id/reject', validateJobApplicationIdParam, JobApplicationController.reject);

@@ -260,7 +260,8 @@ export class JobApplicationController {
 
   static async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const { job_posting_id, applicant_name, applicant_email, applicant_phone, resume_url, cover_letter } = req.body;
+      const { job_posting_id, applicant_name, applicant_email, applicant_phone, resume_url, cover_letter, salary_expectation } =
+        req.body;
 
       const jobPosting = await JobPosting.findByPk(job_posting_id);
       if (!jobPosting) throw ApiError.notFound('Job posting not found');
@@ -272,6 +273,7 @@ export class JobApplicationController {
         applicant_phone,
         resume_url,
         cover_letter,
+        salary_expectation,
         applied_date: new Date(),
         status: 'applied',
       });
@@ -364,6 +366,49 @@ export class JobApplicationController {
       res.json({ message: 'Job application deleted successfully' });
     } catch (error) {
       logger.error(`Error deleting job application: ${error}`);
+      next(error);
+    }
+  }
+
+  static async getPipeline(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { jobPostingId } = req.params;
+
+      // Verify job posting exists
+      const jobPosting = await JobPosting.findByPk(jobPostingId);
+      if (!jobPosting) throw ApiError.notFound('Job posting not found');
+
+      // Fetch all applications for this job posting
+      const applications = await JobApplication.findAll({
+        where: { job_posting_id: jobPostingId },
+        order: [['applied_date', 'DESC']],
+      });
+
+      // Group applications by pipeline stages
+      const pipeline = {
+        submitted: applications.filter((app) => app.status === 'applied'),
+        under_review: applications.filter((app) => app.status === 'under_review'),
+        shortlisted: applications.filter((app) => app.status === 'interviewed'),
+        interview_scheduled: applications.filter((app) => app.status === 'interview_scheduled'),
+      };
+
+      res.json({
+        data: {
+          jobPosting: {
+            id: jobPosting.id,
+            title: jobPosting.title,
+          },
+          pipeline,
+          summary: {
+            submitted: pipeline.submitted.length,
+            under_review: pipeline.under_review.length,
+            shortlisted: pipeline.shortlisted.length,
+            interview_scheduled: pipeline.interview_scheduled.length,
+          },
+        },
+      });
+    } catch (error) {
+      logger.error(`Error fetching application pipeline: ${error}`);
       next(error);
     }
   }
