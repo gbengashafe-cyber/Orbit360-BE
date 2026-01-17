@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { Op } from 'sequelize';
 import { JobPosting } from './job-posting.model';
 import { JobApplication } from './job-application.model';
+import { Applicant } from './applicant.model';
 import { ApiError } from '../../utils/api-error';
 import { logger } from '../../utils/logger';
 
@@ -288,6 +289,7 @@ export class JobApplicationController {
 
       const { count, rows: applications } = await JobApplication.findAndCountAll({
         where: { job_posting_id: jobPostingId },
+        include: [{ model: Applicant, as: 'applicant' }],
         limit: rows as number,
         offset,
         order: [['applied_date', 'DESC']],
@@ -305,36 +307,87 @@ export class JobApplicationController {
 
   static async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const { job_posting_id, applicant_name, applicant_email, applicant_phone, resume_url, cover_letter, salary_expectation } =
-        req.body;
-
-      if (!job_posting_id) throw ApiError.badRequest('Job posting ID is required');
-      if (!applicant_name) throw ApiError.badRequest('Applicant name is required');
-      if (!applicant_email) throw ApiError.badRequest('Applicant email is required');
-      if (!applicant_phone) throw ApiError.badRequest('Applicant phone is required');
-
-      const jobPosting = await JobPosting.findByPk(job_posting_id);
-      if (!jobPosting) throw ApiError.notFound(`Job posting with ID ${job_posting_id} not found`);
-
-      // Check if applicant already applied for this job
-      const existingApplication = await JobApplication.findOne({
-        where: { job_posting_id, applicant_email },
-      });
-      if (existingApplication) throw ApiError.conflict(`This applicant has already applied for this job posting`);
-
-      const application = await JobApplication.create({
+      const {
         job_posting_id,
+        applicant_id,
         applicant_name,
         applicant_email,
         applicant_phone,
         resume_url,
         cover_letter,
         salary_expectation,
+      } = req.body;
+
+      if (!job_posting_id) throw ApiError.badRequest('Job posting ID is required');
+
+      const jobPosting = await JobPosting.findByPk(job_posting_id);
+      if (!jobPosting) throw ApiError.notFound(`Job posting with ID ${job_posting_id} not found`);
+
+      let finalApplicantId = applicant_id;
+
+      // If applicant_id is provided, use existing applicant
+      if (applicant_id) {
+        const existingApplicant = await Applicant.findByPk(applicant_id);
+        if (!existingApplicant) throw ApiError.notFound(`Applicant with ID ${applicant_id} not found`);
+      }
+      // Otherwise, create new applicant or reuse by email
+      else {
+        if (!applicant_name) throw ApiError.badRequest('Applicant name is required');
+        if (!applicant_email) throw ApiError.badRequest('Applicant email is required');
+        if (!applicant_phone) throw ApiError.badRequest('Applicant phone is required');
+
+        // Check if applicant already exists by email
+        let applicant = await Applicant.findOne({ where: { email: applicant_email } });
+
+        if (!applicant) {
+          // Create new applicant
+          applicant = await Applicant.create({
+            name: applicant_name,
+            email: applicant_email,
+            phone: applicant_phone,
+            resume_url,
+            cover_letter,
+            salary_expectation,
+            source: 'manual',
+          });
+        } else {
+          // Update existing applicant with new info if provided
+          if (resume_url) applicant.resume_url = resume_url;
+          if (cover_letter) applicant.cover_letter = cover_letter;
+          if (salary_expectation) applicant.salary_expectation = salary_expectation;
+          await applicant.save();
+        }
+
+        finalApplicantId = applicant.id;
+      }
+
+      // Check if this applicant has already applied for this job
+      const existingApplication = await JobApplication.findOne({
+        where: { job_posting_id, applicant_id: finalApplicantId },
+      });
+      if (existingApplication) throw ApiError.conflict(`This applicant has already applied for this job posting`);
+
+      // Fetch applicant data for denormalization
+      const applicant = await Applicant.findByPk(finalApplicantId);
+
+      // Create job application
+      const application = await JobApplication.create({
+        job_posting_id,
+        applicant_id: finalApplicantId,
+        applicant_name: applicant.name,
+        applicant_email: applicant.email,
+        applicant_phone: applicant.phone,
+        resume_url: applicant.resume_url,
+        cover_letter: applicant.cover_letter,
+        salary_expectation: applicant.salary_expectation,
         applied_date: new Date(),
         status: 'applied',
       });
 
-      res.status(201).json({ data: application, message: 'Applicant added successfully' });
+      res.status(201).json({
+        data: { ...application.toJSON(), applicant },
+        message: 'Applicant added successfully',
+      });
     } catch (error) {
       logger.error(`Error creating job application: ${error}`);
       next(error);
