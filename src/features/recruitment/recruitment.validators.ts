@@ -7,9 +7,7 @@ const createJobPostingSchema = z.object({
   description: z.string().min(10, 'Description must be at least 10 characters'),
   department: z.string().min(1, 'Department is required'),
   location: z.string().min(1, 'Location is required'),
-  employment_type: z
-    .enum(['full_time', 'part_time', 'contract', 'temporary'], { message: 'Invalid employment type' })
-    .optional(),
+  employment_type: z.enum(['full_time', 'part_time', 'contract', 'temporary'], { message: 'Invalid employment type' }).optional(),
   salary_range_min: z.number().positive('Salary range minimum must be positive').optional(),
   salary_range_max: z.number().positive('Salary range maximum must be positive').optional(),
   requirements: z.string().optional(),
@@ -21,9 +19,7 @@ const updateJobPostingSchema = z.object({
   description: z.string().min(10, 'Description must be at least 10 characters').optional(),
   department: z.string().min(1, 'Department is required').optional(),
   location: z.string().min(1, 'Location is required').optional(),
-  employment_type: z
-    .enum(['full_time', 'part_time', 'contract', 'temporary'], { message: 'Invalid employment type' })
-    .optional(),
+  employment_type: z.enum(['full_time', 'part_time', 'contract', 'temporary'], { message: 'Invalid employment type' }).optional(),
   salary_range_min: z.number().positive('Salary range minimum must be positive').optional(),
   salary_range_max: z.number().positive('Salary range maximum must be positive').optional(),
   requirements: z.string().optional(),
@@ -77,13 +73,14 @@ const jobPostingIdRouteParamSchema = z.object({
     .transform(Number),
 });
 
-const validate = (schema: z.ZodObject<any>, source: 'body' | 'params' | 'query' = 'body') =>
+const validate =
+  (schema: z.ZodObject<any>, source: 'body' | 'params' | 'query' = 'body') =>
   (req: Request, res: Response, next: NextFunction) => {
     try {
       schema.parse(req[source]);
       next();
     } catch (error: any) {
-      next(ApiError.badRequest(error.errors[0].message || 'Validation Error'));
+      next(ApiError.badRequest(error?.errors?.[0]?.message || 'Validation Error'));
     }
   };
 
