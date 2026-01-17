@@ -369,6 +369,7 @@ export class JobApplicationController {
 
       // Fetch applicant data for denormalization
       const applicant = await Applicant.findByPk(finalApplicantId);
+      if (!applicant) throw ApiError.notFound(`Applicant with ID ${finalApplicantId} not found`);
 
       // Create job application
       const application = await JobApplication.create({
