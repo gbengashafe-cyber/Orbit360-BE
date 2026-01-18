@@ -37,5 +37,13 @@ router.patch(
   validateUpdateOnboarding,
   OnboardingController.update,
 );
+router.delete(
+  '/:id',
+  validateAuthToken,
+  isInAllowedDepartment(['HR']),
+  hasRequiredPermission('MANAGE_ONBOARDING'),
+  validateOnboardingIdParam,
+  OnboardingController.delete,
+);
 
 export { router as onboardingRoutes };

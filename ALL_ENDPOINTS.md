@@ -52,6 +52,20 @@
 
 ---
 
+## Job Roles
+**Base URL:** `http://localhost:3000/api/v1/job-roles`
+*Requires: Authentication*
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/` | Get all job roles |
+| GET | `/:id` | Get job role by ID |
+| POST | `/` | Create job role |
+| PUT | `/:id` | Update job role |
+| DELETE | `/:id` | Delete job role |
+
+---
+
 ## Positions
 **Base URL:** `http://localhost:3000/api/v1/positions`
 
@@ -119,7 +133,7 @@
 | POST | `/` | Create onboarding (HR + MANAGE_ONBOARDING) |
 | GET | `/` | Get all onboarding (HR + MANAGE_ONBOARDING) |
 | GET | `/employee/:employeeId` | Get onboarding by employee |
-| GET | `/:id` | Get onboarding by ID |
+| GET | `/:id` | Get onboarding 3Pcreby ID |
 | PATCH | `/:id` | Update onboarding (HR + MANAGE_ONBOARDING) |
 
 ---
@@ -239,8 +253,8 @@
 | GET | `/postings/:id` | Get job posting by ID |
 | POST | `/postings` | Create job posting |
 | PUT | `/postings/:id` | Update job posting |
-| POST | `/postings/:id/approve` | Approve job posting |
-| POST | `/postings/:id/reject` | Reject job posting |
+| POST | `/postings/:id/approve` | Approve job posting (Managing Directors only) |
+| POST | `/postings/:id/reject` | Reject job posting (Managing Directors only) |
 | POST | `/postings/:id/close` | Close job posting |
 | DELETE | `/postings/:id` | Delete job posting |
 

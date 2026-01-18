@@ -8,7 +8,7 @@ export class LoanPayment extends Model<InferAttributes<LoanPayment>, InferCreati
   declare id: CreationOptional<number>;
   declare loanId: ForeignKey<Loan['id']>;
   declare employeeId: ForeignKey<Employee['id']>;
-  declare payPeriod: ForeignKey<Payroll['payPeriod']>;
+  declare payPeriod: string;
   declare amount: number;
   declare paymentDate: Date;
 }
@@ -32,7 +32,6 @@ LoanPayment.init(
     },
     payPeriod: {
       type: DataTypes.STRING(7),
-      references: { model: Payroll, key: 'payPeriod' },
       allowNull: false,
     },
     amount: {

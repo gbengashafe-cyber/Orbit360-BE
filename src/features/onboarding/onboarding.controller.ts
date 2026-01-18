@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { ApiError } from '../../utils/api-error';
+import { ApiResponse } from '../../utils/api-response';
 import { logger } from '../../utils/logger';
 import { Employee } from '../employee/employee.model';
 import { Onboarding } from './onboarding.model';
@@ -15,14 +16,15 @@ export class OnboardingController {
         documentName,
         documentUrl,
         notes,
-        status: 'pending',
+        status: 'submitted',
+        submittedAt: new Date(),
       });
 
       const createdOnboarding = await Onboarding.findByPk(onboarding.id, {
         include: [{ model: Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'email'] }],
       });
 
-      res.status(201).json({ data: createdOnboarding, message: 'Document created successfully' });
+      res.status(201).json(ApiResponse({ data: createdOnboarding, message: 'Document uploaded successfully' }));
     } catch (error) {
       logger.error(`Error creating onboarding document: ${error}`);
       next(error);
@@ -41,15 +43,18 @@ export class OnboardingController {
         order: [['createdAt', 'DESC']],
       });
 
-      res.json({
-        data: onboardings,
-        pagination: {
-          total: count,
-          page,
-          rows,
-          pages: Math.ceil(count / rows),
-        },
-      });
+      res.json(
+        ApiResponse({
+          data: onboardings,
+          message: '',
+          pagination: {
+            total: count,
+            page,
+            rows,
+            pages: Math.ceil(count / rows),
+          },
+        }),
+      );
     } catch (error) {
       logger.error(`Error fetching onboardings: ${error}`);
       next(error);
@@ -69,15 +74,18 @@ export class OnboardingController {
         order: [['createdAt', 'DESC']],
       });
 
-      res.json({
-        data: onboardings,
-        pagination: {
-          total: count,
-          page,
-          rows,
-          pages: Math.ceil(count / rows),
-        },
-      });
+      res.json(
+        ApiResponse({
+          data: onboardings,
+          message: '',
+          pagination: {
+            total: count,
+            page,
+            rows,
+            pages: Math.ceil(count / rows),
+          },
+        }),
+      );
     } catch (error) {
       logger.error(`Error fetching employee onboardings: ${error}`);
       next(error);
@@ -95,7 +103,7 @@ export class OnboardingController {
         throw ApiError.notFound('Onboarding not found');
       }
 
-      res.json({ data: onboarding });
+      res.json(ApiResponse({ data: onboarding, message: '' }));
     } catch (error) {
       logger.error(`Error fetching onboarding: ${error}`);
       next(error);
@@ -113,7 +121,7 @@ export class OnboardingController {
       }
 
       const updateData: any = { status, notes };
-      
+
       if (documentUrl) updateData.documentUrl = documentUrl;
       if (status === 'submitted') updateData.submittedAt = new Date();
       if (status === 'approved' || status === 'rejected') {
@@ -127,9 +135,37 @@ export class OnboardingController {
         include: [{ model: Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'email'] }],
       });
 
-      res.json({ data: updatedOnboarding, message: 'Document updated successfully' });
+      res.json(ApiResponse({ data: updatedOnboarding, message: 'Document updated successfully' }));
     } catch (error) {
       logger.error(`Error updating onboarding document: ${error}`);
+      next(error);
+    }
+  }
+
+  static async delete(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const onboarding = await Onboarding.findByPk(id);
+
+      if (!onboarding) {
+        throw ApiError.notFound('Document not found');
+      }
+
+      // Change status to pending instead of deleting
+      await onboarding.update({
+        status: 'pending',
+        documentUrl: '', // Set to empty string instead of null
+        submittedAt: undefined, // Set to undefined instead of null
+      });
+
+      res.json(
+        ApiResponse({
+          data: onboarding,
+          message: 'Document deleted successfully. Status reset to pending.',
+        }),
+      );
+    } catch (error) {
+      logger.error(`Error deleting onboarding document: ${error}`);
       next(error);
     }
   }

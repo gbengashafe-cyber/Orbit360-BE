@@ -53,7 +53,14 @@ const validate = (schema: z.ZodObject<any>) => {
     const result = schema.safeParse(req.body);
     validateOrThrow(result, req.requestId);
 
-    req.body.validated = { employee: result.data };
+    // Map position to jobRole
+    const employeeData = {
+      ...result.data,
+      jobRole: result.data.position,
+    };
+    delete employeeData.position;
+
+    req.body.validated = { employee: employeeData };
     next();
   };
 };

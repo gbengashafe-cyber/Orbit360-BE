@@ -39,11 +39,10 @@
   "firstName": "Jane",
   "lastName": "Smith",
   "email": "jane.smith@example.com",
-  "employeeId": "EMP001",
+  "employeeId": "EMP002",
   "phone": "+1234567890",
   "hireDate": "2024-01-15",
   "departmentName": "Engineering",
-  "supervisorId": null,
   "position": "Senior Developer",
   "dob": "1990-05-20",
   "gender": "F",
@@ -71,32 +70,7 @@
 
 ---
 
-## 4. Departments - Create Department
-**POST** `/api/v1/departments`
-
-```json
-{
-  "name": "Engineering",
-  "description": "Software and Systems Engineering Department",
-  "companyId": 1
-}
-```
-
----
-
-## 5. Positions - Create Position
-**POST** `/api/v1/positions`
-
-```json
-{
-  "title": "Senior Software Engineer",
-  "description": "Lead software development initiatives and mentor junior developers"
-}
-```
-
----
-
-## 6. Companies - Create Company
+## 4. Companies - Create Company
 **POST** `/api/v1/companies`
 *Requires: Authentication + ADMIN permission*
 
@@ -109,19 +83,57 @@
 
 ---
 
-## 7. Leaves - Create Leave
-**POST** `/api/v1/leaves`
+## 5. Departments - Create Department
+**POST** `/api/v1/departments`
+*Requires: Valid companyId*
+
+```json
+{
+  "name": "Engineering",
+  "description": "Software and Systems Engineering Department",
+  "companyId": 1
+}
+```
+
+---
+
+## 6. Job Roles - Create Job Role
+**POST** `/api/v1/job-roles`
 *Requires: Authentication*
 
 ```json
 {
-  "employeeId": 1,
-  "startDate": "2024-02-15T00:00:00Z",
-  "endDate": "2024-02-20T23:59:59Z",
+  "title": "Senior Developer",
+  "description": "Senior software developer position"
+}
+```
+
+---
+
+## 7. Positions - Create Position
+**POST** `/api/v1/positions`
+
+```json
+{
+  "title": "Senior Software Engineer",
+  "description": "Lead software development initiatives and mentor junior developers"
+}
+```
+
+---
+
+## 8. Leaves - Create Leave
+**POST** `/api/v1/leaves`
+*Requires: Authentication*
+
+```json
+ f
   "type": "vacation",
   "reason": "Family vacation"
 }
 ```
+
+**Date Format:** `YYYY-MM-DD` (also accepts ISO 8601: `2024-02-15T00:00:00Z`)
 
 **Leave Type Options:**
 - `sick`
@@ -132,7 +144,7 @@
 
 ---
 
-## 8. Exits - Create Exit
+## 9. Exits - Create Exit
 **POST** `/api/v1/exits`
 *Requires: Authentication*
 
@@ -140,7 +152,7 @@
 {
   "employeeId": 1,
   "exitType": "resignation",
-  "exitDate": "2024-03-31T00:00:00Z",
+  "exitDate": "2024-03-31",
   "reason": "Personal reasons"
 }
 ```
@@ -153,23 +165,24 @@
 
 ---
 
-## 9. Onboarding - Create Onboarding
+## 10. Onboarding - Create Onboarding
 **POST** `/api/v1/onboardings`
 *Requires: Authentication + MANAGE_ONBOARDING permission + HR department*
 
 ```json
 {
-  "employeeId": 1,
+  "employeeId": 3,
   "documentType": "Contract",
   "documentName": "Employment Agreement",
-  "documentUrl": "https://example.com/documents/contract.pdf",
-  "notes": "Standard employment contract"
+  "documentUrl": "https://example.com/documents/contract.pdf"
 }
 ```
 
+**Note:** `employeeId` must be the numeric `id` from the employee, NOT the string `employeeId` (e.g., use `3` not `"EMP002"`)
+
 ---
 
-## 10. Payroll - Generate Payroll
+## 11. Payroll - Generate Payroll
 **POST** `/api/v1/payrolls`
 *Requires: Authentication + MANAGE_PAYROLL permission + HR department*
 
@@ -186,7 +199,7 @@
 
 ---
 
-## 11. Deductions - Create Deduction
+## 12. Deductions - Create Deduction
 **POST** `/api/v1/deductions`
 *Requires: Authentication + MANAGE_PAYROLL permission + HR department*
 
@@ -203,7 +216,7 @@
 
 ---
 
-## 12. Loans - Create Loan
+## 13. Loans - Create Loan
 **POST** `/api/v1/loans`
 *Requires: Authentication + MANAGE_LOAN permission + HR department*
 
@@ -227,7 +240,7 @@
 
 ---
 
-## 13. Complaints - Create Complaint
+## 14. Complaints - Create Complaint
 **POST** `/api/v1/complaints`
 
 ```json
@@ -257,7 +270,7 @@
 
 ---
 
-## 14. Performance - Create Goal
+## 15. Performance - Create Goal
 **POST** `/api/v1/performance/goals`
 
 ```json
@@ -276,7 +289,7 @@
 
 ---
 
-## 15. Performance - Create Appraisal Cycle
+## 16. Performance - Create Appraisal Cycle
 **POST** `/api/v1/performance/cycles`
 
 ```json
@@ -295,7 +308,7 @@
 
 ---
 
-## 16. Performance - Submit Appraisal
+## 17. Performance - Submit Appraisal
 **POST** `/api/v1/performance/appraisals`
 
 ```json
@@ -311,7 +324,7 @@
 
 ---
 
-## 17. Recruitment - Create Job Posting
+## 18. Recruitment - Create Job Posting
 **POST** `/api/v1/recruitment/postings`
 
 ```json
@@ -336,7 +349,7 @@
 
 ---
 
-## 18. Recruitment - Submit Job Application
+## 19. Recruitment - Submit Job Application
 **POST** `/api/v1/recruitment/applications`
 
 ```json
@@ -357,18 +370,20 @@
 Create endpoints in this order:
 1. ✓ Create Company
 2. ✓ Create Department  
-3. ✓ Create Position
-4. ✓ Create User
-5. ✓ Create Employee
-6. ✓ Create Leave Request
-7. ✓ Create Exit Record
-8. ✓ Create Onboarding Document
-9. ✓ Create Loan
-10. ✓ Create Deduction
-11. ✓ Generate Payroll
-12. ✓ Create Complaint
-13. ✓ Create Performance Goal
-14. ✓ Create Appraisal Cycle
-15. ✓ Submit Appraisal
-16. ✓ Create Job Posting
-17. ✓ Submit Job Application
+3. ✓ Create Job Role
+4. ✓ Create Position
+5. ✓ Create User
+6. ✓ Create Employee
+7. ✓ Create Leave Request
+8. ✓ Create Exit Record
+9. ✓ Create Onboarding Document
+10. ✓ Create Loan
+11. ✓ Create Deduction
+12. ✓ Generate Payroll
+13. ✓ Create Complaint
+14. ✓ Create Performance Goal
+15. ✓ Create Appraisal Cycle
+16. ✓ Submit Appraisal
+17. ✓ Create Job Posting
+18. ✓ Approve Job Posting (for Managing Directors)
+19. ✓ Submit Job Application

@@ -111,7 +111,7 @@ app.use('/api/v1/employees', employeeRoutes);
 app.use('/api/v1/leaves', leaveRoutes);
 app.use('/api/v1/exits', exitRoutes);
 app.use('/api/v1/onboardings', onboardingRoutes);
-app.use('/api/v1/recruitments', recruitmentRoutes);
+app.use('/api/v1/recruitment', recruitmentRoutes);
 app.use('/api/v1/payrolls', payrollRoutes);
 app.use('/api/v1/performance', performanceRoutes);
 app.use('/api/v1/job-roles', jobRoleRoutes);
