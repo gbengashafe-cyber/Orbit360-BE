@@ -21,7 +21,7 @@ department (Organizational):
 
 Values: hr, finance, operations, it, sales, etc.
 Purpose: Groups users by business unit
-Used for filtering data, routing approvals, and reporting
+Used for filtering data, routing approvals,recr and reporting
 
 In Practice:
 
