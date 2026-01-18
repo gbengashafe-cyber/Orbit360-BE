@@ -1,3 +1,4 @@
+import config from 'config';
 import { Router } from 'express';
 import { hasRequiredPermission, isInAllowedDepartment } from '../../utils/check-permission';
 import { validateAuthToken } from '../authentication/auth.middleware';
@@ -9,7 +10,7 @@ const router = Router();
 router.get(
   '/',
   validateAuthToken,
-  isInAllowedDepartment(['HR']),
+  isInAllowedDepartment([config.get('departmentNames.HR')]),
   hasRequiredPermission('MANAGE_EMPLOYEES'),
   EmployeeController.getAll,
 );

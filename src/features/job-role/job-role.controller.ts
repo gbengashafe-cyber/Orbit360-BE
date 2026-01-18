@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { ApiError } from '../../utils/api-error';
+import { ApiResponse } from '../../utils/api-response';
 import { logger } from '../../utils/logger';
 import { JobRole } from './job-role.model';
 import { JobRoleRepository } from './job-role.repository';
@@ -75,7 +76,7 @@ export class JobRoleController {
 
       await position.update({ title, description });
 
-      res.json({ data: position, message: 'Position updated successfully' });
+      res.json(ApiResponse({ data: position, message: 'Job role updated successfully' }));
     } catch (error) {
       logger.error(`Error updating position: ${error}`);
       next(error);

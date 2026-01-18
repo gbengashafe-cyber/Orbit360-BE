@@ -17,7 +17,6 @@ export const MONEY = {
 export const moneySchema = z
   .number({})
   .positive('Amount must be greater than 0')
-
   .refine((v) => Number.isFinite(v), 'Amount must be a finite number')
   .refine((v) => Number.isInteger(v * 10 ** MONEY.SCALE), `Amount must have at most ${MONEY.SCALE} decimal places`)
   .refine((v) => v <= MONEY.MAX_KOBO, 'Amount exceeds maximum allowed value')

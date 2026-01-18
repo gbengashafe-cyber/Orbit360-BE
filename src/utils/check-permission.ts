@@ -1,20 +1,19 @@
 import { NextFunction, Request, Response } from 'express';
-import { JobRoleRepository } from '../features/job-role/job-role.repository';
 import { ApiError } from './api-error';
 import { logger } from './logger';
 
 const hasRequiredPermission = (requiredPermission: string) => {
   return async (req: Request, res: Response, next: NextFunction) => {
-    logger.debug(`Checking required permission: RequestId: ${req.requestId}: RequiredPermission: ${requiredPermission}`);
+    logger.debug(`Checking required permission: RequestId: ${req.requestId}: Required Permission: ${requiredPermission}`);
     logger.debug(`Checking required permission: RequestId: ${req.requestId}: User job role: ${req.user?.jobRole}`);
     if (!req.user?.jobRole) {
       throw ApiError.forbidden('Missing/incomplete authorization header. You are not authorized to perform this action.');
     }
 
-    const userJobRolePermissions = await JobRoleRepository.getPermissionsByTitle(req.user.jobRole);
+    const userJobRolePermissions = req.user.permissions;
 
-    if (!userJobRolePermissions) {
-      throw ApiError.internalServerError('No permission found for this job role');
+    if (!userJobRolePermissions || !userJobRolePermissions.length) {
+      throw ApiError.internalServerError(`No permission found for user job role. User job role: ${req.user.jobRole}`);
     }
 
     const userHasRequiredPermission =
@@ -32,7 +31,7 @@ const hasRequiredPermission = (requiredPermission: string) => {
 
 const isInAllowedDepartment = (requiredDepartment: string[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
-    logger.debug(`Checking required department: RequestId: ${req.requestId}: RequiredDepartment(s): ${requiredDepartment}`);
+    logger.debug(`Checking required department: RequestId: ${req.requestId}: Required Department(s): ${requiredDepartment}`);
     logger.debug(`Checking required department: RequestId: ${req.requestId}: User department: ${req.user?.department}`);
 
     if (!req.user?.department) {

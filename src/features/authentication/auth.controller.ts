@@ -6,6 +6,7 @@ import { logger } from '../../utils/logger';
 import { User } from '../users/user.model';
 import { UserRepository } from '../users/user.repository';
 import { authenticateLDAPS } from './auth.utils';
+import { AuthRepository } from './auth.repository';
 
 export class AuthController {
   static readonly ldapLogin = async (req: Request, res: Response) => {
@@ -25,8 +26,8 @@ export class AuthController {
     }
 
     const token = generateToken({
-      userId: userRecord.id,
-      email: userRecord.email,
+      id: userRecord.id,
+      sub: userRecord.email,
       role: userRecord.role,
     });
 
@@ -40,6 +41,7 @@ export class AuthController {
       }),
     );
   };
+
   // Google OAuth callback
   static async googleCallback(req: Request, res: Response, next: NextFunction) {
     try {
@@ -64,8 +66,8 @@ export class AuthController {
 
       // Generate JWT token
       const token = generateToken({
-        userId: user.id,
-        email: user.email,
+        id: user.id,
+        sub: user.email,
         role: user.role,
       });
 
@@ -94,17 +96,19 @@ export class AuthController {
   // Get current user
   static async getCurrentUser(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = (req as any).userId; // Set by auth middleware
+      const userId = req?.user?.id;
 
-      const user = await User.findByPk(userId, {
-        attributes: ['id', 'email', 'firstName', 'lastName', 'profileImage', 'role'],
-      });
+      if (!userId) {
+        throw ApiError.unauthenticated('Authentication failed');
+      }
+
+      const user = await UserRepository.readById(userId);
 
       if (!user) {
         throw ApiError.notFound('User not found');
       }
 
-      res.json(ApiResponse({ data: user, message: 'Fetched current user successfully' }));
+      res.json(ApiResponse(ApiResponse({ data: user, message: 'Fetched current user successfully' })));
     } catch (error) {
       logger.error(`Error fetching user: ${error}`);
       next(error);
@@ -114,10 +118,39 @@ export class AuthController {
   // Logout
   static async logout(req: Request, res: Response, next: NextFunction) {
     try {
-      res.json({ message: 'Logged out successfully' });
+      res.json(ApiResponse({ message: 'Logged out successfully', data: {} }));
     } catch (error) {
       logger.error(`Error during logout: ${error}`);
       next(error);
     }
   }
+
+  static readonly passwordLogin = async (req: Request, res: Response) => {
+    const { email, password } = req.body;
+
+    if (!(password && email)) {
+      throw ApiError.unauthenticated('Email and password is required');
+    }
+
+    const user = await AuthRepository.findLoginUser(email, password);
+
+    if (!user) {
+      throw ApiError.unauthenticated('Invalid email/password');
+    }
+
+    const accessToken = generateToken({
+      id: user.id,
+      sub: user.email,
+      role: user.role,
+    });
+
+    await UserRepository.update(user.id, { lastLoginDate: new Date() });
+
+    res.json(
+      ApiResponse({
+        message: 'Login successful',
+        data: { accessToken },
+      }),
+    );
+  };
 }

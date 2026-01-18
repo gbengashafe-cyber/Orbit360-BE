@@ -33,15 +33,15 @@ class UserRepository {
     });
   };
 
-  static readById = async (id) => {
-    return User.findByPk(id);
+  static readonly readById = async (id: string | number) => {
+    return User.findByPk(id, { raw: true, attributes: { exclude: ['password'] } });
   };
   static readonly readByEmail = async (email: string) => {
     return User.findOne({ attributes: ['id', 'email', 'first_name', 'profile_image', 'role'], where: { email } });
   };
 
-  static update = async (id, role: InferAttributes<User>) => {
-    return User.update(role, { where: { id } });
+  static readonly update = async (id, user: Partial<InferAttributes<User>>) => {
+    return User.update(user, { where: { id } });
   };
 }
 

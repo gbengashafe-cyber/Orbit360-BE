@@ -34,7 +34,7 @@ Permission.init(
 
 class JobRolePermissions extends Model<InferAttributes<JobRolePermissions>, InferCreationAttributes<JobRolePermissions>> {
   declare id: CreationOptional<number>;
-  declare job_role: ForeignKey<JobRole['title']>;
+  declare jobRole: ForeignKey<JobRole['title']>;
   declare permission: ForeignKey<Permission['name']>;
 }
 
@@ -44,6 +44,14 @@ JobRolePermissions.init(
       type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true,
+    },
+    jobRole: {
+      type: DataTypes.STRING(100),
+      unique: 'role_permission',
+    },
+    permission: {
+      type: DataTypes.STRING(50),
+      unique: 'role_permission',
     },
   },
   { sequelize: db, underscored: true },
@@ -64,10 +72,10 @@ JobRole.belongsToMany(Permission, {
   otherKey: 'permission',
 });
 
-JobRolePermissions.belongsTo(Permission, { foreignKey: 'permission' });
-Permission.hasMany(JobRolePermissions, { foreignKey: 'permission' });
+JobRolePermissions.belongsTo(Permission, { foreignKey: 'permission', targetKey: 'name' });
+Permission.hasMany(JobRolePermissions, { foreignKey: 'permission', sourceKey: 'name' });
 
-JobRolePermissions.belongsTo(JobRole, { foreignKey: 'jobRole' });
-JobRole.hasMany(JobRolePermissions, { foreignKey: 'jobRole' });
+JobRolePermissions.belongsTo(JobRole, { foreignKey: 'jobRole', targetKey: 'title' });
+JobRole.hasMany(JobRolePermissions, { foreignKey: 'jobRole', sourceKey: 'title' });
 
 export { JobRolePermissions, Permission };

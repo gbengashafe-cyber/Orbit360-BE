@@ -7,7 +7,7 @@ import morgan from 'morgan';
 import { randomUUID } from 'node:crypto';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger';
-import authRoutes from './features/authentication/auth.routes';
+import { authRoutes } from './features/authentication/auth.routes';
 import { companyRoutes } from './features/company/company.routes';
 import { complaintRoutes } from './features/complaints/complaint.routes';
 import departmentRoutes from './features/department/department.routes';

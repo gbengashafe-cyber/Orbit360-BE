@@ -36,7 +36,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
   public firstName!: string;
   public lastName!: string;
   public email!: string;
-  public password!: string;
+  declare password: string;
   declare profileImage: CreationOptional<string>;
   declare googleId: CreationOptional<string>;
   // Defines what the user can do no the admin platform
@@ -45,6 +45,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
   declare jobRole: ForeignKey<JobRole['title']>;
   declare department: ForeignKey<Department['name']>;
   declare status: CreationOptional<(typeof userStatusOptions)[number]>;
+  declare lastLoginDate: CreationOptional<Date>;
 }
 
 User.init(
@@ -100,6 +101,9 @@ User.init(
       type: DataTypes.ENUM('active', 'suspended'),
       allowNull: false,
       defaultValue: 'active',
+    },
+    lastLoginDate: {
+      type: DataTypes.DATE,
     },
   },
   {
