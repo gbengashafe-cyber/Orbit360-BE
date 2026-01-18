@@ -71,11 +71,7 @@ export class JobApplicationController {
     }
   }
 
-  static async getByJobPosting(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) {
+  static async getByJobPosting(req: Request, res: Response, next: NextFunction) {
     try {
       const { jobPostingId } = req.params;
       const { page, rows } = req.pagination!;
@@ -105,14 +101,7 @@ export class JobApplicationController {
 
   static async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const {
-        job_posting_id,
-        applicant_name,
-        applicant_email,
-        applicant_phone,
-        resume_url,
-        cover_letter,
-      } = req.body;
+      const { job_posting_id, applicant_name, applicant_email, applicant_phone, resume_url, cover_letter } = req.body;
 
       // Verify job posting exists
       const jobPosting = await JobPosting.findByPk(job_posting_id);
@@ -141,11 +130,7 @@ export class JobApplicationController {
     }
   }
 
-  static async updateStatus(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) {
+  static async updateStatus(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
       const { status, interview_date, interview_notes, rating } = req.body;
@@ -172,11 +157,7 @@ export class JobApplicationController {
     }
   }
 
-  static async scheduleInterview(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) {
+  static async scheduleInterview(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
       const { interview_date, interview_notes } = req.body;
