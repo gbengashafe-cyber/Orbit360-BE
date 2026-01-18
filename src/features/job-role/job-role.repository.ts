@@ -3,8 +3,8 @@ import { JobRolePermissions } from '../permissions/permission.model';
 import { JobRole } from './job-role.model';
 
 class JobRoleRepository {
-  static readonly getPermissionsByTitle = async (position: string) => {
-    return JobRolePermissions.findAll({ where: { job_role: position }, attributes: ['permission'] });
+  static readonly getJobRolePermissions = async (jobRoleName: string) => {
+    return JobRolePermissions.findAll({ where: { jobRole: jobRoleName }, attributes: ['permission'] });
   };
 
   static readonly create = (position: InferCreationAttributes<JobRole>) => {

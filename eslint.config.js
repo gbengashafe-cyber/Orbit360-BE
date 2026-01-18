@@ -5,6 +5,7 @@ import sonarjs from 'eslint-plugin-sonarjs';
 import { defineConfig, globalIgnores } from 'eslint/config';
 import tseslint from 'typescript-eslint';
 import standardResponsePlugin from './eslint-rules/enforce-standard-response.cjs';
+import eslintConfigPrettier from 'eslint-config-prettier/flat';
 
 export default defineConfig(
   globalIgnores(['dist/']),
@@ -26,9 +27,10 @@ export default defineConfig(
       },
     },
     rules: {
-      'prettier/prettier': ['error', { endOfLine: 'auto' }],
+      'prettier/prettier': ['error', { endOfLine: 'lf' }],
       'custom/enforce-standard-response': 'error',
       '@typescript-eslint/no-explicit-any': 'off',
     },
   },
+  eslintConfigPrettier,
 );

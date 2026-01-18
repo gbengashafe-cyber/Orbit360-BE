@@ -1,13 +1,7 @@
-import { DataTypes, Model } from 'sequelize';
+import { DataTypes, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import { db } from '../../db';
 
-export interface JobRoleAttributes {
-  id?: number;
-  title: string;
-  description?: string;
-}
-
-export class JobRole extends Model<JobRoleAttributes> implements JobRoleAttributes {
+export class JobRole extends Model<InferAttributes<JobRole>, InferCreationAttributes<JobRole>> {
   public id!: number;
   public title!: string;
   public description!: string;

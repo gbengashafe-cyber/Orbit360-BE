@@ -1,5 +1,6 @@
 import { DataTypes, Model } from 'sequelize';
 import { db } from '../db';
+import { JobApplication } from './job-application.model';
 
 export interface JobPostingAttributes {
   id?: number;
@@ -109,3 +110,6 @@ JobPosting.init(
     tableName: 'job_postings',
   },
 );
+
+JobPosting.hasMany(JobApplication, { foreignKey: 'job_posting_id', as: 'applications' });
+JobApplication.belongsTo(JobPosting, { foreignKey: 'job_posting_id', as: 'jobPosting' });

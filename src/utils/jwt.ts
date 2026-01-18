@@ -3,8 +3,8 @@ import { env } from '../config/env';
 import { logger } from './logger';
 
 export interface TokenPayload {
-  userId: number;
-  email: string;
+  id: number;
+  sub: string;
   role: string;
   iat?: number;
   exp?: number;

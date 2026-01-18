@@ -17,6 +17,7 @@ const employeeSchema = z.object({
   phone: z.string().min(1, 'Phone number is required').max(20, 'Phone number cannot exceed 20 characters'),
   hireDate: z.iso.date('Invalid hire date format'),
   departmentName: z.string().min(1, 'Department ID is required'),
+  jobRole: z.string().min(1, 'Job role is required'),
   supervisorId: z.string().nullable().optional(),
   position: z.string().min(1, 'Position ID is required'),
   dob: z.iso.date('Invalid dob date provided'),

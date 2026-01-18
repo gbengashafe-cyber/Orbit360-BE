@@ -44,13 +44,7 @@ export class JobPostingController {
         include: [
           {
             association: 'applications',
-            attributes: [
-              'id',
-              'applicant_name',
-              'applicant_email',
-              'status',
-              'applied_date',
-            ],
+            attributes: ['id', 'applicant_name', 'applicant_email', 'status', 'applied_date'],
           },
         ],
       });
@@ -107,16 +101,8 @@ export class JobPostingController {
   static async update(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const {
-        title,
-        description,
-        department,
-        location,
-        employment_type,
-        salary_range_min,
-        salary_range_max,
-        requirements,
-      } = req.body;
+      const { title, description, department, location, employment_type, salary_range_min, salary_range_max, requirements } =
+        req.body;
 
       const posting = await JobPosting.findByPk(id);
       if (!posting) {
