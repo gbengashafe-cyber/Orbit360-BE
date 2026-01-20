@@ -127,7 +127,10 @@
 *Requires: Authentication*
 
 ```json
- f
+  {
+    "employeeId": 1,
+    "startDate": "2024-02-15",
+    "endDate": "2024-02-20",
   "type": "vacation",
   "reason": "Family vacation"
 }
@@ -141,6 +144,136 @@
 - `personal`
 - `maternity`
 - `paternity`
+
+---
+
+## 8a. Employees - Get Employee Information (with Leave Balance)
+**GET** `/api/v1/employees/{id}`
+*Requires: Authentication*
+
+### Response Example:
+```json
+{
+  "data": {
+    "id": 1,
+    "employeeId": "EMP001",
+    "firstName": "Zebedee",
+    "lastName": "Zoe",
+    "email": "zebedee.zoe@example.com",
+    "phone": "+1234567890",
+    "dob": "1990-05-20",
+    "gender": "M",
+    "nationality": "Nigerian",
+    "address": "123 Main Street, Lagos, NG",
+    "hireDate": "2023-01-15",
+    "departmentName": "General",
+    "jobRole": "Manager",
+    "status": "active",
+    "annualLeaveAllowance": 21,
+    "leaveEntitlement": 21,
+    "supervisorId": null,
+    "supervisor_name": "N/A"
+  },
+  "message": "Employee fetched successfully"
+}
+```
+
+### Usage in Leave Request Form:
+This endpoint is called to pre-populate employee information in the leave request form:
+- **Full Name:** `{firstName} {lastName}`
+- **Employee ID:** `{employeeId}`
+- **Department:** `{departmentName}`
+- **Supervisor:** `{supervisor_name}`
+- **Leave Entitlement:** `{leaveEntitlement}` (used to calculate balance)
+
+---
+
+## 8b. Leaves - Get Employee Leave Balance
+**GET** `/api/v1/leaves/balance/{employeeId}`
+*Requires: Authentication*
+
+### Query Parameters:
+- `year` (optional): Specific year to fetch balance. Defaults to current year.
+
+### Response Example:
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "employeeId": 1,
+      "leaveType": "vacation",
+      "allocated": 21,
+      "used": 0,
+      "remaining": 21,
+      "year": 2024
+    },
+    {
+      "id": 2,
+      "employeeId": 1,
+      "leaveType": "sick",
+      "allocated": 10,
+      "used": 2,
+      "remaining": 8,
+      "year": 2024
+    }
+  ],
+  "message": "Leave balance fetched successfully"
+}
+```
+
+### Usage in Leave Request Form:
+This endpoint provides the breakdown of leave balances by type:
+- **Total Annual Leave Balance:** Sum of `remaining` for `leaveType: 'vacation'`
+- **Display:** "Your current annual leave balance is {remaining} days"
+- **Validation:** Prevent leave request if `requested_days > remaining`
+
+---
+
+## 8c. Employees - Get All Employees (for Supervisor/Backup Selection)
+**GET** `/api/v1/employees?page=1&rows=100`
+*Requires: Authentication*
+
+### Response Example:
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "firstName": "Zebedee",
+      "lastName": "Zoe",
+      "employeeId": "EMP001",
+      "email": "zebedee.zoe@example.com",
+      "departmentName": "General",
+      "jobRole": "Manager",
+      "status": "active"
+    },
+    {
+      "id": 2,
+      "firstName": "Jane",
+      "lastName": "Smith",
+      "employeeId": "EMP002",
+      "email": "jane.smith@example.com",
+      "departmentName": "Engineering",
+      "jobRole": "Developer",
+      "status": "active"
+    }
+  ],
+  "pagination": {
+    "total": 2,
+    "page": 1,
+    "rows": 100,
+    "pages": 1
+  },
+  "message": "Employees fetched successfully"
+}
+```
+
+### Usage in Leave Request Form:
+This endpoint is used to populate dropdown lists:
+- **Approving Supervisor Dropdown:** List all employees with `{firstName} {lastName} - {jobRole}`
+- **Backup/Reliever Dropdown:** List all employees with `{firstName} {lastName} - {departmentName}`
+- **Filter:** Only show `active` status employees
 
 ---
 
