@@ -42,11 +42,10 @@ _Requires: Authentication + MANAGE_EMPLOYEES permission + HR department_
   "firstName": "Jane",
   "lastName": "Smith",
   "email": "jane.smith@example.com",
-  "employeeId": "EMP001",
+  "employeeId": "EMP002",
   "phone": "+1234567890",
   "hireDate": "2024-01-15",
   "departmentName": "Engineering",
-  "supervisorId": null,
   "position": "Senior Developer",
   "dob": "1990-05-20",
   "gender": "F",
@@ -74,34 +73,7 @@ _Requires: Authentication + MANAGE_EMPLOYEES permission + HR department_
 
 ---
 
-## 4. Departments - Create Department
-
-**POST** `/api/v1/departments`
-
-```json
-{
-  "name": "Engineering",
-  "description": "Software and Systems Engineering Department",
-  "companyId": 1
-}
-```
-
----
-
-## 5. Positions - Create Position
-
-**POST** `/api/v1/positions`
-
-```json
-{
-  "title": "Senior Software Engineer",
-  "description": "Lead software development initiatives and mentor junior developers"
-}
-```
-
----
-
-## 6. Companies - Create Company
+## 4. Companies - Create Company
 
 **POST** `/api/v1/companies`
 _Requires: Authentication + ADMIN permission_
@@ -115,7 +87,49 @@ _Requires: Authentication + ADMIN permission_
 
 ---
 
-## 7. Leaves - Create Leave
+## 5. Departments - Create Department
+
+**POST** `/api/v1/departments`
+_Requires: Valid companyId_
+
+```json
+{
+  "name": "Engineering",
+  "description": "Software and Systems Engineering Department",
+  "companyId": 1
+}
+```
+
+---
+
+## 6. Job Roles - Create Job Role
+
+**POST** `/api/v1/job-roles`
+_Requires: Authentication_
+
+```json
+{
+  "title": "Senior Developer",
+  "description": "Senior software developer position"
+}
+```
+
+---
+
+## 7. Positions - Create Position
+
+**POST** `/api/v1/positions`
+
+```json
+{
+  "title": "Senior Software Engineer",
+  "description": "Lead software development initiatives and mentor junior developers"
+}
+```
+
+---
+
+## 8. Leaves - Create Leave
 
 **POST** `/api/v1/leaves`
 _Requires: Authentication_
@@ -123,12 +137,14 @@ _Requires: Authentication_
 ```json
 {
   "employeeId": 1,
-  "startDate": "2024-02-15T00:00:00Z",
-  "endDate": "2024-02-20T23:59:59Z",
+  "startDate": "2024-02-15",
+  "endDate": "2024-02-20",
   "type": "vacation",
   "reason": "Family vacation"
 }
 ```
+
+**Date Format:** `YYYY-MM-DD` (also accepts ISO 8601: `2024-02-15T00:00:00Z`)
 
 **Leave Type Options:**
 
@@ -140,7 +156,150 @@ _Requires: Authentication_
 
 ---
 
-## 8. Exits - Create Exit
+## 8a. Employees - Get Employee Information (with Leave Balance)
+
+**GET** `/api/v1/employees/{id}`
+_Requires: Authentication_
+
+### Response Example:
+
+```json
+{
+  "data": {
+    "id": 1,
+    "employeeId": "EMP001",
+    "firstName": "Zebedee",
+    "lastName": "Zoe",
+    "email": "zebedee.zoe@example.com",
+    "phone": "+1234567890",
+    "dob": "1990-05-20",
+    "gender": "M",
+    "nationality": "Nigerian",
+    "address": "123 Main Street, Lagos, NG",
+    "hireDate": "2023-01-15",
+    "departmentName": "General",
+    "jobRole": "Manager",
+    "status": "active",
+    "annualLeaveAllowance": 21,
+    "leaveEntitlement": 21,
+    "supervisorId": null,
+    "supervisor_name": "N/A"
+  },
+  "message": "Employee fetched successfully"
+}
+```
+
+### Usage in Leave Request Form:
+
+This endpoint is called to pre-populate employee information in the leave request form:
+
+- **Full Name:** `{firstName} {lastName}`
+- **Employee ID:** `{employeeId}`
+- **Department:** `{departmentName}`
+- **Supervisor:** `{supervisor_name}`
+- **Leave Entitlement:** `{leaveEntitlement}` (used to calculate balance)
+
+---
+
+## 8b. Leaves - Get Employee Leave Balance
+
+**GET** `/api/v1/leaves/balance/{employeeId}`
+_Requires: Authentication_
+
+### Query Parameters:
+
+- `year` (optional): Specific year to fetch balance. Defaults to current year.
+
+### Response Example:
+
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "employeeId": 1,
+      "leaveType": "vacation",
+      "allocated": 21,
+      "used": 0,
+      "remaining": 21,
+      "year": 2024
+    },
+    {
+      "id": 2,
+      "employeeId": 1,
+      "leaveType": "sick",
+      "allocated": 10,
+      "used": 2,
+      "remaining": 8,
+      "year": 2024
+    }
+  ],
+  "message": "Leave balance fetched successfully"
+}
+```
+
+### Usage in Leave Request Form:
+
+This endpoint provides the breakdown of leave balances by type:
+
+- **Total Annual Leave Balance:** Sum of `remaining` for `leaveType: 'vacation'`
+- **Display:** "Your current annual leave balance is {remaining} days"
+- **Validation:** Prevent leave request if `requested_days > remaining`
+
+---
+
+## 8c. Employees - Get All Employees (for Supervisor/Backup Selection)
+
+**GET** `/api/v1/employees?page=1&rows=100`
+_Requires: Authentication_
+
+### Response Example:
+
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "firstName": "Zebedee",
+      "lastName": "Zoe",
+      "employeeId": "EMP001",
+      "email": "zebedee.zoe@example.com",
+      "departmentName": "General",
+      "jobRole": "Manager",
+      "status": "active"
+    },
+    {
+      "id": 2,
+      "firstName": "Jane",
+      "lastName": "Smith",
+      "employeeId": "EMP002",
+      "email": "jane.smith@example.com",
+      "departmentName": "Engineering",
+      "jobRole": "Developer",
+      "status": "active"
+    }
+  ],
+  "pagination": {
+    "total": 2,
+    "page": 1,
+    "rows": 100,
+    "pages": 1
+  },
+  "message": "Employees fetched successfully"
+}
+```
+
+### Usage in Leave Request Form:
+
+This endpoint is used to populate dropdown lists:
+
+- **Approving Supervisor Dropdown:** List all employees with `{firstName} {lastName} - {jobRole}`
+- **Backup/Reliever Dropdown:** List all employees with `{firstName} {lastName} - {departmentName}`
+- **Filter:** Only show `active` status employees
+
+---
+
+## 9. Exits - Create Exit
 
 **POST** `/api/v1/exits`
 _Requires: Authentication_
@@ -149,7 +308,7 @@ _Requires: Authentication_
 {
   "employeeId": 1,
   "exitType": "resignation",
-  "exitDate": "2024-03-31T00:00:00Z",
+  "exitDate": "2024-03-31",
   "reason": "Personal reasons"
 }
 ```
@@ -163,24 +322,25 @@ _Requires: Authentication_
 
 ---
 
-## 9. Onboarding - Create Onboarding
+## 10. Onboarding - Create Onboarding
 
 **POST** `/api/v1/onboardings`
 _Requires: Authentication + MANAGE_ONBOARDING permission + HR department_
 
 ```json
 {
-  "employeeId": 1,
+  "employeeId": 3,
   "documentType": "Contract",
   "documentName": "Employment Agreement",
-  "documentUrl": "https://example.com/documents/contract.pdf",
-  "notes": "Standard employment contract"
+  "documentUrl": "https://example.com/documents/contract.pdf"
 }
 ```
 
+**Note:** `employeeId` must be the numeric `id` from the employee, NOT the string `employeeId` (e.g., use `3` not `"EMP002"`)
+
 ---
 
-## 10. Payroll - Generate Payroll
+## 11. Payroll - Generate Payroll
 
 **POST** `/api/v1/payrolls`
 _Requires: Authentication + MANAGE_PAYROLL permission + HR department_
@@ -198,7 +358,7 @@ _Requires: Authentication + MANAGE_PAYROLL permission + HR department_
 
 ---
 
-## 11. Deductions - Create Deduction
+## 12. Deductions - Create Deduction
 
 **POST** `/api/v1/deductions`
 _Requires: Authentication + MANAGE_PAYROLL permission + HR department_
@@ -216,7 +376,7 @@ _Requires: Authentication + MANAGE_PAYROLL permission + HR department_
 
 ---
 
-## 12. Loans - Create Loan
+## 13. Loans - Create Loan
 
 **POST** `/api/v1/loans`
 _Requires: Authentication + MANAGE_LOANS permission + HR department_
@@ -242,7 +402,7 @@ _Requires: Authentication + MANAGE_LOANS permission + HR department_
 
 ---
 
-## 13. Complaints - Create Complaint
+## 14. Complaints - Create Complaint
 
 **POST** `/api/v1/complaints`
 
@@ -275,7 +435,7 @@ _Requires: Authentication + MANAGE_LOANS permission + HR department_
 
 ---
 
-## 14. Performance - Create Goal
+## 15. Performance - Create Goal
 
 **POST** `/api/v1/performance/goals`
 
@@ -295,7 +455,7 @@ _Requires: Authentication + MANAGE_LOANS permission + HR department_
 
 ---
 
-## 15. Performance - Create Appraisal Cycle
+## 16. Performance - Create Appraisal Cycle
 
 **POST** `/api/v1/performance/cycles`
 
@@ -315,7 +475,7 @@ _Requires: Authentication + MANAGE_LOANS permission + HR department_
 
 ---
 
-## 16. Performance - Submit Appraisal
+## 17. Performance - Submit Appraisal
 
 **POST** `/api/v1/performance/appraisals`
 
@@ -332,7 +492,7 @@ _Requires: Authentication + MANAGE_LOANS permission + HR department_
 
 ---
 
-## 17. Recruitment - Create Job Posting
+## 18. Recruitment - Create Job Posting
 
 **POST** `/api/v1/recruitment/postings`
 
@@ -359,7 +519,7 @@ _Requires: Authentication + MANAGE_LOANS permission + HR department_
 
 ---
 
-## 18. Recruitment - Submit Job Application
+## 19. Recruitment - Submit Job Application
 
 **POST** `/api/v1/recruitment/applications`
 
@@ -382,18 +542,20 @@ Create endpoints in this order:
 
 1. ✓ Create Company
 2. ✓ Create Department
-3. ✓ Create Position
-4. ✓ Create User
-5. ✓ Create Employee
-6. ✓ Create Leave Request
-7. ✓ Create Exit Record
-8. ✓ Create Onboarding Document
-9. ✓ Create Loan
-10. ✓ Create Deduction
-11. ✓ Generate Payroll
-12. ✓ Create Complaint
-13. ✓ Create Performance Goal
-14. ✓ Create Appraisal Cycle
-15. ✓ Submit Appraisal
-16. ✓ Create Job Posting
-17. ✓ Submit Job Application
+3. ✓ Create Job Role
+4. ✓ Create Position
+5. ✓ Create User
+6. ✓ Create Employee
+7. ✓ Create Leave Request
+8. ✓ Create Exit Record
+9. ✓ Create Onboarding Document
+10. ✓ Create Loan
+11. ✓ Create Deduction
+12. ✓ Generate Payroll
+13. ✓ Create Complaint
+14. ✓ Create Performance Goal
+15. ✓ Create Appraisal Cycle
+16. ✓ Submit Appraisal
+17. ✓ Create Job Posting
+18. ✓ Approve Job Posting (for Managing Directors)
+19. ✓ Submit Job Application
