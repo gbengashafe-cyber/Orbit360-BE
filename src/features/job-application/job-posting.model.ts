@@ -1,6 +1,6 @@
 import { DataTypes, Model } from 'sequelize';
-import { db } from '../db';
 import { JobApplication } from './job-application.model';
+import { db } from '../../db';
 
 export interface JobPostingAttributes {
   id?: number;

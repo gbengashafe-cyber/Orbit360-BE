@@ -3,6 +3,7 @@ import { ApiError } from '../../utils/api-error';
 import { ApiResponse } from '../../utils/api-response';
 import { logger } from '../../utils/logger';
 import { Department } from './department.model';
+import { DepartmentRepository } from './department.repository';
 
 export class DepartmentController {
   static async getAll(req: Request, res: Response, next: NextFunction) {
@@ -17,15 +18,18 @@ export class DepartmentController {
         include: [{ association: 'company', attributes: ['id', 'name', 'description'] }],
       });
 
-      res.json({
-        data: departments,
-        pagination: {
-          total: count,
-          page,
-          rows,
-          pages: Math.ceil(count / rows),
-        },
-      });
+      res.json(
+        ApiResponse({
+          data: departments,
+          message: '',
+          pagination: {
+            total: count,
+            page,
+            rows,
+            pages: Math.ceil(count / rows),
+          },
+        }),
+      );
     } catch (error) {
       logger.error(`Error fetching departments: ${error}`);
       next(error);
@@ -43,7 +47,7 @@ export class DepartmentController {
         throw ApiError.notFound('Department not found');
       }
 
-      res.json({ data: department });
+      res.json(ApiResponse({ data: department, message: '' }));
     } catch (error) {
       logger.error(`Error fetching department: ${error}`);
       next(error);

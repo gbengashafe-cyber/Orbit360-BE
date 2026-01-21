@@ -18,7 +18,16 @@ const enforceStandardResponse = createRule({
     const checker = services.program.getTypeChecker();
 
     return {
-      'CallExpression[callee.property.name="json"]'(node) {
+      'CallExpression[callee.type="MemberExpression"][callee.property.name="json"]'(node) {
+        const callee = node.callee;
+        const tsObjectNode = services.esTreeNodeToTSNodeMap.get(callee.object);
+        const objectType = checker.getTypeAtLocation(tsObjectNode);
+
+        const typeSymbol = objectType.getSymbol() || objectType.aliasSymbol;
+        const isExpressResponse = typeSymbol?.getName() === 'Response' || checker.typeToString(objectType).includes('Response');
+
+        if (!isExpressResponse) return;
+
         const responseArg = node.arguments[0];
         if (!responseArg) return;
 

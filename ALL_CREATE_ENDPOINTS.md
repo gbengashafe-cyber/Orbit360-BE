@@ -3,6 +3,7 @@
 ---
 
 ## 1. Authentication - Google Callback
+
 **POST** `/api/auth/google/callback`
 
 ```json
@@ -15,8 +16,9 @@
 ---
 
 ## 2. Users - Create User
+
 **POST** `/api/v1/users`
-*Requires: Authentication + ADMIN permission*
+_Requires: Authentication + ADMIN permission_
 
 ```json
 {
@@ -31,8 +33,9 @@
 ---
 
 ## 3. Employees - Create Employee
+
 **POST** `/api/v1/employees`
-*Requires: Authentication + MANAGE_EMPLOYEES permission + HR department*
+_Requires: Authentication + MANAGE_EMPLOYEES permission + HR department_
 
 ```json
 {
@@ -58,7 +61,7 @@
   "annualHousingAllowance": 24000,
   "annualTransportAllowance": 12000,
   "annualLeaveAllowance": 6000,
-  "otherAllowance": 5000,
+  "annualOtherAllowances": 5000,
   "beneficiaryName": "John Smith",
   "beneficiaryRelationship": "Brother",
   "beneficiaryPhone": "+9876543210",
@@ -72,6 +75,7 @@
 ---
 
 ## 4. Departments - Create Department
+
 **POST** `/api/v1/departments`
 
 ```json
@@ -85,6 +89,7 @@
 ---
 
 ## 5. Positions - Create Position
+
 **POST** `/api/v1/positions`
 
 ```json
@@ -97,8 +102,9 @@
 ---
 
 ## 6. Companies - Create Company
+
 **POST** `/api/v1/companies`
-*Requires: Authentication + ADMIN permission*
+_Requires: Authentication + ADMIN permission_
 
 ```json
 {
@@ -110,8 +116,9 @@
 ---
 
 ## 7. Leaves - Create Leave
+
 **POST** `/api/v1/leaves`
-*Requires: Authentication*
+_Requires: Authentication_
 
 ```json
 {
@@ -124,6 +131,7 @@
 ```
 
 **Leave Type Options:**
+
 - `sick`
 - `vacation`
 - `personal`
@@ -133,8 +141,9 @@
 ---
 
 ## 8. Exits - Create Exit
+
 **POST** `/api/v1/exits`
-*Requires: Authentication*
+_Requires: Authentication_
 
 ```json
 {
@@ -146,6 +155,7 @@
 ```
 
 **Exit Type Options:**
+
 - `resignation`
 - `termination`
 - `retirement`
@@ -154,8 +164,9 @@
 ---
 
 ## 9. Onboarding - Create Onboarding
+
 **POST** `/api/v1/onboardings`
-*Requires: Authentication + MANAGE_ONBOARDING permission + HR department*
+_Requires: Authentication + MANAGE_ONBOARDING permission + HR department_
 
 ```json
 {
@@ -170,8 +181,9 @@
 ---
 
 ## 10. Payroll - Generate Payroll
+
 **POST** `/api/v1/payrolls`
-*Requires: Authentication + MANAGE_PAYROLL permission + HR department*
+_Requires: Authentication + MANAGE_PAYROLL permission + HR department_
 
 ```json
 {
@@ -187,8 +199,9 @@
 ---
 
 ## 11. Deductions - Create Deduction
+
 **POST** `/api/v1/deductions`
-*Requires: Authentication + MANAGE_PAYROLL permission + HR department*
+_Requires: Authentication + MANAGE_PAYROLL permission + HR department_
 
 ```json
 {
@@ -204,8 +217,9 @@
 ---
 
 ## 12. Loans - Create Loan
+
 **POST** `/api/v1/loans`
-*Requires: Authentication + MANAGE_LOAN permission + HR department*
+_Requires: Authentication + MANAGE_LOANS permission + HR department_
 
 ```json
 {
@@ -220,6 +234,7 @@
 ```
 
 **Loan Type Options:**
+
 - `PERSONAL`
 - `VEHICLE`
 - `HOUSING`
@@ -228,6 +243,7 @@
 ---
 
 ## 13. Complaints - Create Complaint
+
 **POST** `/api/v1/complaints`
 
 ```json
@@ -242,6 +258,7 @@
 ```
 
 **Complaint Type Options:**
+
 - `harassment`
 - `discrimination`
 - `safety`
@@ -250,6 +267,7 @@
 - `other`
 
 **Severity Options:**
+
 - `low`
 - `medium`
 - `high`
@@ -258,6 +276,7 @@
 ---
 
 ## 14. Performance - Create Goal
+
 **POST** `/api/v1/performance/goals`
 
 ```json
@@ -277,6 +296,7 @@
 ---
 
 ## 15. Performance - Create Appraisal Cycle
+
 **POST** `/api/v1/performance/cycles`
 
 ```json
@@ -296,6 +316,7 @@
 ---
 
 ## 16. Performance - Submit Appraisal
+
 **POST** `/api/v1/performance/appraisals`
 
 ```json
@@ -312,6 +333,7 @@
 ---
 
 ## 17. Recruitment - Create Job Posting
+
 **POST** `/api/v1/recruitment/postings`
 
 ```json
@@ -329,6 +351,7 @@
 ```
 
 **Employment Type Options:**
+
 - `full_time`
 - `part_time`
 - `contract`
@@ -337,6 +360,7 @@
 ---
 
 ## 18. Recruitment - Submit Job Application
+
 **POST** `/api/v1/recruitment/applications`
 
 ```json
@@ -355,8 +379,9 @@
 ## Testing Checklist
 
 Create endpoints in this order:
+
 1. ✓ Create Company
-2. ✓ Create Department  
+2. ✓ Create Department
 3. ✓ Create Position
 4. ✓ Create User
 5. ✓ Create Employee

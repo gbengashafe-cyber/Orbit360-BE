@@ -4,7 +4,10 @@ import { JobRole } from './job-role.model';
 
 class JobRoleRepository {
   static readonly getJobRolePermissions = async (jobRoleName: string) => {
-    return JobRolePermissions.findAll({ where: { jobRole: jobRoleName }, attributes: ['permission'] });
+    const result = await JobRolePermissions.findAll({ where: { jobRole: jobRoleName }, attributes: ['permission'] });
+
+    const permissions = result.flatMap((_result) => _result.permission);
+    return permissions;
   };
 
   static readonly create = (position: InferCreationAttributes<JobRole>) => {
@@ -12,7 +15,7 @@ class JobRoleRepository {
   };
 
   static readonly read = async ({ page, rows, query }) => {
-    const whereCondition = query ? { name: { [Op.substring]: query } } : {};
+    const whereCondition = query ? { title: { [Op.substring]: query } } : {};
 
     return JobRole.findAndCountAll({ where: whereCondition, limit: rows, offset: (page - 1) * rows });
   };

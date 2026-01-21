@@ -1,7 +1,5 @@
 import 'express';
 import { ParsedQs } from 'qs';
-import { InferAttributes } from 'sequelize';
-import { JobRolePermissions } from '../features/permissions/permission.model';
 
 declare module 'express-serve-static-core' {
   interface Request {
@@ -13,7 +11,7 @@ declare module 'express-serve-static-core' {
       jobRole: string;
       role: string;
       department: string;
-      permissions: InferAttributes<JobRolePermissions>[];
+      permissions: string[];
     };
     pagination: { page: number; rows: number };
     parsedQuery: ParsedQs;
