@@ -5,7 +5,7 @@ import { logger } from '../utils/logger';
 
 async function seed() {
   try {
-    await db.sync({ alter: true });
+    await JobRolePermissions.destroy({ where: { jobRole: 'HR_OPERATIONS' } });
 
     // Create job roles first
     await JobRole.bulkCreate(
@@ -18,13 +18,18 @@ async function seed() {
     );
 
     // Create permissions
-    await Permission.bulkCreate([{ name: 'MANAGE_EMPLOYEES' }, { name: 'MANAGE_ONBOARDING' }], { ignoreDuplicates: true });
+    await Permission.bulkCreate(
+      [{ name: 'MANAGE_EMPLOYEES' }, { name: 'MANAGE_ONBOARDING' }, { name: 'MANAGE_LOANS' }, { name: 'MANAGE_USERS' }],
+      { ignoreDuplicates: true },
+    );
 
     // Create role-permission mappings
     await JobRolePermissions.bulkCreate(
       [
         { permission: 'MANAGE_EMPLOYEES', jobRole: 'HR_OPERATIONS' },
         { permission: 'MANAGE_ONBOARDING', jobRole: 'HR_OPERATIONS' },
+        { permission: 'MANAGE_LOANS', jobRole: 'HR_OPERATIONS' },
+        { permission: 'MANAGE_USERS', jobRole: 'HR_OPERATIONS' },
       ],
       { ignoreDuplicates: true },
     );

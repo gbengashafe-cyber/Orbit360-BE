@@ -6,6 +6,7 @@ const hasRequiredPermission = (requiredPermission: string) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     logger.debug(`Checking required permission: RequestId: ${req.requestId}: Required Permission: ${requiredPermission}`);
     logger.debug(`Checking required permission: RequestId: ${req.requestId}: User job role: ${req.user?.jobRole}`);
+
     if (!req.user?.jobRole) {
       throw ApiError.forbidden('Missing/incomplete authorization header. You are not authorized to perform this action.');
     }
@@ -20,7 +21,7 @@ const hasRequiredPermission = (requiredPermission: string) => {
 
     const userHasRequiredPermission =
       req.user.role === 'ADMIN' ||
-      userJobRolePermissions.find((_result) => _result.permission.toUpperCase() === requiredPermission.toUpperCase());
+      userJobRolePermissions.find((_result) => _result.toUpperCase() === requiredPermission.toUpperCase());
 
     if (!userHasRequiredPermission) {
       throw ApiError.forbidden('You are not authorized to perform this action');

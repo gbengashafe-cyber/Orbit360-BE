@@ -6,10 +6,10 @@ import { validateUser } from './user.validation';
 
 const router = Router();
 
-router.post('/', validateAuthToken, hasRequiredPermission('MANAGE_USER'), validateUser, UserController.create);
-router.put('/:id', validateAuthToken, hasRequiredPermission('MANAGE_USER'), validateUser, UserController.update);
-router.get('/', validateAuthToken, hasRequiredPermission('MANAGE_USER'), UserController.get);
-router.get('/job-roles', validateAuthToken, hasRequiredPermission('MANAGE_USER'), UserController.getJobRoles);
-router.get('/:id', validateAuthToken, hasRequiredPermission('MANAGE_USER'), UserController.getById);
+router.post('/', validateAuthToken, hasRequiredPermission('MANAGE_USERS'), validateUser, UserController.create);
+router.put('/:id', validateAuthToken, hasRequiredPermission('MANAGE_USERS'), validateUser, UserController.update);
+router.get('/', validateAuthToken, hasRequiredPermission('MANAGE_USERS'), UserController.get);
+router.get('/job-roles', validateAuthToken, hasRequiredPermission('MANAGE_USERS'), UserController.getJobRoles);
+router.get('/:id', validateAuthToken, hasRequiredPermission('MANAGE_USERS'), UserController.getById);
 
 export { router as userRoutes };

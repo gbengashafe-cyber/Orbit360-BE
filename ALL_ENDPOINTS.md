@@ -170,7 +170,7 @@
 
 ## Loans
 **Base URL:** `http://localhost:3000/api/v1/loans`
-*Requires: Authentication + MANAGE_LOAN permission + HR department*
+*Requires: Authentication + MANAGE_LOANS permission + HR department*
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|

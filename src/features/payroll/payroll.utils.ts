@@ -33,7 +33,7 @@ const calculatePAYE = ({ annualGross, annualPension, annualNhf }: PayeProps) => 
   const taxableIncome = calculateTaxableIncome(annualGross, annualPension, annualNhf);
 
   let annualTax = 0;
-  let taxBreakdown: TaxBreakDown = [];
+  const taxBreakdown: TaxBreakDown = [];
   let remainingIncome = taxableIncome;
 
   // Band 1: First ₦800,000 @ 0% (Tax-Free Threshold)
@@ -171,13 +171,14 @@ type CalculatePayroll = {
 };
 
 const calculatePayroll = ({ employee, activeLoans, payPeriod, pensionRate = 0.08 }: CalculatePayroll) => {
-  const { annualBasicSalary, annualHousingAllowance, annualTransportAllowance, annualLeaveAllowance, otherAllowance } = employee;
+  const { annualBasicSalary, annualHousingAllowance, annualTransportAllowance, annualLeaveAllowance, annualOtherAllowances } =
+    employee;
 
   const basicSalary = annualBasicSalary / 12;
   const housingAllowance = annualHousingAllowance / 12;
   const transportAllowance = annualTransportAllowance / 12;
   const leaveAllowance = annualLeaveAllowance / 12;
-  const otherMonthlyAllowances = otherAllowance / 12;
+  const otherMonthlyAllowances = annualOtherAllowances / 12;
 
   const monthlyGross = basicSalary + housingAllowance + transportAllowance + leaveAllowance + otherMonthlyAllowances;
   const annualGross = monthlyGross * 12;
@@ -238,7 +239,7 @@ const calculatePayroll = ({ employee, activeLoans, payPeriod, pensionRate = 0.08
       nhfDeduction: annualNhf / 12,
       loanDeduction,
     },
-    totalAllowances: housingAllowance + transportAllowance + leaveAllowance + otherAllowance + otherAllowance / 12,
+    totalAllowances: housingAllowance + transportAllowance + leaveAllowance + annualOtherAllowances / 12,
     netSalary,
     taxBreakdown,
     annualGross,

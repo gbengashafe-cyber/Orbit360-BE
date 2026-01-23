@@ -87,14 +87,18 @@ app.use(
   ),
 );
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(
+  express.json({
+    strict: false,
+    verify: (req: Request, res, buf) => {
+      if (buf.toString().trim() === 'null' || buf.toString().trim() === 'undefined') {
+        req.body = {};
+      }
+    },
+  }),
+);
 
-// handle case where request body is empty
-app.use((req: Request, res: Response, next: NextFunction) => {
-  req.body = req.body ?? {};
-  next();
-});
+app.use(express.urlencoded({ extended: true }));
 
 app.use(
   cors({
@@ -111,6 +115,12 @@ app.use(
     allowedHeaders: ['Content-Type', 'Authorization'],
   }),
 );
+
+// handle case where request body is empty
+app.use((req: Request, res: Response, next: NextFunction) => {
+  req.body = req.body ?? {};
+  next();
+});
 
 app.use((req: Request, res: Response, next: NextFunction) => {
   const { page, rows } = req.query;

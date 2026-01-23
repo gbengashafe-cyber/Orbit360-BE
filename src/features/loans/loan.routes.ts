@@ -6,19 +6,26 @@ import { validateLoan } from './loan.validators';
 
 const router = Router();
 
-router.get('/', validateAuthToken, isInAllowedDepartment(['HR']), hasRequiredPermission('MANAGE_LOAN'), LoanController.get);
+router.get('/', validateAuthToken, isInAllowedDepartment(['HR']), hasRequiredPermission('MANAGE_LOANS'), LoanController.get);
+router.get(
+  '/dashboard',
+  validateAuthToken,
+  isInAllowedDepartment(['HR']),
+  hasRequiredPermission('MANAGE_LOANS'),
+  LoanController.getDashboard,
+);
 router.get(
   '/:id',
   validateAuthToken,
   isInAllowedDepartment(['HR']),
-  hasRequiredPermission('MANAGE_LOAN'),
+  hasRequiredPermission('MANAGE_LOANS'),
   LoanController.getById,
 );
 router.post(
   '/',
   validateAuthToken,
   isInAllowedDepartment(['HR']),
-  hasRequiredPermission('MANAGE_LOAN'),
+  hasRequiredPermission('MANAGE_LOANS'),
   validateLoan,
   LoanController.create,
 );
@@ -26,7 +33,7 @@ router.put(
   '/:id',
   validateAuthToken,
   isInAllowedDepartment(['HR']),
-  hasRequiredPermission('MANAGE_LOAN'),
+  hasRequiredPermission('MANAGE_LOANS'),
   validateLoan,
   LoanController.update,
 );
@@ -34,7 +41,7 @@ router.delete(
   '/:id',
   validateAuthToken,
   isInAllowedDepartment(['HR']),
-  hasRequiredPermission('MANAGE_LOAN'),
+  hasRequiredPermission('MANAGE_LOANS'),
   LoanController.delete,
 );
 

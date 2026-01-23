@@ -5,7 +5,6 @@ import { JobRole } from '../job-role/job-role.model';
 class Permission extends Model<InferAttributes<Permission>, InferCreationAttributes<Permission>> {
   declare id: CreationOptional<number>;
   declare name: string;
-  declare description: CreationOptional<string>;
 }
 
 Permission.init(
@@ -20,10 +19,6 @@ Permission.init(
       allowNull: false,
       unique: 'name',
     },
-    description: {
-      type: DataTypes.STRING(),
-      allowNull: true,
-    },
   },
   {
     sequelize: db,
@@ -35,7 +30,7 @@ Permission.init(
 class JobRolePermissions extends Model<InferAttributes<JobRolePermissions>, InferCreationAttributes<JobRolePermissions>> {
   declare id: CreationOptional<number>;
   declare jobRole: ForeignKey<JobRole['title']>;
-  declare permission: ForeignKey<Permission['name']>;
+  declare permission: string;
 }
 
 JobRolePermissions.init(

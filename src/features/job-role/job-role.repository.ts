@@ -18,7 +18,7 @@ class JobRoleRepository {
   };
 
   static readonly read = async ({ page, rows, query }) => {
-    const whereCondition = query ? { name: { [Op.substring]: query } } : {};
+    const whereCondition = query ? { title: { [Op.substring]: query } } : {};
 
     return JobRole.findAndCountAll({ where: whereCondition, limit: rows, offset: (page - 1) * rows });
   };

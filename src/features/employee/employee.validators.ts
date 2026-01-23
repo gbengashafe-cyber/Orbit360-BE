@@ -1,13 +1,16 @@
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
-import { moneySchema, toCents } from '../../utils/money.utils';
+import { moneySchema } from '../../utils/money.utils';
 import { validateOrThrow } from '../../utils/zod-validation-utils';
 import { employeeStatus } from './employee.model';
+import { ApiError } from '../../utils/api-error';
 
 export const MONEY_PRECISION = {
   scale: 2,
   max: 9_999_999_999.99,
 };
+
+const emptyToNull = (val: unknown) => (val === '' ? null : val);
 
 const employeeSchema = z.object({
   firstName: z.string().min(1, 'First name is required').max(50, 'First name cannot exceed 50 characters'),
@@ -16,30 +19,29 @@ const employeeSchema = z.object({
   employeeId: z.string().min(1, 'Employee ID is required').max(10, 'Only 10 characters are allowed for employee ID'),
   phone: z.string().min(1, 'Phone number is required').max(20, 'Phone number cannot exceed 20 characters'),
   hireDate: z.iso.date('Invalid hire date format'),
-  departmentName: z.string().min(1, 'Department ID is required'),
+  departmentName: z.string().min(1, 'Employee department is required'),
   jobRole: z.string().min(1, 'Job role is required'),
-  supervisorId: z.string().nullable().optional(),
-  position: z.string().min(1, 'Position ID is required'),
+  supervisorId: z.preprocess(emptyToNull, z.string().min(1).nullable().optional()),
   dob: z.iso.date('Invalid dob date provided'),
   gender: z.enum(['M', 'F']),
   nationality: z.string().nullable().optional(),
   address: z.string().max(100, 'Address should not exceed 100 characters'),
-  bankName: z.string().max(50),
-  bankCode: z.string().max(30),
-  accountNumber: z.string().max(20),
-  accountName: z.string().max(100),
+  bankName: z.string().max(50).optional(),
+  bankCode: z.string().max(30).optional(),
+  accountNumber: z.string().max(20).optional(),
+  accountName: z.string().max(100).optional(),
   nhfApplicable: z.coerce.boolean(),
-  annualBasicSalary: moneySchema.transform((val) => toCents(val)),
-  annualHousingAllowance: moneySchema.transform((val) => toCents(val)),
-  annualTransportAllowance: moneySchema.transform((val) => toCents(val)),
-  annualLeaveAllowance: moneySchema.transform((val) => toCents(val)),
-  otherAllowance: moneySchema.transform((val) => toCents(val)),
+  annualBasicSalary: moneySchema,
+  annualHousingAllowance: moneySchema,
+  annualTransportAllowance: moneySchema,
+  annualLeaveAllowance: moneySchema,
+  annualOtherAllowances: moneySchema,
   beneficiaryName: z.string().nullable().nullable().optional(),
   beneficiaryRelationship: z.string().nullable().optional(),
   beneficiaryPhone: z.string().nullable().nullable().optional(),
-  nokName: z.string().nullable(),
-  nokRelationship: z.string().nullable(),
-  nokPhone: z.string().nullable(),
+  nokName: z.string().nullable().optional(),
+  nokRelationship: z.string().nullable().optional(),
+  nokPhone: z.string().nullable().optional(),
   leaveEntitlement: z.number().positive(),
 });
 
@@ -54,14 +56,11 @@ const validate = (schema: z.ZodObject<any>) => {
     const result = schema.safeParse(req.body);
     validateOrThrow(result, req.requestId);
 
-    // Map position to jobRole
-    const employeeData = {
-      ...result.data,
-      jobRole: result.data.position,
-    };
-    delete employeeData.position;
+    if (result?.data?.employeeId === result?.data?.supervisorId) {
+      throw ApiError.badRequest('Employee and supervisor cannot be the same');
+    }
 
-    req.body.validated = { employee: employeeData };
+    req.body.validated = { employee: result.data };
     next();
   };
 };

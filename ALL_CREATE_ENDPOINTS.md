@@ -3,6 +3,7 @@
 ---
 
 ## 1. Authentication - Google Callback
+
 **POST** `/api/auth/google/callback`
 
 ```json
@@ -15,8 +16,9 @@
 ---
 
 ## 2. Users - Create User
+
 **POST** `/api/v1/users`
-*Requires: Authentication + ADMIN permission*
+_Requires: Authentication + ADMIN permission_
 
 ```json
 {
@@ -31,8 +33,9 @@
 ---
 
 ## 3. Employees - Create Employee
+
 **POST** `/api/v1/employees`
-*Requires: Authentication + MANAGE_EMPLOYEES permission + HR department*
+_Requires: Authentication + MANAGE_EMPLOYEES permission + HR department_
 
 ```json
 {
@@ -57,7 +60,7 @@
   "annualHousingAllowance": 24000,
   "annualTransportAllowance": 12000,
   "annualLeaveAllowance": 6000,
-  "otherAllowance": 5000,
+  "annualOtherAllowances": 5000,
   "beneficiaryName": "John Smith",
   "beneficiaryRelationship": "Brother",
   "beneficiaryPhone": "+9876543210",
@@ -71,8 +74,9 @@
 ---
 
 ## 4. Companies - Create Company
+
 **POST** `/api/v1/companies`
-*Requires: Authentication + ADMIN permission*
+_Requires: Authentication + ADMIN permission_
 
 ```json
 {
@@ -84,8 +88,9 @@
 ---
 
 ## 5. Departments - Create Department
+
 **POST** `/api/v1/departments`
-*Requires: Valid companyId*
+_Requires: Valid companyId_
 
 ```json
 {
@@ -98,8 +103,9 @@
 ---
 
 ## 6. Job Roles - Create Job Role
+
 **POST** `/api/v1/job-roles`
-*Requires: Authentication*
+_Requires: Authentication_
 
 ```json
 {
@@ -111,6 +117,7 @@
 ---
 
 ## 7. Positions - Create Position
+
 **POST** `/api/v1/positions`
 
 ```json
@@ -123,14 +130,15 @@
 ---
 
 ## 8. Leaves - Create Leave
+
 **POST** `/api/v1/leaves`
-*Requires: Authentication*
+_Requires: Authentication_
 
 ```json
-  {
-    "employeeId": 1,
-    "startDate": "2024-02-15",
-    "endDate": "2024-02-20",
+{
+  "employeeId": 1,
+  "startDate": "2024-02-15",
+  "endDate": "2024-02-20",
   "type": "vacation",
   "reason": "Family vacation"
 }
@@ -139,6 +147,7 @@
 **Date Format:** `YYYY-MM-DD` (also accepts ISO 8601: `2024-02-15T00:00:00Z`)
 
 **Leave Type Options:**
+
 - `sick`
 - `vacation`
 - `personal`
@@ -148,10 +157,12 @@
 ---
 
 ## 8a. Employees - Get Employee Information (with Leave Balance)
+
 **GET** `/api/v1/employees/{id}`
-*Requires: Authentication*
+_Requires: Authentication_
 
 ### Response Example:
+
 ```json
 {
   "data": {
@@ -179,7 +190,9 @@
 ```
 
 ### Usage in Leave Request Form:
+
 This endpoint is called to pre-populate employee information in the leave request form:
+
 - **Full Name:** `{firstName} {lastName}`
 - **Employee ID:** `{employeeId}`
 - **Department:** `{departmentName}`
@@ -189,13 +202,16 @@ This endpoint is called to pre-populate employee information in the leave reques
 ---
 
 ## 8b. Leaves - Get Employee Leave Balance
+
 **GET** `/api/v1/leaves/balance/{employeeId}`
-*Requires: Authentication*
+_Requires: Authentication_
 
 ### Query Parameters:
+
 - `year` (optional): Specific year to fetch balance. Defaults to current year.
 
 ### Response Example:
+
 ```json
 {
   "data": [
@@ -223,7 +239,9 @@ This endpoint is called to pre-populate employee information in the leave reques
 ```
 
 ### Usage in Leave Request Form:
+
 This endpoint provides the breakdown of leave balances by type:
+
 - **Total Annual Leave Balance:** Sum of `remaining` for `leaveType: 'vacation'`
 - **Display:** "Your current annual leave balance is {remaining} days"
 - **Validation:** Prevent leave request if `requested_days > remaining`
@@ -231,10 +249,12 @@ This endpoint provides the breakdown of leave balances by type:
 ---
 
 ## 8c. Employees - Get All Employees (for Supervisor/Backup Selection)
+
 **GET** `/api/v1/employees?page=1&rows=100`
-*Requires: Authentication*
+_Requires: Authentication_
 
 ### Response Example:
+
 ```json
 {
   "data": [
@@ -270,7 +290,9 @@ This endpoint provides the breakdown of leave balances by type:
 ```
 
 ### Usage in Leave Request Form:
+
 This endpoint is used to populate dropdown lists:
+
 - **Approving Supervisor Dropdown:** List all employees with `{firstName} {lastName} - {jobRole}`
 - **Backup/Reliever Dropdown:** List all employees with `{firstName} {lastName} - {departmentName}`
 - **Filter:** Only show `active` status employees
@@ -278,8 +300,9 @@ This endpoint is used to populate dropdown lists:
 ---
 
 ## 9. Exits - Create Exit
+
 **POST** `/api/v1/exits`
-*Requires: Authentication*
+_Requires: Authentication_
 
 ```json
 {
@@ -291,6 +314,7 @@ This endpoint is used to populate dropdown lists:
 ```
 
 **Exit Type Options:**
+
 - `resignation`
 - `termination`
 - `retirement`
@@ -299,8 +323,9 @@ This endpoint is used to populate dropdown lists:
 ---
 
 ## 10. Onboarding - Create Onboarding
+
 **POST** `/api/v1/onboardings`
-*Requires: Authentication + MANAGE_ONBOARDING permission + HR department*
+_Requires: Authentication + MANAGE_ONBOARDING permission + HR department_
 
 ```json
 {
@@ -316,8 +341,9 @@ This endpoint is used to populate dropdown lists:
 ---
 
 ## 11. Payroll - Generate Payroll
+
 **POST** `/api/v1/payrolls`
-*Requires: Authentication + MANAGE_PAYROLL permission + HR department*
+_Requires: Authentication + MANAGE_PAYROLL permission + HR department_
 
 ```json
 {
@@ -333,8 +359,9 @@ This endpoint is used to populate dropdown lists:
 ---
 
 ## 12. Deductions - Create Deduction
+
 **POST** `/api/v1/deductions`
-*Requires: Authentication + MANAGE_PAYROLL permission + HR department*
+_Requires: Authentication + MANAGE_PAYROLL permission + HR department_
 
 ```json
 {
@@ -350,8 +377,9 @@ This endpoint is used to populate dropdown lists:
 ---
 
 ## 13. Loans - Create Loan
+
 **POST** `/api/v1/loans`
-*Requires: Authentication + MANAGE_LOAN permission + HR department*
+_Requires: Authentication + MANAGE_LOANS permission + HR department_
 
 ```json
 {
@@ -366,6 +394,7 @@ This endpoint is used to populate dropdown lists:
 ```
 
 **Loan Type Options:**
+
 - `PERSONAL`
 - `VEHICLE`
 - `HOUSING`
@@ -374,6 +403,7 @@ This endpoint is used to populate dropdown lists:
 ---
 
 ## 14. Complaints - Create Complaint
+
 **POST** `/api/v1/complaints`
 
 ```json
@@ -388,6 +418,7 @@ This endpoint is used to populate dropdown lists:
 ```
 
 **Complaint Type Options:**
+
 - `harassment`
 - `discrimination`
 - `safety`
@@ -396,6 +427,7 @@ This endpoint is used to populate dropdown lists:
 - `other`
 
 **Severity Options:**
+
 - `low`
 - `medium`
 - `high`
@@ -404,6 +436,7 @@ This endpoint is used to populate dropdown lists:
 ---
 
 ## 15. Performance - Create Goal
+
 **POST** `/api/v1/performance/goals`
 
 ```json
@@ -423,6 +456,7 @@ This endpoint is used to populate dropdown lists:
 ---
 
 ## 16. Performance - Create Appraisal Cycle
+
 **POST** `/api/v1/performance/cycles`
 
 ```json
@@ -442,6 +476,7 @@ This endpoint is used to populate dropdown lists:
 ---
 
 ## 17. Performance - Submit Appraisal
+
 **POST** `/api/v1/performance/appraisals`
 
 ```json
@@ -458,6 +493,7 @@ This endpoint is used to populate dropdown lists:
 ---
 
 ## 18. Recruitment - Create Job Posting
+
 **POST** `/api/v1/recruitment/postings`
 
 ```json
@@ -475,6 +511,7 @@ This endpoint is used to populate dropdown lists:
 ```
 
 **Employment Type Options:**
+
 - `full_time`
 - `part_time`
 - `contract`
@@ -483,6 +520,7 @@ This endpoint is used to populate dropdown lists:
 ---
 
 ## 19. Recruitment - Submit Job Application
+
 **POST** `/api/v1/recruitment/applications`
 
 ```json
@@ -501,8 +539,9 @@ This endpoint is used to populate dropdown lists:
 ## Testing Checklist
 
 Create endpoints in this order:
+
 1. ✓ Create Company
-2. ✓ Create Department  
+2. ✓ Create Department
 3. ✓ Create Job Role
 4. ✓ Create Position
 5. ✓ Create User

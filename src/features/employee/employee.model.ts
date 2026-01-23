@@ -24,13 +24,13 @@ export class Employee extends Model<InferAttributes<Employee>, InferCreationAttr
   declare status: (typeof employeeStatus)[number];
   declare terminationDate: CreationOptional<Date>;
   // Reporting Line
-  declare supervisorId: ForeignKey<Employee['employeeId']>;
+  declare supervisorId: CreationOptional<ForeignKey<Employee['employeeId']>>;
   // Compensation and benefit
   declare annualBasicSalary: number;
   declare annualHousingAllowance: number;
   declare annualTransportAllowance: number;
   declare annualLeaveAllowance: number;
-  declare otherAllowance: number;
+  declare annualOtherAllowances: number;
   // Bank Information
   declare bankName: string;
   declare bankCode: string;
@@ -106,11 +106,11 @@ Employee.init(
       type: DataTypes.DATE,
     },
     supervisorId: { type: DataTypes.STRING(10), references: { model: Employee, key: 'employee_id' }, allowNull: true },
-    annualBasicSalary: { type: DataTypes.DECIMAL(15, 2), allowNull: false },
-    annualHousingAllowance: { type: DataTypes.DECIMAL(15, 2), allowNull: false },
-    annualTransportAllowance: { type: DataTypes.DECIMAL(15, 2), allowNull: false },
-    annualLeaveAllowance: { type: DataTypes.DECIMAL(15, 2), allowNull: false },
-    otherAllowance: { type: DataTypes.DECIMAL(15, 2), allowNull: false },
+    annualBasicSalary: { type: DataTypes.DECIMAL(17, 2), allowNull: false },
+    annualHousingAllowance: { type: DataTypes.DECIMAL(17, 2), allowNull: false },
+    annualTransportAllowance: { type: DataTypes.DECIMAL(17, 2), allowNull: false },
+    annualLeaveAllowance: { type: DataTypes.DECIMAL(17, 2), allowNull: false },
+    annualOtherAllowances: { type: DataTypes.DECIMAL(17, 2), allowNull: false },
     bankName: {
       type: DataTypes.STRING(50),
       allowNull: false,
