@@ -56,7 +56,7 @@ const validate = (schema: z.ZodObject<any>) => {
     const result = schema.safeParse(req.body);
     validateOrThrow(result, req.requestId);
 
-    if (result?.data?.employeeId === result?.data?.supervisorId) {
+    if (result?.data?.employeeId && result?.data?.employeeId === result?.data?.supervisorId) {
       throw ApiError.badRequest('Employee and supervisor cannot be the same');
     }
 

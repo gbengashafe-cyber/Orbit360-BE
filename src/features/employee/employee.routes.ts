@@ -38,4 +38,13 @@ router.put(
   EmployeeController.update,
 );
 
+router.put(
+  '/:id/status',
+  validateAuthToken,
+  isInAllowedDepartment(['HR']),
+  hasRequiredPermission('MANAGE_EMPLOYEES'),
+  validateUpdateEmployee,
+  EmployeeController.update,
+);
+
 export default router;

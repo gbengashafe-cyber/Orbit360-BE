@@ -15,6 +15,10 @@ export class PayrollRepository {
     return Payroll.findOne({ where: { payPeriod } });
   };
 
+  static readonly readById = (id: string | number) => {
+    return Payroll.findByPk(id);
+  };
+
   static readonly read = ({ rows, page, filters, orderBy = 'createdAt', orderDirection = 'ASC' }: ReadAllProps) => {
     const offset = (page - 1) * rows;
 

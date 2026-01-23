@@ -16,7 +16,7 @@ const db = new Sequelize(DB_NAME, DB_USER, DB_PASSWORD, {
     collate: 'utf8mb4_general_ci',
   },
   dialectOptions: {
-    // collate: "utf8mb4_general_ci",
+    decimalNumbers: true,
   },
 
   logging: (msg) => (env.NODE_ENV === 'production' ? logger.debug(msg) : logger.info(msg)),

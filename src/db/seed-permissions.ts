@@ -9,6 +9,7 @@ async function seed() {
       { permission: 'MANAGE_EMPLOYEES', jobRole: 'HR_OPERATIONS' },
       { permission: 'MANAGE_LOANS', jobRole: 'HR_OPERATIONS' },
       { permission: 'MANAGE_USERS', jobRole: 'HR_OPERATIONS' },
+      { permission: 'MANAGE_PAYROLLS', jobRole: 'HR_OPERATIONS' },
     ]);
 
     logger.info('Database seeding completed successfully');

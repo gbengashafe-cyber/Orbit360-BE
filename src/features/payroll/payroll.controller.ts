@@ -52,13 +52,10 @@ export class PayrollController {
       const offset = (page - 1) * rows;
 
       const { count, rows: payrolls } = await Payroll.findAndCountAll({
-        where: { employeeId: employeeId },
+        where: { employeeId },
         limit: rows,
         offset,
-        order: [
-          ['year', 'DESC'],
-          ['month', 'DESC'],
-        ],
+        order: [['createdAt', 'DESC']],
       });
 
       res.json(
@@ -97,17 +94,19 @@ export class PayrollController {
     }
   }
 
-  static async getByPayPeriod(req: Request, res: Response, next: NextFunction) {
+  static async getByPayPeriod(req: Request, res: Response) {
     const { payPeriod } = req.params;
 
     const payroll = await Payroll.findAll({
       where: { payPeriod },
-      include: [{ model: Employee, as: 'employee', attributes: ['employeeId', 'firstName', 'lastName', 'email'] }],
+      include: [
+        {
+          model: Employee,
+          as: 'employee',
+          attributes: ['employeeId', 'firstName', 'lastName', 'email', 'departmentName', 'jobRole'],
+        },
+      ],
     });
-
-    if (!payroll.length) {
-      throw ApiError.notFound('Payroll record not found');
-    }
 
     res.json(ApiResponse({ data: payroll, message: 'Payroll record(s) fetched successfully' }));
   }
@@ -207,6 +206,23 @@ export class PayrollController {
       next(error);
     }
   }
+
+  static readonly updateStatus = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { payroll: payrollPayload } = req.body.validated;
+
+    const payroll = await PayrollRepository.readById(id);
+
+    if (!payroll) {
+      throw ApiError.notFound('Payroll record not found');
+    }
+
+    await payroll.update(payrollPayload);
+
+    const updatedPayroll = await PayrollRepository.readById(id);
+
+    res.json(ApiResponse({ data: updatedPayroll, message: 'Payroll updated successfully' }));
+  };
 
   static async update(req: Request, res: Response, next: NextFunction) {
     try {

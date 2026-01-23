@@ -19,6 +19,12 @@ export class Payroll extends Model<InferAttributes<Payroll>, InferCreationAttrib
   public loanDeduction: number;
   public payeDeduction: number;
   declare status: CreationOptional<(typeof payrollStatus)[number]>;
+  declare paymentDate: CreationOptional<Date>;
+
+  // Virtual Fields
+  declare totalDeductions: number;
+  declare totalAllowances: number;
+  declare netSalary: number;
 }
 
 Payroll.init(
@@ -88,6 +94,39 @@ Payroll.init(
       type: DataTypes.ENUM,
       values: payrollStatus,
       defaultValue: 'generated',
+    },
+    paymentDate: {
+      type: DataTypes.DATEONLY,
+    },
+
+    // VIRTUAL FIELDS
+    totalDeductions: {
+      type: DataTypes.VIRTUAL,
+      get() {
+        return (
+          (Number(this.pensionDeduction) || 0) +
+          (Number(this.payeDeduction) || 0) +
+          (Number(this.nhfDeduction) || 0) +
+          (Number(this.loanDeduction) || 0)
+        );
+      },
+    },
+    totalAllowances: {
+      type: DataTypes.VIRTUAL,
+      get() {
+        return (
+          (Number(this.housingAllowance) || 0) +
+          (Number(this.transportAllowance) || 0) +
+          (Number(this.leaveAllowance) || 0) +
+          (Number(this.otherAllowance) || 0)
+        );
+      },
+    },
+    netSalary: {
+      type: DataTypes.VIRTUAL,
+      get() {
+        return (Number(this.grossSalary) || 0) - Number(this.totalDeductions);
+      },
     },
   },
   {
