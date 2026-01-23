@@ -3,7 +3,7 @@ import { ApiError } from '../../utils/api-error';
 import { ApiResponse } from '../../utils/api-response';
 import { logger } from '../../utils/logger';
 import { Applicant } from './applicant.model';
-import { JobApplication } from './job-application.model';
+import { JobApplication } from '../job-application/job-application.model';
 import { JobPosting } from './job-posting.model';
 
 // ============ Job Posting Controller ============

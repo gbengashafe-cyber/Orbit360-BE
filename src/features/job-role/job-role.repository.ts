@@ -4,7 +4,13 @@ import { JobRole } from './job-role.model';
 
 class JobRoleRepository {
   static readonly getJobRolePermissions = async (jobRoleName: string) => {
-    return JobRolePermissions.findAll({ where: { jobRole: jobRoleName }, attributes: ['permission'] });
+    const results = await JobRolePermissions.findAll({
+      where: { jobRole: jobRoleName.toUpperCase() },
+      attributes: ['permission'],
+      raw: true,
+    });
+    console.log(`JobRolePermissions query for ${jobRoleName}:`, results);
+    return results;
   };
 
   static readonly create = (position: InferCreationAttributes<JobRole>) => {

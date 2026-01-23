@@ -47,35 +47,26 @@ JobRolePermissions.init(
     },
     jobRole: {
       type: DataTypes.STRING(100),
+      allowNull: false,
       unique: 'role_permission',
+      set(value: string) {
+        this.setDataValue('jobRole', value.toUpperCase());
+      },
     },
     permission: {
       type: DataTypes.STRING(50),
+      allowNull: false,
       unique: 'role_permission',
     },
   },
-  { sequelize: db, underscored: true },
+  { sequelize: db, underscored: true, tableName: 'job_role_permissions' },
 );
 
-Permission.belongsToMany(JobRole, {
-  through: JobRolePermissions,
-  sourceKey: 'name',
-  foreignKey: 'permission',
-  targetKey: 'title',
-  otherKey: 'job_role',
-});
-JobRole.belongsToMany(Permission, {
-  through: JobRolePermissions,
-  sourceKey: 'title',
-  foreignKey: 'job_role',
-  targetKey: 'name',
-  otherKey: 'permission',
-});
+// Define associations AFTER both models are initialized
+JobRolePermissions.belongsTo(Permission, { foreignKey: 'permission', targetKey: 'name', as: 'permissionObj' });
+Permission.hasMany(JobRolePermissions, { foreignKey: 'permission', sourceKey: 'name', as: 'rolePermissions' });
 
-JobRolePermissions.belongsTo(Permission, { foreignKey: 'permission', targetKey: 'name' });
-Permission.hasMany(JobRolePermissions, { foreignKey: 'permission', sourceKey: 'name' });
-
-JobRolePermissions.belongsTo(JobRole, { foreignKey: 'jobRole', targetKey: 'title' });
-JobRole.hasMany(JobRolePermissions, { foreignKey: 'jobRole', sourceKey: 'title' });
+JobRolePermissions.belongsTo(JobRole, { foreignKey: 'jobRole', targetKey: 'title', as: 'roleObj' });
+JobRole.hasMany(JobRolePermissions, { foreignKey: 'jobRole', sourceKey: 'title', as: 'permissions' });
 
 export { JobRolePermissions, Permission };

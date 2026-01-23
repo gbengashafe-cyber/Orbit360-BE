@@ -4,7 +4,7 @@ import { db } from '../../db';
 export interface JobApplicationAttributes {
   id?: number;
   job_posting_id: number;
-  applicant_id: number;
+  applicant_id?: number;
   applied_date: Date;
   status: 'applied' | 'under_review' | 'interview_scheduled' | 'interviewed' | 'offered' | 'hired' | 'rejected';
   interview_date?: Date;
@@ -49,7 +49,7 @@ JobApplication.init(
     },
     applicant_id: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
     },
     applied_date: {
       type: DataTypes.DATE,

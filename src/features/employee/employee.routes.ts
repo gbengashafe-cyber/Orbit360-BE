@@ -7,35 +7,9 @@ import { validateCreateEmployee, validateUpdateEmployee } from './employee.valid
 
 const router = Router();
 
-router.get(
-  '/',
-  validateAuthToken,
-  isInAllowedDepartment([config.get('departmentNames.HR')]),
-  hasRequiredPermission('MANAGE_EMPLOYEES'),
-  EmployeeController.getAll,
-);
-router.get(
-  '/:id',
-  validateAuthToken,
-  isInAllowedDepartment(['HR']),
-  hasRequiredPermission('MANAGE_EMPLOYEES'),
-  EmployeeController.getById,
-);
-router.post(
-  '/',
-  validateAuthToken,
-  isInAllowedDepartment(['HR']),
-  hasRequiredPermission('MANAGE_EMPLOYEES'),
-  validateCreateEmployee,
-  EmployeeController.create,
-);
-router.put(
-  '/:id',
-  validateAuthToken,
-  isInAllowedDepartment(['HR']),
-  hasRequiredPermission('MANAGE_EMPLOYEES'),
-  validateUpdateEmployee,
-  EmployeeController.update,
-);
+router.get('/', validateAuthToken, EmployeeController.getAll);
+router.get('/:id', validateAuthToken, EmployeeController.getById);
+router.post('/', validateAuthToken, validateCreateEmployee, EmployeeController.create);
+router.put('/:id', validateAuthToken, validateUpdateEmployee, EmployeeController.update);
 
 export default router;

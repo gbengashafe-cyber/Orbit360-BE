@@ -1,5 +1,5 @@
 import { DataTypes, Model } from 'sequelize';
-import { db } from '../db';
+import { db } from '../../db';
 import { JobApplication } from './job-application.model';
 
 export interface JobPostingAttributes {
