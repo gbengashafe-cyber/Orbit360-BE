@@ -9,8 +9,8 @@ class JobRoleRepository {
       attributes: ['permission'],
       raw: true,
     });
-    console.log(`JobRolePermissions query for ${jobRoleName}:`, results);
-    return results;
+    const permissions = results.flatMap((result) => result.permission);
+    return permissions;
   };
 
   static readonly create = (position: InferCreationAttributes<JobRole>) => {
