@@ -13,6 +13,8 @@ const hasRequiredPermission = (requiredPermission: string) => {
 
     const userJobRolePermissions = req.user.permissions;
 
+    logger.debug(`Permissions for user: ${JSON.stringify(userJobRolePermissions)}`);
+
     if (!userJobRolePermissions || !userJobRolePermissions.length) {
       throw ApiError.internalServerError(`No permission found for user job role. User job role: ${req.user.jobRole}`);
     }

@@ -13,26 +13,41 @@ async function seed() {
     await db.sync({ alter: true });
     logger.info('Database synced');
 
-    const companies = await Company.bulkCreate([{ name: 'MFB', description: 'Microfinance Bank', createdBy: '' }]);
+    const companies = await Company.bulkCreate([{ name: 'MFB', description: 'Microfinance Bank', createdBy: '' }], {
+      ignoreDuplicates: true,
+    });
 
     // Create Departments
-    const departments = await Department.bulkCreate([
-      { name: 'Engineering', description: 'Software Development', companyId: companies[0].id },
-      { name: 'Human Resources', description: 'HR Department', companyId: companies[0].id },
-      { name: 'Finance', description: 'Finance Department', companyId: companies[0].id },
-      { name: 'Sales', description: 'Sales Department', companyId: companies[0].id },
-    ]);
+    const departments = await Department.bulkCreate(
+      [
+        { name: 'Engineering', description: 'Software Development', companyId: companies[0].id },
+        { name: 'HR', description: 'HR Department', companyId: companies[0].id },
+        { name: 'Finance', description: 'Finance Department', companyId: companies[0].id },
+        { name: 'Sales', description: 'Sales Department', companyId: companies[0].id },
+      ],
+      { ignoreDuplicates: true },
+    );
     logger.info('Departments created');
 
     // Create Positions
-    const jobRoles = await JobRole.bulkCreate([
-      { title: 'senior_developer', description: 'Senior Software Developer' },
-      { title: 'junior_developer', description: 'Junior Software Developer' },
-      { title: 'hr_manager', description: 'HR Manager' },
-      { title: 'sales_manager', description: 'Sales Manager' },
-      { title: 'human_resources_manager', description: 'Sales Manager' },
-    ]);
+    const jobRoles = await JobRole.bulkCreate(
+      [
+        { title: 'SENIOR_DEVELOPER', description: 'Senior Software Developer' },
+        { title: 'JUNIOR_DEVELOPER', description: 'Junior Software Developer' },
+        { title: 'HR_MANAGER', description: 'HR Manager' },
+        { title: 'SALES_MANAGER', description: 'Sales Manager' },
+        { title: 'HUMAN_RESOURCES_MANAGER', description: 'Human Resources Manager' },
+        { title: 'HR_OPERATIONS', description: 'HR Operations Manager' },
+      ],
+      { ignoreDuplicates: true },
+    );
     logger.info('Positions created');
+
+    // Get existing departments and job roles
+    const existingDepts = await Department.findAll();
+    const existingRoles = await JobRole.findAll();
+    const depts = existingDepts.length > 0 ? existingDepts : departments;
+    const roles = existingRoles.length > 0 ? existingRoles : jobRoles;
 
     // Create Employees
     const employees = await Employee.bulkCreate([
@@ -71,36 +86,72 @@ async function seed() {
         nhfApplicable: false,
       },
       {
+        employeeId: '2',
         firstName: 'Jane',
         lastName: 'Smith',
         email: 'jane.smith@example.com',
         phone: '+1234567891',
         hireDate: new Date('2023-03-20'),
-        department: departments[0].name,
+        departmentName: departments[0].name,
         jobRole: jobRoles[1].title,
         status: 'active',
-        employeeId: '2',
         dob: new Date('1992-08-25'),
         address: '456 Elm St, Townsville',
         nationality: '',
         gender: 'M',
         supervisorId: '',
+        annualBasicSalary: 200000,
+        annualHousingAllowance: 200000,
+        annualLeaveAllowance: 200000,
+        annualTransportAllowance: 200000,
+        annualOtherAllowances: 200000,
+        bankName: 'MFB',
+        bankCode: '20001',
+        accountNumber: '200023124',
+        accountName: 'Jane Smith',
+        beneficiaryName: 'Alice Smith',
+        beneficiaryRelationship: 'daughter',
+        beneficiaryPhone: '',
+        nokName: 'Alice Smith',
+        nokRelationship: 'daughter',
+        nokAddress: 'Same as employee',
+        nokPhone: '',
+        leaveEntitlement: 22,
+        nhfApplicable: false,
       },
       {
+        employeeId: '3',
         firstName: 'Bob',
         lastName: 'Johnson',
         email: 'bob.johnson@example.com',
         phone: '+1234567892',
         hireDate: new Date('2022-06-10'),
-        department: departments[1].name,
+        departmentName: departments[1].name,
         jobRole: jobRoles[2].title,
         status: 'active',
-        employeeId: '3',
         dob: new Date('1988-11-12'),
         address: '789 Oak St, Villagetown',
         nationality: '',
         gender: 'M',
         supervisorId: '',
+        annualBasicSalary: 200000,
+        annualHousingAllowance: 200000,
+        annualLeaveAllowance: 200000,
+        annualTransportAllowance: 200000,
+        annualOtherAllowances: 200000,
+        bankName: 'MFB',
+        bankCode: '20001',
+        accountNumber: '200023125',
+        accountName: 'Bob Johnson',
+        beneficiaryName: 'Charlie Johnson',
+        beneficiaryRelationship: 'brother',
+        beneficiaryPhone: '',
+        nokName: 'Charlie Johnson',
+        nokRelationship: 'brother',
+        nokAddress: 'Same as employee',
+        nokPhone: '',
+        leaveEntitlement: 22,
+        nhfApplicable: false,
       },
     ]);
     logger.info('Employees created');
@@ -124,52 +175,77 @@ async function seed() {
     // ]);
     logger.info('Attendance records created');
 
+    // Get existing employees to avoid duplicates
+    const existingEmployees = await Employee.findAll();
+    const empList = existingEmployees.length > 0 ? existingEmployees : employees;
+
     // Create Leave Requests
-    await Leave.bulkCreate([
-      {
-        employeeId: employees[0].id,
-        startDate: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000),
-        endDate: new Date(new Date().getTime() + 10 * 24 * 60 * 60 * 1000),
-        type: 'vacation',
-        status: 'pending',
-        reason: 'Family vacation',
-      },
-    ]);
+    await Leave.bulkCreate(
+      [
+        {
+          employeeId: empList[0].id,
+          startDate: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000),
+          endDate: new Date(new Date().getTime() + 10 * 24 * 60 * 60 * 1000),
+          type: 'vacation',
+          status: 'pending',
+          reason: 'Family vacation',
+        },
+      ],
+      { ignoreDuplicates: true },
+    );
     logger.info('Leave requests created');
 
     // Create Payroll Records
-    await Payroll.bulkCreate([
-      {
-        employeeId: employees[0].id,
-        basicSalary: 75000,
-        allowances: 5000,
-        deductions: 3000,
-        netSalary: 77000,
-        status: 'processed',
-      },
-      {
-        employeeId: employees[1].id,
-        month: 1,
-        year: 2024,
-        baseSalary: 65000,
-        allowances: 4000,
-        deductions: 2500,
-        netSalary: 66500,
-        status: 'paid',
-      },
-    ]);
+    await Payroll.bulkCreate(
+      [
+        {
+          employeeId: empList[0].id,
+          payPeriod: '2026-01',
+          basicSalary: 75000,
+          grossSalary: 80000,
+          housingAllowance: 5000,
+          transportAllowance: 3000,
+          leaveAllowance: 2000,
+          otherAllowance: 1000,
+          pensionDeduction: 0,
+          nhfDeduction: 0,
+          loanDeduction: 0,
+          payeDeduction: 3000,
+          status: 'processed',
+        },
+        {
+          employeeId: empList[1].id,
+          payPeriod: '2026-01',
+          basicSalary: 65000,
+          grossSalary: 70000,
+          housingAllowance: 4000,
+          transportAllowance: 2500,
+          leaveAllowance: 1500,
+          otherAllowance: 800,
+          pensionDeduction: 0,
+          nhfDeduction: 0,
+          loanDeduction: 0,
+          payeDeduction: 2500,
+          status: 'paid',
+        },
+      ],
+      { ignoreDuplicates: true },
+    );
     logger.info('Payroll records created');
 
-    await User.bulkCreate([
-      {
-        firstName: 'oluwaseun',
-        lastName: 'ABIOLA',
-        email: 'o@o.com',
-        department: departments[0].name,
-        password: '',
-        jobRole: jobRoles[0].title,
-      },
-    ]);
+    await User.bulkCreate(
+      [
+        {
+          firstName: 'oluwaseun',
+          lastName: 'ABIOLA',
+          email: 'o@o.com',
+          department: departments[1].name,
+          password: '$2b$08$KSiN0urPrsj.4euw2e7mxe.Q00iqohbKsYcY2o3Xu3RaSjEFWwY6e',
+          jobRole: 'HR_OPERATIONS',
+        },
+      ],
+      { ignoreDuplicates: true },
+    );
 
     logger.info('Database seeding completed successfully');
     process.exit(0);

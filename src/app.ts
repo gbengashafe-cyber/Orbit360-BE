@@ -7,6 +7,8 @@ import morgan from 'morgan';
 import { randomUUID } from 'node:crypto';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger';
+import { db } from './db';
+import { loadModels } from './db/loadModels';
 import { authRoutes } from './features/authentication/auth.routes';
 import { companyRoutes } from './features/company/company.routes';
 import { complaintRoutes } from './features/complaints/complaint.routes';
@@ -27,6 +29,13 @@ import { logger } from './utils/logger';
 import { parsePageAndLimitNumber, parseQueryParams } from './utils/request-query-parser';
 
 const allowedOrigins = config.get<string[]>('allowedOrigins');
+
+loadModels();
+
+// Sync database on startup
+db.sync({ alter: true }).catch((err) => {
+  logger.error('Database sync failed:', err);
+});
 
 const app = express();
 
@@ -93,9 +102,17 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     optionsSuccessStatus: 200,
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   }),
 );
 

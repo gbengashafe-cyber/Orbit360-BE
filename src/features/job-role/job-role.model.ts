@@ -1,10 +1,10 @@
-import { DataTypes, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
+import { CreationOptional, DataTypes, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import { db } from '../../db';
 
 export class JobRole extends Model<InferAttributes<JobRole>, InferCreationAttributes<JobRole>> {
-  public id!: number;
+  public id!: CreationOptional<number>;
   public title!: string;
-  public description!: string;
+  public description!: CreationOptional<string>;
 }
 
 JobRole.init(
