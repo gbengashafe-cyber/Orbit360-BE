@@ -96,19 +96,27 @@ export class PayrollController {
 
   static async getByPayPeriod(req: Request, res: Response) {
     const { payPeriod } = req.params;
+    const { page, rows } = req.pagination;
 
-    const payroll = await Payroll.findAll({
-      where: { payPeriod },
-      include: [
-        {
-          model: Employee,
-          as: 'employee',
-          attributes: ['employeeId', 'firstName', 'lastName', 'email', 'departmentName', 'jobRole'],
-        },
-      ],
+    const {
+      count,
+      rows: payroll,
+      totalGrossPay,
+      totalNetPay,
+    } = await PayrollRepository.readByPayPeriod({
+      filters: { payPeriod },
+      page,
+      rows,
     });
 
-    res.json(ApiResponse({ data: payroll, message: 'Payroll record(s) fetched successfully' }));
+    res.json(
+      ApiResponse({
+        data: payroll,
+        message: 'Payroll record(s) fetched successfully',
+        pagination: { total: count, page, pages: Math.ceil(count / rows), rows },
+        meta: { totalGrossPay, totalNetPay },
+      }),
+    );
   }
 
   static readonly generatePayroll = async (req: Request, res: Response, next: NextFunction) => {

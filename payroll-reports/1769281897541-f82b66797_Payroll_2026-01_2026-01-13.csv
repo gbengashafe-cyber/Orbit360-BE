@@ -1,0 +1,4 @@
+Employee Name,Employee ID,Position,Department,Basic Salary,Housing Allowance,Transport Allowance,Leave Allowance,Other Allowances,Gross Salary,Pension Deduction,NHF Deduction,Loan Deduction,PAYE Tax,Total Deductions,Net Salary,Bank Name,Account Number,Status
+"Soji ADENIYI",IBA002,,hr,66666.67,0.00,0.00,6666.67,0.00,73333.33,5333.33,1666.67,25000.00,6950.00,38950.00,34383.33,,,generated
+"Test firstName Test",10,,hr,416666.67,500000.00,333333.33,41666.67,833333.33,2125000.00,100000.00,0.00,0.00,468666.67,568666.67,1556333.33,,,generated
+"SHile OLUWAGBENGA",IBA002,,hr,666666.67,416666.67,166666.67,66666.67,8333.33,1325000.00,100000.00,0.00,103333.33,276666.67,480000.00,845000.00,,,generated

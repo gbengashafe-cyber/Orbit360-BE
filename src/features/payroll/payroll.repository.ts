@@ -1,4 +1,6 @@
 import { CreationAttributes, Transaction } from 'sequelize';
+import { db } from '../../db';
+import { Employee } from '../employee/employee.model';
 import { ReadAllProps } from '../employee/employee.repository';
 import { Payroll, payrollStatus } from './payroll.model';
 
@@ -17,6 +19,54 @@ export class PayrollRepository {
 
   static readonly readById = (id: string | number) => {
     return Payroll.findByPk(id);
+  };
+
+  static readonly readByPayPeriod = async ({
+    rows,
+    page,
+    filters,
+    orderBy = 'createdAt',
+    orderDirection = 'ASC',
+  }: ReadAllProps) => {
+    const offset = (page - 1) * rows;
+
+    const where: any = {};
+
+    if (filters.status) where.status = filters.status;
+    if (filters.payPeriod) where.payPeriod = filters.payPeriod;
+
+    const { count, rows: data } = await Payroll.findAndCountAll({
+      include: [
+        {
+          model: Employee,
+          as: 'employee',
+          attributes: ['employeeId', 'firstName', 'lastName', 'email', 'departmentName', 'jobRole'],
+        },
+      ],
+      where,
+      limit: rows,
+      offset,
+      order: [[orderBy, orderDirection]],
+    });
+
+    const totals = (await Payroll.findOne({
+      attributes: [
+        [db.fn('SUM', db.col('grossSalary')), 'totalGrossPay'],
+        [
+          db.fn('SUM', db.literal('grossSalary - (pensionDeduction + payeDeduction + nhfDeduction + loanDeduction)')),
+          'totalNetPay',
+        ],
+      ],
+      where,
+      raw: true,
+    })) as { totalGrossPay: number; totalNetPay: number } | null;
+
+    return {
+      count,
+      rows: data,
+      totalGrossPay: totals?.totalGrossPay || 0,
+      totalNetPay: totals?.totalNetPay || 0,
+    };
   };
 
   static readonly read = ({ rows, page, filters, orderBy = 'createdAt', orderDirection = 'ASC' }: ReadAllProps) => {

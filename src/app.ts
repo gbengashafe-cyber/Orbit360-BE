@@ -5,10 +5,9 @@ import express, { NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { randomUUID } from 'node:crypto';
+import path from 'path';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger';
-import { db } from './db';
-import { loadModels } from './db/loadModels';
 import { authRoutes } from './features/authentication/auth.routes';
 import { companyRoutes } from './features/company/company.routes';
 import { complaintRoutes } from './features/complaints/complaint.routes';
@@ -20,6 +19,7 @@ import { leaveRoutes } from './features/leave/leave.routes';
 import { loanRoutes } from './features/loans/loan.routes';
 import { onboardingRoutes } from './features/onboarding/onboarding.routes';
 import payrollRoutes from './features/payroll/payroll.routes';
+import { payrollReportRoutes } from './features/payroll/reports/payroll-report.routes';
 import { performanceRoutes } from './features/performance/performance.routes';
 import { recruitmentRoutes } from './features/recruitment/recruitment.routes';
 import { userRoutes } from './features/users/user.router';
@@ -29,13 +29,6 @@ import { logger } from './utils/logger';
 import { parsePageAndLimitNumber, parseQueryParams } from './utils/request-query-parser';
 
 const allowedOrigins = config.get<string[]>('allowedOrigins');
-
-loadModels();
-
-// Sync database on startup
-db.sync({ alter: true }).catch((err) => {
-  logger.error('Database sync failed:', err);
-});
 
 const app = express();
 
@@ -86,6 +79,9 @@ app.use(
     },
   ),
 );
+
+const PAYROLL_REPORT_FOLDER = config.get<string>('payrollReport.storagePath');
+app.use(`/${PAYROLL_REPORT_FOLDER}`, express.static(path.join(process.cwd(), PAYROLL_REPORT_FOLDER)));
 
 app.use(
   express.json({
@@ -139,6 +135,7 @@ app.use('/api/v1/leaves', leaveRoutes);
 app.use('/api/v1/exits', exitRoutes);
 app.use('/api/v1/onboardings', onboardingRoutes);
 app.use('/api/v1/recruitment', recruitmentRoutes);
+app.use('/api/v1/payrolls/uploads', payrollReportRoutes);
 app.use('/api/v1/payrolls', payrollRoutes);
 app.use('/api/v1/performance', performanceRoutes);
 app.use('/api/v1/job-roles', jobRoleRoutes);

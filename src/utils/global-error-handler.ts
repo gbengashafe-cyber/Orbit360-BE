@@ -11,6 +11,8 @@ import {
 import { env } from '../config/env';
 import { ApiError } from './api-error';
 import { logger } from './logger';
+import { ZodError } from 'zod';
+import { MulterError } from 'multer';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const globalErrorHandler: ErrorRequestHandler = (err, req: Request, res: Response, next: NextFunction): Response => {
@@ -65,8 +67,32 @@ const globalErrorHandler: ErrorRequestHandler = (err, req: Request, res: Respons
     }
   }
 
+  if (err instanceof ZodError) {
+    const errors = err.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`).join(', ');
+
+    logger.debug(`RequestId: ${req.requestId}, Validation Error: ${errors}`);
+
+    err = ApiError.badRequest(errors);
+  }
+
+  if (err instanceof MulterError) {
+    let message = err.message;
+
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      message = 'File is too large. Please upload a smaller file.';
+    } else if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+      message = 'Unexpected field name. Please use "reportFile".';
+    }
+
+    logger.debug(`RequestId: ${req.requestId}, Multer Error: ${message}`);
+
+    const statusCode = err.code === 'LIMIT_FILE_SIZE' ? 413 : 400;
+    err = new ApiError(statusCode, message);
+  }
+
   if (!(err instanceof ApiError)) {
-    err = ApiError.internalServerError('Oops! Something went wrong on the server. Please try again later');
+    const message = err.message || 'Oops! Something went wrong on the server. Please try again later';
+    err = ApiError.internalServerError(message);
   }
 
   logger.error({ method: req?.method, path: req?.requestPath, requestId: req?.requestId, ...err });

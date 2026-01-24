@@ -1,5 +1,7 @@
 {
-  "departmentNames": {
-    "HR": "HR"
+  "payrollReport": {
+    "storagePath": "payroll-reports",
+    "maxFileSizeInMB": 5,
+    "storageServer": "https://localhost:3000/"
   }
 }
