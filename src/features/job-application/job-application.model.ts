@@ -1,21 +1,6 @@
 import { CreationOptional, DataTypes, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import { db } from '../../db';
 
-interface JobApplicationAttributes {
-  id?: number;
-  job_posting_id: number;
-  applicant_name: string;
-  applicant_email: string;
-  applicant_phone: string;
-  resume_url?: string;
-  cover_letter?: string;
-  applied_date: Date;
-  status: 'applied' | 'under_review' | 'interview_scheduled' | 'interviewed' | 'offered' | 'hired' | 'rejected';
-  interview_date?: Date;
-  interview_notes?: string;
-  rating?: number;
-}
-
 export class JobApplication extends Model<InferAttributes<JobApplication>, InferCreationAttributes<JobApplication>> {
   declare id: CreationOptional<number>;
   public job_posting_id!: number;

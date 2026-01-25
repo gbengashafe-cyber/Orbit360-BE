@@ -19,7 +19,6 @@ var envSchema = zod_1.z.object({
   JWT_SECRET: zod_1.z.string(),
   GOOGLE_CLIENT_ID: zod_1.z.string().optional(),
   GOOGLE_CLIENT_SECRET: zod_1.z.string().optional(),
-  LDAPS_URL: zod_1.z.string().optional(),
 });
 var result = envSchema.safeParse(process.env);
 if (!result.success) {

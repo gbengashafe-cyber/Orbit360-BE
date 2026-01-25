@@ -213,7 +213,7 @@ async function seed() {
           lastName: 'ABIOLA',
           email: 'o@o.com',
           department: departments[1].name,
-          password: '$2b$08$KSiN0urPrsj.4euw2e7mxe.Q00iqohbKsYcY2o3Xu3RaSjEFWwY6e',
+          password: '',
           jobRole: 'HR_OPERATIONS',
         },
       ],

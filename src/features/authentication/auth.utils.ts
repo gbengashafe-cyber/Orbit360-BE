@@ -1,12 +1,15 @@
+import bcrypt from 'bcryptjs';
+import config from 'config';
 import { verify } from 'jsonwebtoken';
 import { Client } from 'ldapts';
 import { env } from '../../config/env';
 import { ApiError } from '../../utils/api-error';
 import { logger } from '../../utils/logger';
-import bcrypt from 'bcryptjs';
+
+const LDAPS_URL = config.get<string>('ldapsUrl');
 
 const ldapConfig = {
-  url: env.LDAPS_URL ?? '',
+  url: LDAPS_URL ?? '',
   timeout: 0,
   connectTimeout: 0,
   tlsOptions: {

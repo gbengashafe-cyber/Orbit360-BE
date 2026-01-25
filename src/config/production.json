@@ -1,7 +1,9 @@
 {
+  "allowedOrigins": "*",
   "payrollReport": {
     "storagePath": "payroll-reports",
     "maxFileSizeInMB": 5,
     "storageServer": "https://localhost:3000/"
-  }
+  },
+  "ldapsUrl": "ldaps:\\domain.com:639"
 }

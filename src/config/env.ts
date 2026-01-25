@@ -6,7 +6,7 @@ dotenv.config();
 
 const envSchema = z.object({
   PORT: z.string(),
-  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  NODE_ENV: z.enum(['development', 'production', 'test']),
   LOG_LEVEL: z.enum(['info', 'error', 'debug']).default('info'),
   DB_NAME: z.string(),
   DB_USER: z.string(),
@@ -18,7 +18,6 @@ const envSchema = z.object({
   JWT_SECRET: z.string(),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
-  LDAPS_URL: z.string().optional(),
 });
 
 const result = envSchema.safeParse(process.env);

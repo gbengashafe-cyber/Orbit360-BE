@@ -100,7 +100,7 @@ export class DepartmentController {
 
       await department.destroy();
 
-      res.json({ message: 'Department deleted successfully' });
+      res.json(ApiResponse({ data: {}, message: 'Department deleted successfully' }));
     } catch (error) {
       logger.error(`Error deleting department: ${error}`);
       next(error);

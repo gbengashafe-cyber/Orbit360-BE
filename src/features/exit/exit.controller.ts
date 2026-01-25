@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { ApiError } from '../../utils/api-error';
+import { ApiResponse } from '../../utils/api-response';
 import { logger } from '../../utils/logger';
 import { Employee } from '../employee/employee.model';
 import { Exit } from './exit.model';
@@ -129,7 +130,7 @@ export class ExitController {
         include: [{ model: Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'email'] }],
       });
 
-      res.json({ data: updatedExit, message: `Exit request ${action}` });
+      res.json(ApiResponse({ data: updatedExit, message: `Exit request ${action}` }));
     } catch (error) {
       logger.error(`Error approving exit: ${error}`);
       next(error);
