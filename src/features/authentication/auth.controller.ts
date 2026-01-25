@@ -143,6 +143,7 @@ export class AuthController {
       sub: user.email,
       role: user.role,
     });
+    console.log('🚀 ~ AuthController ~ accessToken:', accessToken);
 
     await UserRepository.update(user.id, { lastLoginDate: new Date() });
 

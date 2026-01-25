@@ -11,7 +11,7 @@ export interface TokenPayload {
 }
 
 const JWT_SECRET = env.JWT_SECRET;
-const JWT_EXPIRY = '7d';
+const JWT_EXPIRY = '20m';
 
 /**
  * Generate JWT token
