@@ -7,7 +7,7 @@ interface ApiResponseDataType {
         [key: string]: any;
       }[]
     | null;
-  message: string;
+  message?: string;
   [key: string]: any;
 }
 
@@ -15,6 +15,10 @@ const ApiResponse = ({ message, data, ...meta }: ApiResponseDataType) => {
   if (typeof data === 'object' && !Array.isArray(data)) {
     // Ensures password prop is not sent to frontend
     if (data?.password) delete data.password;
+  }
+
+  if (!message) {
+    message = 'Success';
   }
 
   return { success: true, message, data, ...meta };

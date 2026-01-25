@@ -1,40 +1,39 @@
-import { Request, Response, NextFunction } from 'express';
-import { JobPosting, JobApplication } from '../models';
-import { ApiError } from '../utils/api-error';
-import { logger } from '../utils/logger';
+import { NextFunction, Request, Response } from 'express';
+import { JobPosting } from './job-posting.model';
+import { ApiResponse } from '../../utils/api-response';
+import { logger } from '../../utils/logger';
+import { ApiError } from '../../utils/api-error';
 
 export class JobPostingController {
-  static async getAll(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { page, rows } = req.pagination!;
-      const offset = (page - 1) * rows;
-      const { status } = req.query;
+  static async getAll(req: Request, res: Response) {
+    const { page, rows } = req.pagination!;
+    const offset = (page - 1) * rows;
+    const { status } = req.query;
 
-      const whereClause: any = {};
-      if (status) {
-        whereClause.status = status;
-      }
+    const whereClause: any = {};
+    if (status) {
+      whereClause.status = status;
+    }
 
-      const { count, rows: postings } = await JobPosting.findAndCountAll({
-        where: whereClause,
-        limit: rows,
-        offset,
-        order: [['posted_date', 'DESC']],
-      });
+    const { count, rows: postings } = await JobPosting.findAndCountAll({
+      where: whereClause,
+      limit: rows,
+      offset,
+      order: [['posted_date', 'DESC']],
+    });
 
-      res.json({
+    res.json(
+      ApiResponse({
         data: postings,
+        message: '',
         pagination: {
           total: count,
           page,
           rows,
           pages: Math.ceil(count / rows),
         },
-      });
-    } catch (error) {
-      logger.error(`Error fetching job postings: ${error}`);
-      next(error);
-    }
+      }),
+    );
   }
 
   static async getById(req: Request, res: Response, next: NextFunction) {
@@ -53,7 +52,7 @@ export class JobPostingController {
         throw ApiError.notFound('Job posting not found');
       }
 
-      res.json({ data: posting });
+      res.json(ApiResponse({ data: posting, message: '' }));
     } catch (error) {
       logger.error(`Error fetching job posting: ${error}`);
       next(error);

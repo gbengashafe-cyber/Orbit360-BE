@@ -22,9 +22,9 @@ export class Payroll extends Model<InferAttributes<Payroll>, InferCreationAttrib
   declare paymentDate: CreationOptional<Date>;
 
   // Virtual Fields
-  declare totalDeductions: number;
-  declare totalAllowances: number;
-  declare netSalary: number;
+  declare totalDeductions: CreationOptional<number>;
+  declare totalAllowances: CreationOptional<number>;
+  declare netSalary: CreationOptional<number>;
 }
 
 Payroll.init(

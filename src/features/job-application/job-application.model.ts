@@ -1,7 +1,7 @@
-import { DataTypes, Model } from 'sequelize';
+import { CreationOptional, DataTypes, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import { db } from '../../db';
 
-export interface JobApplicationAttributes {
+interface JobApplicationAttributes {
   id?: number;
   job_posting_id: number;
   applicant_name: string;
@@ -16,8 +16,8 @@ export interface JobApplicationAttributes {
   rating?: number;
 }
 
-export class JobApplication extends Model<JobApplicationAttributes> implements JobApplicationAttributes {
-  public id!: number;
+export class JobApplication extends Model<InferAttributes<JobApplication>, InferCreationAttributes<JobApplication>> {
+  declare id: CreationOptional<number>;
   public job_posting_id!: number;
   public applicant_name!: string;
   public applicant_email!: string;
@@ -26,9 +26,11 @@ export class JobApplication extends Model<JobApplicationAttributes> implements J
   public cover_letter!: string;
   public applied_date!: Date;
   public status!: 'applied' | 'under_review' | 'interview_scheduled' | 'interviewed' | 'offered' | 'hired' | 'rejected';
-  public interview_date!: Date;
-  public interview_notes!: string;
-  public rating!: number;
+  declare interview_date: CreationOptional<Date>;
+  declare interview_notes: CreationOptional<string>;
+  declare rating: CreationOptional<number>;
+  declare applicant_id: CreationOptional<string>;
+  declare salary_expectation: CreationOptional<number>;
 }
 
 JobApplication.init(
@@ -52,6 +54,14 @@ JobApplication.init(
     },
     applicant_phone: {
       type: DataTypes.STRING(20),
+      allowNull: false,
+    },
+    applicant_id: {
+      type: DataTypes.STRING(20),
+      allowNull: false,
+    },
+    salary_expectation: {
+      type: DataTypes.DECIMAL(15, 2),
       allowNull: false,
     },
     resume_url: {

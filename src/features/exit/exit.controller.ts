@@ -121,7 +121,7 @@ export class ExitController {
 
       await exit.update({
         status: action,
-        approvedBy: req.user?.id,
+        approvedBy: Number(req.user?.id),
         approvedAt: new Date(),
       });
 

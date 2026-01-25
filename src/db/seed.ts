@@ -43,12 +43,6 @@ async function seed() {
     );
     logger.info('Positions created');
 
-    // Get existing departments and job roles
-    const existingDepts = await Department.findAll();
-    const existingRoles = await JobRole.findAll();
-    const depts = existingDepts.length > 0 ? existingDepts : departments;
-    const roles = existingRoles.length > 0 ? existingRoles : jobRoles;
-
     // Create Employees
     const employees = await Employee.bulkCreate([
       {
@@ -156,28 +150,7 @@ async function seed() {
     ]);
     logger.info('Employees created');
 
-    // // Create Attendance Records
-    // const today = new Date();
-    // await Attendance.bulkCreate([
-    //   {
-    //     employeeId: employees[0].id,
-    //     date: today,
-    //     checkIn: new Date(),
-    //     checkOut: new Date(new Date().getTime() + 8 * 60 * 60 * 1000),
-    //     status: 'present',
-    //   },
-    //   {
-    //     employeeId: employees[1].id,
-    //     date: today,
-    //     checkIn: new Date(new Date().getTime() + 1 * 60 * 60 * 1000),
-    //     status: 'present',
-    //   },
-    // ]);
-    logger.info('Attendance records created');
-
-    // Get existing employees to avoid duplicates
-    const existingEmployees = await Employee.findAll();
-    const empList = existingEmployees.length > 0 ? existingEmployees : employees;
+    const empList = employees;
 
     // Create Leave Requests
     await Leave.bulkCreate(

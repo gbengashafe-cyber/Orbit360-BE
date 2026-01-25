@@ -1,7 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
-import { JobApplication, JobPosting } from '../models';
-import { ApiError } from '../utils/api-error';
-import { logger } from '../utils/logger';
+import { JobApplication } from './job-application.model';
+import { JobPosting } from './job-posting.model';
+import { ApiResponse } from '../../utils/api-response';
+import { logger } from '../../utils/logger';
+import { ApiError } from '../../utils/api-error';
 
 export class JobApplicationController {
   static async getAll(req: Request, res: Response, next: NextFunction) {
@@ -32,15 +34,18 @@ export class JobApplicationController {
         order: [['applied_date', 'DESC']],
       });
 
-      res.json({
-        data: applications,
-        pagination: {
-          total: count,
-          page,
-          rows,
-          pages: Math.ceil(count / rows),
-        },
-      });
+      res.json(
+        ApiResponse({
+          data: applications,
+          message: '',
+          pagination: {
+            total: count,
+            page,
+            rows,
+            pages: Math.ceil(count / rows),
+          },
+        }),
+      );
     } catch (error) {
       logger.error(`Error fetching job applications: ${error}`);
       next(error);
@@ -64,7 +69,7 @@ export class JobApplicationController {
         throw ApiError.notFound('Job application not found');
       }
 
-      res.json({ data: application });
+      res.json(ApiResponse({ data: application, message: '' }));
     } catch (error) {
       logger.error(`Error fetching job application: ${error}`);
       next(error);
@@ -84,15 +89,18 @@ export class JobApplicationController {
         order: [['applied_date', 'DESC']],
       });
 
-      res.json({
-        data: applications,
-        pagination: {
-          total: count,
-          page,
-          rows,
-          pages: Math.ceil(count / rows),
-        },
-      });
+      res.json(
+        ApiResponse({
+          data: applications,
+          message: '',
+          pagination: {
+            total: count,
+            page,
+            rows,
+            pages: Math.ceil(count / rows),
+          },
+        }),
+      );
     } catch (error) {
       logger.error(`Error fetching job applications: ${error}`);
       next(error);

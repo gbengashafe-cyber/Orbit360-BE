@@ -3,7 +3,6 @@ import { ApiError } from '../../utils/api-error';
 import { ApiResponse } from '../../utils/api-response';
 import { logger } from '../../utils/logger';
 import { Department } from './department.model';
-import { DepartmentRepository } from './department.repository';
 
 export class DepartmentController {
   static async getAll(req: Request, res: Response, next: NextFunction) {
@@ -83,7 +82,7 @@ export class DepartmentController {
 
       await department.update({ name, description });
 
-      res.json({ data: department, message: 'Department updated successfully' });
+      res.json(ApiResponse({ data: department, message: 'Department updated successfully' }));
     } catch (error) {
       logger.error(`Error updating department: ${error}`);
       next(error);
