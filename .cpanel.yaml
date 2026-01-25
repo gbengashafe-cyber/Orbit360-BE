@@ -1,6 +1,6 @@
 ---
 deployment:
   tasks:
-    - export DEPLOYMENTPATH=~/public_html/api/
+    - export DEPLOYMENTPATH=~/public_html/orbit360-api/
     - /bin/rm -rf $DEPLOYMENTPATHsrc
     - /bin/cp -R * $DEPLOYMENTPATH
