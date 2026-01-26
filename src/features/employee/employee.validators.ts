@@ -1,9 +1,9 @@
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
+import { ApiError } from '../../utils/api-error';
 import { moneySchema } from '../../utils/money.utils';
 import { validateOrThrow } from '../../utils/zod-validation-utils';
 import { employeeStatus } from './employee.model';
-import { ApiError } from '../../utils/api-error';
 
 export const MONEY_PRECISION = {
   scale: 2,

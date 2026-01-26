@@ -109,7 +109,8 @@ function handleMulterError(err: MulterError, req: Request): ApiError {
 }
 
 function handleUnknownError(err: any): ApiError {
-  const message = err.message || 'Oops! Something went wrong on the server. Please try again later';
+  logger.debug(err);
+  const message = 'Oops! Something went wrong on the server. Please try again later';
   return ApiError.internalServerError(message);
 }
 
