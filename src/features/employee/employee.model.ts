@@ -9,22 +9,22 @@ export class Employee extends Model<InferAttributes<Employee>, InferCreationAttr
   declare id: CreationOptional<number>;
   // Personal Information
   declare employeeId: string;
-  public firstName!: string;
-  public lastName!: string;
-  public email!: string;
-  public phone!: string;
+  declare firstName: string;
+  declare lastName: string;
+  declare email: string;
+  declare phone: string;
   declare dob: Date;
   declare gender: 'M' | 'F';
   declare nationality: string;
   declare address: string;
   // Employment details
-  public hireDate!: Date;
+  declare hireDate: Date;
   declare departmentName: ForeignKey<Department['name']>;
   declare jobRole: ForeignKey<JobRole['title']>;
   declare status: (typeof employeeStatus)[number];
   declare terminationDate: CreationOptional<Date>;
   // Reporting Line
-  declare supervisorId: CreationOptional<ForeignKey<Employee['employeeId']>>;
+  declare supervisorId: CreationOptional<ForeignKey<Employee['id']>>;
   // Compensation and benefit
   declare annualBasicSalary: number;
   declare annualHousingAllowance: number;
@@ -85,6 +85,15 @@ Employee.init(
     dob: {
       type: DataTypes.DATEONLY,
       allowNull: false,
+      validate: {
+        isDate: true,
+        isOldEnough(value: string) {
+          const age = new Date().getFullYear() - new Date(value).getFullYear();
+          if (age < 18) {
+            throw new Error('Employee must be at least 18 years old');
+          }
+        },
+      },
     },
     gender: {
       type: DataTypes.ENUM('M', 'F'),
@@ -96,6 +105,14 @@ Employee.init(
     hireDate: {
       type: DataTypes.DATE,
       allowNull: false,
+      validate: {
+        isDate: true,
+        notFuture(value: Date) {
+          if (new Date(value) > new Date()) {
+            throw new Error('Hire date cannot be in the future');
+          }
+        },
+      },
     },
     status: {
       type: DataTypes.ENUM,
@@ -105,7 +122,11 @@ Employee.init(
     terminationDate: {
       type: DataTypes.DATE,
     },
-    supervisorId: { type: DataTypes.STRING(10), references: { model: Employee, key: 'employee_id' }, allowNull: true },
+    supervisorId: {
+      type: DataTypes.INTEGER,
+      references: { model: Employee, key: 'id' },
+      allowNull: true,
+    },
     annualBasicSalary: { type: DataTypes.DECIMAL(17, 2), allowNull: false },
     annualHousingAllowance: { type: DataTypes.DECIMAL(17, 2), allowNull: false },
     annualTransportAllowance: { type: DataTypes.DECIMAL(17, 2), allowNull: false },
@@ -150,8 +171,21 @@ Employee.init(
     sequelize: db,
     tableName: 'employees',
     underscored: true,
+    timestamps: true,
+    paranoid: true,
+    indexes: [{ fields: ['status'] }, { fields: ['department_name'] }, { fields: ['supervisor_id'] }, { fields: ['hire_date'] }],
   },
 );
+
+Employee.belongsTo(Employee, {
+  foreignKey: 'supervisorId',
+  as: 'supervisor',
+});
+
+Employee.hasMany(Employee, {
+  foreignKey: 'supervisorId',
+  as: 'subordinates',
+});
 
 Employee.belongsTo(Department, {
   foreignKey: { name: 'departmentName', allowNull: false },

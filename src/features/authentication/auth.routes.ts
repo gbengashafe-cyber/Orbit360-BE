@@ -14,5 +14,6 @@ router.get('/me', validateAuthToken, AuthController.getCurrentUser);
 router.post('/logout', AuthController.logout);
 router.post('/user', AuthController.ldapLogin);
 router.post('/login', AuthController.passwordLogin);
+router.post('/refresh', AuthController.refreshToken);
 
 export { router as authRoutes };

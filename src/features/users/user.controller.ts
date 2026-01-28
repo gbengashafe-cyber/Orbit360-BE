@@ -1,12 +1,25 @@
 import { Request, Response } from 'express';
 import { ApiError } from '../../utils/api-error';
 import { ApiResponse } from '../../utils/api-response';
+import { AuthUtil } from '../authentication/auth.utils';
 import { UserRepository } from './user.repository';
 
 class UserController {
   static readonly create = async (req: Request, res: Response) => {
     const user = req.validatedBody?.user;
-    Object.assign(user, { password: '' });
+
+    const passwordWasNotSent = !user.password || user.password === '';
+
+    if (passwordWasNotSent) {
+      user.password = AuthUtil.generate();
+    } else {
+      const validation = AuthUtil.validate(user.password);
+      if (!validation.strong) {
+        throw ApiError.badRequest('Password is not strong enough');
+      }
+    }
+
+    user.password = await AuthUtil.hashPassword(user.password);
 
     const result = await UserRepository.create(user);
     return res.send(ApiResponse({ message: 'User created successfully', data: { id: result.id } }));
@@ -81,15 +94,26 @@ class UserController {
       throw ApiError.notFound('User not found');
     }
 
-    await UserRepository.update(id, req.body.user);
-    const updatedUser = await UserRepository.readById(id);
+    const passwordWasSent = !user.password || user.password === '';
 
-    res.json(
-      ApiResponse({
-        data: updatedUser,
-        message: 'User updated successfully',
-      }),
-    );
+    if (passwordWasSent) {
+      const validation = AuthUtil.validate(user.password);
+      if (!validation.strong) {
+        throw ApiError.badRequest('Password is not strong enough');
+      }
+
+      user.password = await AuthUtil.hashPassword(user.password);
+
+      await UserRepository.update(id, req.body.user);
+      const updatedUser = await UserRepository.readById(id);
+
+      res.json(
+        ApiResponse({
+          data: updatedUser,
+          message: 'User updated successfully',
+        }),
+      );
+    }
   }
 }
 

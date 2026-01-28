@@ -27,6 +27,7 @@ import { ApiError } from './utils/api-error';
 import { globalErrorHandler } from './utils/global-error-handler';
 import { logger } from './utils/logger';
 import { parsePageAndLimitNumber, parseQueryParams } from './utils/request-query-parser';
+import cookieParser from 'cookie-parser';
 
 const allowedOrigins = config.get<string[]>('allowedOrigins');
 
@@ -79,6 +80,8 @@ app.use(
     },
   ),
 );
+
+app.use(cookieParser());
 
 const PAYROLL_REPORT_FOLDER = config.get<string>('payrollReport.storagePath');
 app.use(`/${PAYROLL_REPORT_FOLDER}`, express.static(path.join(process.cwd(), PAYROLL_REPORT_FOLDER)));

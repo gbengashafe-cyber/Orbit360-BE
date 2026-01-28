@@ -74,7 +74,6 @@ function handleSequelizeError(err: BaseError): ApiError {
   }
 
   if (err instanceof ConnectionError) {
-    logger.error('Unable to connect to DB.');
     return ApiError.internalServerError('Oops! Something went wrong on the server. Please try again later.');
   } else if (code === 409) {
     return ApiError.conflict(message);

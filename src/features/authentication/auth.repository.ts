@@ -1,5 +1,5 @@
-import { User } from '../users/user.model';
 import bcrypt from 'bcryptjs';
+import { User } from '../users/user.model';
 
 export class AuthRepository {
   static readonly findLoginUser = async (email: string, password: string) => {

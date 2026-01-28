@@ -33,7 +33,7 @@ class UserRepository {
     });
   };
 
-  static readonly readById = async (id: string | number) => {
+  static readonly readById = (id: string | number) => {
     return User.findByPk(id, { raw: true, attributes: { exclude: ['password'] } });
   };
   static readonly readByEmail = async (email: string) => {

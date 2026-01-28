@@ -98,7 +98,7 @@ User.init(
       allowNull: false,
     },
     status: {
-      type: DataTypes.ENUM('active', 'suspended'),
+      type: DataTypes.ENUM(...userStatusOptions),
       allowNull: false,
       defaultValue: 'active',
     },
@@ -110,6 +110,8 @@ User.init(
     sequelize: db,
     tableName: 'users',
     underscored: true,
+    timestamps: true,
+    paranoid: true,
   },
 );
 

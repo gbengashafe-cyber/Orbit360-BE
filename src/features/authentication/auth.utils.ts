@@ -1,12 +1,18 @@
 import bcrypt from 'bcryptjs';
 import config from 'config';
-import { verify } from 'jsonwebtoken';
+import crypto from 'crypto';
+import generator from 'generate-password';
 import { Client } from 'ldapts';
-import { env } from '../../config/env';
-import { ApiError } from '../../utils/api-error';
+import owasp from 'owasp-password-strength-test';
 import { logger } from '../../utils/logger';
 
 const LDAPS_URL = config.get<string>('ldapsUrl');
+
+owasp.config({
+  minLength: 12,
+  maxLength: 128,
+  minOptionalTestsToPass: 4,
+});
 
 const ldapConfig = {
   url: LDAPS_URL ?? '',
@@ -17,7 +23,8 @@ const ldapConfig = {
   },
 };
 
-type DecodedTokenType = { id: string; email: string };
+export const TOKEN_FINGERPRINT_COOKIE_NAME = '__Orbit360-Secure-Fgp';
+export const REFRESH_TOKEN_COOKIE_NAME = '__Orbit360-Refresh-Token';
 
 const DC = 'mfb';
 
@@ -37,36 +44,31 @@ export const authenticateLDAPS = async (username: string, password: string) => {
 };
 
 export class AuthUtil {
-  private static readonly handleTokenVerificationError = (error) => {
-    if (error.name === 'JsonWebTokenError') {
-      error = ApiError.unauthenticated('Invalid token provided');
-    }
-    if (error.name === 'TokenExpiredError') {
-      error = ApiError.forbidden('Token expired');
-    }
-    if (error.name === 'ApiError') {
-      logger.error(`Decoding token failed. ${error.message}`);
-    } else {
-      logger.error('Decoding token failed.');
-    }
-    throw error;
-  };
-
-  static readonly decodeJwt = (token: string): DecodedTokenType | null => {
-    try {
-      const decodePayload = verify(token, env.JWT_SECRET, {
-        algorithms: ['HS256'],
-      }) as DecodedTokenType;
-      logger.debug('Decoding token successful.');
-
-      return decodePayload;
-    } catch (error) {
-      this.handleTokenVerificationError(error);
-      return null;
-    }
-  };
-
   static readonly hashPassword = async (password: string) => {
     return await bcrypt.hash(password, 8);
+  };
+
+  static readonly generate = () => {
+    return generator.generate({
+      length: 12,
+      numbers: true,
+      symbols: true,
+      uppercase: true,
+      lowercase: true,
+      strict: true,
+      excludeSimilarCharacters: true,
+    });
+  };
+
+  static readonly validate = (password: string) => {
+    return owasp.test(password);
+  };
+
+  static readonly generateUserContext = () => {
+    return crypto.randomBytes(32).toString('hex');
+  };
+
+  static readonly hashUserContext = (value: string) => {
+    return crypto.createHash('sha256').update(value).digest('hex');
   };
 }
