@@ -23,7 +23,7 @@ export class TokenUtil {
       error = ApiError.unauthenticated('Invalid token provided');
     }
     if (error.name === 'TokenExpiredError') {
-      error = ApiError.forbidden('Token expired');
+      error = ApiError.unauthenticated('Token expired');
     }
     if (error.name === 'ApiError') {
       logger.error(`Decoding token failed. ${error.message}`);
@@ -38,7 +38,7 @@ export class TokenUtil {
   };
 
   static readonly generateRefreshToken = (payload: Omit<RefreshTokenPayload, 'iat' | 'exp'>): string => {
-    return jwt.sign(payload, env.JWT_SECRET, { expiresIn: JWT_EXPIRY });
+    return jwt.sign(payload, env.JWT_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRY });
   };
 
   static readonly decodeToken = (token: string): TokenPayload | RefreshTokenPayload | null => {

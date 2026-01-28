@@ -194,6 +194,7 @@ Employee.belongsTo(Department, {
 Department.hasMany(Employee, {
   foreignKey: { name: 'departmentName', allowNull: false },
   sourceKey: 'name',
+  as: 'employees',
 });
 
 Employee.belongsTo(JobRole, { foreignKey: { name: 'jobRole', allowNull: false }, targetKey: 'title' });

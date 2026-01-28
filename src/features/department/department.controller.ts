@@ -3,6 +3,7 @@ import { ApiError } from '../../utils/api-error';
 import { ApiResponse } from '../../utils/api-response';
 import { logger } from '../../utils/logger';
 import { Department } from './department.model';
+import { DepartmentRepository } from './department.repository';
 
 export class DepartmentController {
   static async getAll(req: Request, res: Response, next: NextFunction) {
@@ -52,6 +53,17 @@ export class DepartmentController {
       next(error);
     }
   }
+
+  static readonly getDepartmentEmployees = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { rows, page } = req.pagination;
+
+    const departmentEmployees = await DepartmentRepository.getEmployees(id, { page, rows, filters: req.parsedQuery });
+
+    const responsePayload = departmentEmployees ? departmentEmployees : { employees: [] };
+
+    res.json(ApiResponse({ data: responsePayload, message: '' }));
+  };
 
   static async create(req: Request, res: Response, next: NextFunction) {
     try {

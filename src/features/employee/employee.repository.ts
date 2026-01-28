@@ -9,17 +9,17 @@ export type ReadAllProps = {
   orderDirection?: 'ASC' | 'DESC';
 };
 export class EmployeeRepository {
-  static create = (employee: InferCreationAttributes<Employee>) => {
+  static readonly create = (employee: InferCreationAttributes<Employee>) => {
     return Employee.create(employee);
   };
 
-  static activeEmployeesCompensation = ({ rows, page }) => {
+  static readonly activeEmployeesCompensation = ({ rows, page }) => {
     const offset = (page - 1) * rows;
 
     return Employee.findAll({ where: { status: ['active', 'on_leave'] }, limit: rows, offset });
   };
 
-  static read = ({ rows, page, filters, orderBy = 'createdAt', orderDirection = 'ASC' }: ReadAllProps) => {
+  static readonly read = ({ rows, page, filters, orderBy = 'createdAt', orderDirection = 'ASC' }: ReadAllProps) => {
     const offset = (page - 1) * rows;
 
     const where: any = {};
@@ -53,7 +53,7 @@ export class EmployeeRepository {
     });
   };
 
-  static isExist = (id: string | number) => {
+  static readonly isExist = (id: string | number) => {
     return Employee.findByPk(id, { paranoid: false });
   };
 
@@ -64,7 +64,7 @@ export class EmployeeRepository {
     });
   };
 
-  static update = (id: number | string, employee: InferAttributes<Employee>) => {
+  static readonly update = (id: number | string, employee: InferAttributes<Employee>) => {
     return Employee.update(employee, { where: { id }, paranoid: false });
   };
 }

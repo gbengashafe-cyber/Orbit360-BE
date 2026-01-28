@@ -5,6 +5,7 @@ import { validateCreateDepartment, validateUpdateDepartment } from './department
 const router = Router();
 
 router.get('/', DepartmentController.getAll);
+router.get('/:id/employees', DepartmentController.getDepartmentEmployees);
 router.get('/:id', DepartmentController.getById);
 router.post('/', validateCreateDepartment, DepartmentController.create);
 router.put('/:id', validateUpdateDepartment, DepartmentController.update);

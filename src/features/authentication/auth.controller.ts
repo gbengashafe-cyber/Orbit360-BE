@@ -8,7 +8,7 @@ import { UserRepository } from '../users/user.repository';
 import { AuthRepository } from './auth.repository';
 import { authenticateLDAPS, AuthUtil, REFRESH_TOKEN_COOKIE_NAME, TOKEN_FINGERPRINT_COOKIE_NAME } from './auth.utils';
 import { RefreshTokenRepository } from './refresh-token.repository';
-import { JWT_EXPIRY, REFRESH_TOKEN_EXPIRY, TokenUtil } from './token.util';
+import { REFRESH_TOKEN_EXPIRY, TokenUtil } from './token.util';
 
 export class AuthController {
   private static async handleUserLogin({
@@ -50,7 +50,7 @@ export class AuthController {
       httpOnly: true,
       secure: true,
       sameSite: 'strict',
-      maxAge: JWT_EXPIRY * 1000,
+      maxAge: REFRESH_TOKEN_EXPIRY * 1000,
       path: '/',
     });
 
