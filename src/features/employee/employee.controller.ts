@@ -15,10 +15,6 @@ export class EmployeeController {
         filters: req.parsedQuery,
       });
 
-      if (!count) {
-        throw ApiError.notFound('No employee found');
-      }
-
       res.json(
         ApiResponse({
           message: 'Employees fetched successfully',
