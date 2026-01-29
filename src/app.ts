@@ -28,6 +28,7 @@ import { globalErrorHandler } from './utils/global-error-handler';
 import { logger } from './utils/logger';
 import { parsePageAndLimitNumber, parseQueryParams } from './utils/request-query-parser';
 import cookieParser from 'cookie-parser';
+import { dashboardRoutes } from './dashboard/dashboard.routes';
 
 const allowedOrigins = config.get<string[]>('allowedOrigins');
 
@@ -115,13 +116,9 @@ app.use(
   }),
 );
 
-// handle case where request body is empty
 app.use((req: Request, res: Response, next: NextFunction) => {
+  // handle case where request body is empty
   req.body = req.body ?? {};
-  next();
-});
-
-app.use((req: Request, res: Response, next: NextFunction) => {
   const { page, rows } = req.query;
   req.pagination = parsePageAndLimitNumber(page, rows);
   req.parsedQuery = parseQueryParams(req.query);
@@ -145,6 +142,7 @@ app.use('/api/v1/job-roles', jobRoleRoutes);
 app.use('/api/v1/companies', companyRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/loans', loanRoutes);
+app.use('/api/v1/dashboard', dashboardRoutes);
 
 // Swagger Documentation
 app.use(

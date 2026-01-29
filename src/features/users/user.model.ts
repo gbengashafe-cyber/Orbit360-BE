@@ -43,7 +43,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
   declare role: CreationOptional<(typeof userRoleOptions)[number]>;
   // Defines what the user does for the organization
   declare jobRole: ForeignKey<JobRole['title']>;
-  declare department: ForeignKey<Department['name']>;
+  declare departmentName: ForeignKey<Department['name']>;
   declare status: CreationOptional<(typeof userStatusOptions)[number]>;
   declare lastLoginDate: CreationOptional<Date>;
 }
@@ -92,7 +92,7 @@ User.init(
       references: { model: JobRole, key: 'title' },
       allowNull: false,
     },
-    department: {
+    departmentName: {
       type: DataTypes.STRING,
       references: { model: Department, key: 'name' },
       allowNull: false,
@@ -118,5 +118,5 @@ User.init(
 User.belongsTo(JobRole, { foreignKey: { name: 'jobRole', allowNull: false }, targetKey: 'title', as: 'userJobRole' });
 JobRole.hasMany(User, { foreignKey: { name: 'jobRole', allowNull: false }, sourceKey: 'title', as: 'users' });
 
-User.belongsTo(Department, { foreignKey: { name: 'department', allowNull: false }, targetKey: 'name', as: 'userDepartment' });
-Department.hasMany(User, { foreignKey: { name: 'department', allowNull: false }, sourceKey: 'name', as: 'users' });
+User.belongsTo(Department, { foreignKey: { name: 'departmentName', allowNull: false }, targetKey: 'name', as: 'userDepartment' });
+Department.hasMany(User, { foreignKey: { name: 'departmentName', allowNull: false }, sourceKey: 'name', as: 'users' });

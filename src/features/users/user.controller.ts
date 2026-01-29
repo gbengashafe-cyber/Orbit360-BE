@@ -11,7 +11,7 @@ class UserController {
     const passwordWasNotSent = !user.password || user.password === '';
 
     if (passwordWasNotSent) {
-      user.password = AuthUtil.generate();
+      user.password = AuthUtil.generatePassword();
     } else {
       const validation = AuthUtil.validate(user.password);
       if (!validation.strong) {

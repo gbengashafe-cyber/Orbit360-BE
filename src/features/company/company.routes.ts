@@ -6,10 +6,12 @@ import { validateCreateCompany, validateUpdateCompany } from './company.validato
 
 const router = Router();
 
-router.post('/', validateAuthToken, hasRequiredPermission('ADMIN'), validateCreateCompany, CompanyController.create);
-router.get('/:id', validateAuthToken, hasRequiredPermission('ADMIN'), CompanyController.getById);
-router.get('/', validateAuthToken, hasRequiredPermission('ADMIN'), CompanyController.get);
-router.put('/:id', validateAuthToken, hasRequiredPermission('ADMIN'), validateUpdateCompany, CompanyController.update);
-router.delete('/:id', validateAuthToken, hasRequiredPermission('ADMIN'), CompanyController.delete);
+router.use([validateAuthToken, hasRequiredPermission('ADMIN')]);
+
+router.post('/', validateCreateCompany, CompanyController.create);
+router.get('/:id', CompanyController.getById);
+router.get('/', CompanyController.get);
+router.put('/:id', validateUpdateCompany, CompanyController.update);
+router.delete('/:id', CompanyController.delete);
 
 export { router as companyRoutes };

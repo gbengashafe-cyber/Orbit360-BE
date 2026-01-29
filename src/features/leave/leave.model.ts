@@ -58,6 +58,7 @@ Leave.init(
     sequelize: db,
     modelName: 'Leave',
     tableName: 'leaves',
+    timestamps: true,
   },
 );
 

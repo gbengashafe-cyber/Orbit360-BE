@@ -1,4 +1,3 @@
-import config from 'config';
 import { Router } from 'express';
 import { hasRequiredPermission, isInAllowedDepartment } from '../../utils/check-permission';
 import { validateAuthToken } from '../authentication/auth.middleware';
@@ -7,14 +6,15 @@ import { validateCreateEmployee, validateUpdateEmployee } from './employee.valid
 
 const router = Router();
 
-router.get('/', validateAuthToken, EmployeeController.getAll);
-router.get('/:id', validateAuthToken, EmployeeController.getById);
-router.post('/', validateAuthToken, validateCreateEmployee, EmployeeController.create);
-router.put('/:id', validateAuthToken, validateUpdateEmployee, EmployeeController.update);
+router.use(validateAuthToken);
+
+router.get('/', EmployeeController.getAll);
+router.get('/:id', EmployeeController.getById);
+router.post('/', validateCreateEmployee, EmployeeController.create);
+router.put('/:id', validateUpdateEmployee, EmployeeController.update);
 
 router.put(
   '/:id/status',
-  validateAuthToken,
   isInAllowedDepartment(['HR']),
   hasRequiredPermission('MANAGE_EMPLOYEES'),
   validateUpdateEmployee,

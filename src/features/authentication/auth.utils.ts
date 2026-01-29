@@ -48,7 +48,7 @@ export class AuthUtil {
     return await bcrypt.hash(password, 8);
   };
 
-  static readonly generate = () => {
+  static readonly generatePassword = () => {
     return generator.generate({
       length: 12,
       numbers: true,

@@ -212,7 +212,7 @@ async function seed() {
           firstName: 'oluwaseun',
           lastName: 'ABIOLA',
           email: 'o@o.com',
-          department: departments[1].name,
+          departmentName: departments[1].name,
           password: '',
           jobRole: 'HR_OPERATIONS',
         },

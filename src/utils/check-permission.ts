@@ -63,13 +63,14 @@ const canAccessResource = ({ matcherProp, requiredPermission = '' }: { matcherPr
 const isInAllowedDepartment = (requiredDepartment: string[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     logger.debug(`Checking required department: RequestId: ${req.requestId}: Required Department(s): ${requiredDepartment}`);
-    logger.debug(`Checking required department: RequestId: ${req.requestId}: User department: ${req.user?.department}`);
+    logger.debug(`Checking required department: RequestId: ${req.requestId}: User department: ${req.user?.departmentName}`);
 
-    if (!req.user?.department) {
+    if (!req.user?.departmentName) {
       throw ApiError.forbidden('Missing/incomplete authorization header. You are not authorized to perform this action.');
     }
 
-    const userDepartmentIsAllowed = req.user.role === 'ADMIN' || requiredDepartment.includes(req.user.department.toUpperCase());
+    const userDepartmentIsAllowed =
+      req.user.role === 'ADMIN' || requiredDepartment.includes(req.user.departmentName.toUpperCase());
 
     if (!userDepartmentIsAllowed) {
       throw ApiError.forbidden('You are not authorized to perform this action');

@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { validateOrThrow } from '../../utils/zod-validation-utils';
 import { userRoleOptions, userStatusOptions } from './user.model';
 
-const userSchema = z.object({
+export const userSchema = z.object({
   firstName: z
     .string()
     .trim()
@@ -19,7 +19,7 @@ const userSchema = z.object({
   googleId: z.string().nullable().optional(),
   role: z.enum(userRoleOptions),
   jobRole: z.string('User job role is required').min(1, 'User job role is required'),
-  department: z.string().min(1, 'User department is required'),
+  departmentName: z.string().min(1, 'User department is required'),
 });
 
 const UpdateUserSchema = userSchema.extend({ status: z.enum(userStatusOptions).optional() }).optional();

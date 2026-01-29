@@ -10,7 +10,7 @@ declare module 'express-serve-static-core' {
       id: number | string;
       jobRole: string;
       role: string;
-      department: string;
+      departmentName: string;
       permissions: string[];
     };
     pagination: { page: number; rows: number };

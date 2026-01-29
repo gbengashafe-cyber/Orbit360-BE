@@ -2,6 +2,8 @@ import { NextFunction, Request, Response } from 'express';
 import { ApiError } from '../../utils/api-error';
 import { ApiResponse } from '../../utils/api-response';
 import { logger } from '../../utils/logger';
+import { AuthUtil } from '../authentication/auth.utils';
+import { UserRepository } from '../users/user.repository';
 import { EmployeeRepository } from './employee.repository';
 
 export class EmployeeController {
@@ -54,6 +56,11 @@ export class EmployeeController {
       const employee = req.body.validated.employee;
 
       const createdEmployee = await EmployeeRepository.create(employee);
+
+      if (employee.createUser) {
+        const password = await AuthUtil.hashPassword(AuthUtil.generatePassword());
+        await UserRepository.create({ ...employee, password });
+      }
 
       res.status(201).json(ApiResponse({ data: createdEmployee, message: 'Employee created successfully' }));
     } catch (error) {

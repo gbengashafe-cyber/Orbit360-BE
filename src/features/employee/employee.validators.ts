@@ -43,6 +43,7 @@ const employeeSchema = z.object({
   nokRelationship: z.string().nullable().optional(),
   nokPhone: z.string().nullable().optional(),
   leaveEntitlement: z.number().positive(),
+  createUser: z.boolean().default(false),
 });
 
 const updateEmployeeSchema = employeeSchema

@@ -104,8 +104,8 @@ export class AuthController {
         role,
         status: 'active',
         jobRole: 'employee',
-        department: 'employee',
-        password: await AuthUtil.hashPassword(AuthUtil.generate()),
+        departmentName: 'employee',
+        password: await AuthUtil.hashPassword(AuthUtil.generatePassword()),
       });
     }
 
