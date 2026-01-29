@@ -1,0 +1,30 @@
+import { startOfMonth } from 'date-fns';
+import { Request, Response } from 'express';
+import z from 'zod';
+import { ApiResponse } from '../utils/api-response';
+import { DashboardService } from './dashboard.service';
+
+export class DashboardController {
+  static readonly getStats = async (req: Request, res: Response) => {
+    const dashboardQuerySchema = z.object({
+      department: z.string().trim().optional(),
+      startDate: z.coerce.date().optional(),
+      endDate: z.coerce.date().optional(),
+    });
+
+    // eslint-disable-next-line prefer-const
+    let { department, startDate, endDate } = dashboardQuerySchema.parse(req.query || {});
+
+    if (!startDate) {
+      startDate = startOfMonth(new Date());
+    }
+
+    if (!endDate) {
+      endDate = new Date();
+    }
+
+    const data = await DashboardService.getDashboard({ department, startDate, endDate });
+
+    return res.json(ApiResponse({ data }));
+  };
+}
