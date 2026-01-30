@@ -75,14 +75,17 @@ export class EmployeeController {
 
       let employeePayload = req.body.validated.employee;
 
-      if (req.path.endsWith('status') && req.body.validated?.employee?.status === 'terminated') {
-        employeePayload = { ...employeePayload, terminationDate: new Date() };
+      const employeeExistingData = await EmployeeRepository.readById(id);
+
+      if (!employeeExistingData) {
+        throw ApiError.notFound('Employee not found');
       }
 
-      const employee = await EmployeeRepository.isExist(id);
+      const shouldUpdateTerminationDate =
+        employeeExistingData.status?.toUpperCase() !== 'TERMINATED' && employeePayload?.status?.toUpperCase() === 'TERMINATED';
 
-      if (!employee) {
-        throw ApiError.notFound('Employee not found');
+      if (shouldUpdateTerminationDate) {
+        employeePayload = { ...employeePayload, terminationDate: new Date() };
       }
 
       await EmployeeRepository.update(id, employeePayload);

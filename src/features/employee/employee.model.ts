@@ -120,7 +120,7 @@ Employee.init(
       defaultValue: 'active',
     },
     terminationDate: {
-      type: DataTypes.DATE,
+      type: DataTypes.DATEONLY,
     },
     supervisorId: {
       type: DataTypes.INTEGER,

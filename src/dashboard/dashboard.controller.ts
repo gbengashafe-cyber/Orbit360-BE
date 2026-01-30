@@ -12,7 +12,6 @@ export class DashboardController {
       endDate: z.coerce.date().optional(),
     });
 
-    // eslint-disable-next-line prefer-const
     let { department, startDate, endDate } = dashboardQuerySchema.parse(req.query || {});
 
     if (!startDate) {
@@ -21,6 +20,10 @@ export class DashboardController {
 
     if (!endDate) {
       endDate = new Date();
+    }
+
+    if (department === 'all') {
+      department = '';
     }
 
     const data = await DashboardService.getDashboard({ department, startDate, endDate });

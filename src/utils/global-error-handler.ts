@@ -49,12 +49,13 @@ function handleSequelizeError(err: BaseError): ApiError {
   let code: number = 400;
   let message = '';
   switch (err.constructor.name) {
-    case UniqueConstraintError.name:
+    case UniqueConstraintError.name: {
+      const uniqueErr = err as UniqueConstraintError;
+      const fieldNames = Object.keys(uniqueErr.fields || {}).join(', ');
       code = 409;
-      message = err.entity
-        ? 'Duplicate record not allowed for entity ' + err.entity?.toLowerCase()
-        : 'Duplicate record not allowed';
+      message = fieldNames ? `Duplicate record: The ${fieldNames} already exists.` : 'Duplicate record not allowed';
       break;
+    }
     case ForeignKeyConstraintError.name:
       message = 'Missing/invalid association field.';
       break;
@@ -88,7 +89,6 @@ function handleZodError(err: ZodError, req: Request): ApiError {
   const errors = err.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`).join(', ');
 
   logger.debug(`RequestId: ${req.requestId}, Validation Error: ${errors}`);
-
   return ApiError.badRequest(errors);
 }
 
