@@ -53,10 +53,6 @@ export class EmployeeRepository {
     });
   };
 
-  static readonly isExist = (id: string | number) => {
-    return Employee.findByPk(id, { paranoid: false });
-  };
-
   static readonly readById = (id: string | number) => {
     return Employee.findByPk(id, {
       paranoid: false,

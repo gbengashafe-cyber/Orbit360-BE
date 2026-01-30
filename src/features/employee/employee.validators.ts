@@ -2,7 +2,6 @@ import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
 import { ApiError } from '../../utils/api-error';
 import { moneySchema } from '../../utils/money.utils';
-import { validateOrThrow } from '../../utils/zod-validation-utils';
 import { employeeStatus } from './employee.model';
 
 export const MONEY_PRECISION = {
@@ -54,14 +53,13 @@ const updateEmployeeSchema = employeeSchema
 
 const validate = (schema: z.ZodObject<any>) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    const result = schema.safeParse(req.body);
-    validateOrThrow(result, req.requestId);
+    const result = schema.parse(req.body);
 
-    if (result?.data?.employeeId && result?.data?.employeeId === result?.data?.supervisorId) {
+    if (result.employeeId && result.employeeId === result.supervisorId) {
       throw ApiError.badRequest('Employee and supervisor cannot be the same');
     }
 
-    req.body.validated = { employee: result.data };
+    req.body.validated = { employee: result };
     next();
   };
 };

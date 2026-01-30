@@ -82,8 +82,15 @@ export class DashboardRepository {
     }) as unknown as Promise<AggregatedLeave | null>;
   };
 
-  static readonly getAttritionTrend = async (department?: string) => {
-    const where: any = { status: 'terminated', terminationDate: { [Op.ne]: null } };
+  static readonly getAttritionTrend = async ({ startDate, endDate, department }: DashboardStatsParams) => {
+    const where: any = {
+      status: 'terminated',
+      terminationDate: {
+        [Op.ne]: null,
+        [Op.between]: [startDate, endDate],
+      },
+    };
+
     if (department) where.departmentName = department;
 
     return Employee.findAll({
@@ -95,7 +102,7 @@ export class DashboardRepository {
       group: [literal("DATE_FORMAT(termination_date, '%Y-%m')") as any as string],
       order: [[literal('month'), 'ASC']],
       raw: true,
-    });
+    }) as unknown as Promise<{ month: string; count: number }[]>;
   };
 
   static readonly getGenderDistribution = async (department?: string) => {
@@ -103,10 +110,13 @@ export class DashboardRepository {
     if (department) where.departmentName = department;
 
     return Employee.findAll({
-      attributes: ['gender', [fn('COUNT', col('id')), 'count']],
+      attributes: [
+        ['gender', 'name'],
+        [fn('COUNT', col('id')), 'value'],
+      ],
       where,
       group: ['gender'],
       raw: true,
-    });
+    }) as unknown as Promise<{ name: 'M' | 'F'; value: number }[]>;
   };
 }
