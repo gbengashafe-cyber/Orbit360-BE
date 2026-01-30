@@ -20,7 +20,7 @@ const employeeSchema = z.object({
   hireDate: z.iso.date('Invalid hire date format'),
   departmentName: z.string().min(1, 'Employee department is required'),
   jobRole: z.string().min(1, 'Job role is required'),
-  supervisorId: z.preprocess(emptyToNull, z.string().min(1).nullable().optional()),
+  supervisorId: z.preprocess(emptyToNull, z.coerce.number().int().positive().nullable().optional()),
   dob: z.iso.date('Invalid dob date provided'),
   gender: z.enum(['M', 'F']),
   nationality: z.string().nullable().optional(),
