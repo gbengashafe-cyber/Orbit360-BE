@@ -21,6 +21,24 @@ export class LoanService {
     return loan;
   };
 
+  static readonly editLoan = async (id: number, data: any) => {
+    const loan = await LoanRepository.readById(id);
+
+    if (!loan) {
+      throw ApiError.notFound('Loan record not found');
+    }
+
+    if (['PENDING_APPROVAL', 'PENDING_DISBURSEMENT', 'PAID_OFF', 'REJECTED'].includes(loan.status)) {
+      throw ApiError.badRequest(`Cannot modify loan in ${loan.status} state.`);
+    }
+
+    await LoanRepository.update(Number(id), data);
+
+    const updatedLoan = await LoanRepository.readById(id);
+
+    return updatedLoan;
+  };
+
   static readonly approveLoan = async (loanId: number, approverId: number) => {
     const loan = await LoanRepository.readById(loanId);
 

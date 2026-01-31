@@ -1,12 +1,13 @@
 import { Router } from 'express';
 import { validateAuthToken } from '../features/authentication/auth.middleware';
-import { ApprovalController } from './pending-authorization.controller';
+import { AuthorizationController } from './pending-authorization.controller';
 
 const router = Router();
 
 router.use(validateAuthToken);
 
-router.get('/', ApprovalController.getDashboard);
-router.get('/counts', ApprovalController.getCounts);
+router.get('/', AuthorizationController.getDashboard);
+router.get('/counts', AuthorizationController.getCounts);
+router.get('/:moduleName', AuthorizationController.getModulePending);
 
 export { router as authorizationRoutes };

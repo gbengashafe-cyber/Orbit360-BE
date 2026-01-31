@@ -35,6 +35,7 @@ async function seed() {
     await JobRolePermissions.bulkCreate(
       [
         { permission: 'MANAGE_EMPLOYEES', jobRole: 'HR Operations' },
+        { permission: 'MANAGE_EMPLOYEES', jobRole: 'HR Manager' },
         { permission: 'MANAGE_ONBOARDING', jobRole: 'HR Operations' },
         { permission: 'MANAGE_LOANS', jobRole: 'HR Operations' },
         { permission: 'MANAGE_USERS', jobRole: 'HR Operations' },

@@ -1,13 +1,15 @@
-import { CreationOptional, DataTypes, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
+import { CreationOptional, DataTypes, ForeignKey, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import { db } from '../../db';
 import { Employee } from '../employee/employee.model';
 
+export const LEAVE_TYPES = ['sick', 'vacation', 'personal', 'maternity', 'paternity'];
+
 export class Leave extends Model<InferAttributes<Leave>, InferCreationAttributes<Leave>> {
   declare id: CreationOptional<number>;
-  declare employeeId: number;
+  declare employeeId: ForeignKey<Employee['id']>;
   declare startDate: Date;
   declare endDate: Date;
-  declare type: 'sick' | 'vacation' | 'personal' | 'maternity' | 'paternity';
+  declare type: (typeof LEAVE_TYPES)[number];
   declare status: CreationOptional<'pending' | 'approved' | 'rejected'>;
   declare reason: CreationOptional<string | null>;
   declare createdAt: CreationOptional<Date>;
@@ -34,7 +36,8 @@ Leave.init(
       allowNull: false,
     },
     type: {
-      type: DataTypes.ENUM('sick', 'vacation', 'personal', 'maternity', 'paternity'),
+      type: DataTypes.ENUM,
+      values: LEAVE_TYPES,
       allowNull: false,
     },
     status: {

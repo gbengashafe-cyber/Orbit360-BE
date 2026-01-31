@@ -2,6 +2,7 @@ import { CreationOptional, DataTypes, ForeignKey, InferAttributes, InferCreation
 import { db } from '../../db';
 import { Department } from '../department/department.model';
 import { JobRole } from '../job-role/job-role.model';
+import { User } from '../users/user.model';
 
 export const employeeStatus = ['active', 'suspended', 'terminated', 'on_leave'];
 
@@ -49,6 +50,8 @@ export class Employee extends Model<InferAttributes<Employee>, InferCreationAttr
   // Others
   declare nhfApplicable: boolean;
   declare createdAt: CreationOptional<Date>;
+  declare createdBy: ForeignKey<User['id']>;
+  declare approvedBy: ForeignKey<User['id']>;
 }
 
 Employee.init(

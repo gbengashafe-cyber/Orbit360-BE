@@ -1,11 +1,12 @@
-import { ApprovalRepository } from './pending-authorization.repository';
+import { ApiError } from '../utils/api-error';
+import { AuthorizationRepository } from './pending-authorization.repository';
 
-export class ApprovalService {
+export class AuthorizationService {
   static readonly getGroupedPending = async (page = 1, rows = 25) => {
     const [loans, leaves, employees] = await Promise.all([
-      ApprovalRepository.getPendingLoans(rows),
-      ApprovalRepository.getPendingLeaves(rows),
-      ApprovalRepository.getPendingEmployees(rows),
+      AuthorizationRepository.getPendingLoans(rows),
+      AuthorizationRepository.getPendingLeaves(rows),
+      AuthorizationRepository.getPendingEmployees(rows),
     ]);
 
     const allItems = [
@@ -39,22 +40,30 @@ export class ApprovalService {
     };
   };
 
-  static readonly getBadgeCounts = async () => {
-    const [loanCount, leaveCount, employeeCount] = await ApprovalRepository.getPendingCounts();
-    const total = loanCount + leaveCount + employeeCount;
+  static readonly getBadgeCounts = async (userPermissions: string[], userId: number) => {
+    const authorizedModules = userPermissions
+      .filter((perm) => perm.startsWith('APPROVE_'))
+      .map((perm) => perm.replace('APPROVE_', ''));
 
-    return {
-      total,
-      breakdown: {
-        loans: loanCount,
-        leaves: leaveCount,
-        employees: employeeCount,
-      },
-    };
+    if (authorizedModules.length === 0) {
+      return { total: 0, breakdown: {} };
+    }
+
+    const results = await AuthorizationRepository.getCountsByModules(authorizedModules, userId);
+
+    const breakdown: Record<string, number> = {};
+    let total = 0;
+
+    results.forEach(({ key, count }) => {
+      breakdown[key] = count;
+      total += count;
+    });
+
+    return { total, breakdown };
   };
 
   static readonly getCheckerHistory = async (checkerId: number, page = 1, rows = 25) => {
-    const { loans } = await ApprovalRepository.getApprovedByChecker(checkerId, rows);
+    const { loans } = await AuthorizationRepository.getApprovedByChecker(checkerId, rows);
 
     const groupedData = {
       loans: {
@@ -69,6 +78,24 @@ export class ApprovalService {
         totalItems: loans.length,
         checkerId,
         page,
+      },
+    };
+  };
+
+  static readonly getPendingModuleItems = async (moduleType: string, page: number, rows: number) => {
+    const result = await AuthorizationRepository.getPendingByModule(moduleType, page, rows);
+
+    if (!result) {
+      throw ApiError.badRequest(`Invalid module type: ${moduleType}`);
+    }
+
+    return {
+      data: result.rows,
+      pagination: {
+        total: result.count,
+        page,
+        rows,
+        pages: Math.ceil(result.count / rows),
       },
     };
   };

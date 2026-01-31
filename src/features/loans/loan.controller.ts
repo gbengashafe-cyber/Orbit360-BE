@@ -67,15 +67,7 @@ export class LoanController {
     const { id } = req.params;
     const loanRequest = req.body.validated.loan;
 
-    const loan = await LoanRepository.readById(id);
-
-    if (!loan) {
-      throw ApiError.notFound('Loan record not found');
-    }
-
-    await LoanRepository.update(Number(id), loanRequest);
-
-    const updatedLoan = await LoanRepository.readById(id);
+    const updatedLoan = await LoanService.editLoan(Number(id), loanRequest);
 
     res.json(ApiResponse({ data: updatedLoan, message: 'Payroll updated successfully' }));
   };
