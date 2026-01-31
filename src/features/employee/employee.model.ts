@@ -48,7 +48,7 @@ export class Employee extends Model<InferAttributes<Employee>, InferCreationAttr
   declare leaveEntitlement: number;
   // Others
   declare nhfApplicable: boolean;
-  declare createdAt: Date;
+  declare createdAt: CreationOptional<Date>;
 }
 
 Employee.init(

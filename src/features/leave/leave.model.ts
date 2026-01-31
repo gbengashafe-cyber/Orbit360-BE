@@ -1,27 +1,17 @@
-import { DataTypes, Model } from 'sequelize';
+import { CreationOptional, DataTypes, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import { db } from '../../db';
 import { Employee } from '../employee/employee.model';
 
-export interface LeaveAttributes {
-  id?: number;
-  employeeId: number;
-  startDate: Date;
-  endDate: Date;
-  type: 'sick' | 'vacation' | 'personal' | 'maternity' | 'paternity';
-  status: 'pending' | 'approved' | 'rejected';
-  reason?: string;
-  createdAt: Date;
-}
-
-export class Leave extends Model<LeaveAttributes> implements LeaveAttributes {
-  public id!: number;
-  public employeeId!: number;
-  public startDate!: Date;
-  public endDate!: Date;
-  public type!: 'sick' | 'vacation' | 'personal' | 'maternity' | 'paternity';
-  public status!: 'pending' | 'approved' | 'rejected';
-  public reason!: string;
-  declare createdAt: Date;
+export class Leave extends Model<InferAttributes<Leave>, InferCreationAttributes<Leave>> {
+  declare id: CreationOptional<number>;
+  declare employeeId: number;
+  declare startDate: Date;
+  declare endDate: Date;
+  declare type: 'sick' | 'vacation' | 'personal' | 'maternity' | 'paternity';
+  declare status: CreationOptional<'pending' | 'approved' | 'rejected'>;
+  declare reason: CreationOptional<string | null>;
+  declare createdAt: CreationOptional<Date>;
+  declare updatedAt: CreationOptional<Date>;
 }
 
 Leave.init(
@@ -55,7 +45,8 @@ Leave.init(
       type: DataTypes.TEXT,
       allowNull: true,
     },
-    createdAt: { type: DataTypes.DATE },
+    createdAt: DataTypes.DATE,
+    updatedAt: DataTypes.DATE,
   },
   {
     sequelize: db,
