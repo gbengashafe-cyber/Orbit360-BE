@@ -1,5 +1,6 @@
 import compression from 'compression';
 import config from 'config';
+import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express, { NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
@@ -8,6 +9,7 @@ import { randomUUID } from 'node:crypto';
 import path from 'path';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger';
+import { dashboardRoutes } from './dashboard/dashboard.routes';
 import { authRoutes } from './features/authentication/auth.routes';
 import { companyRoutes } from './features/company/company.routes';
 import { complaintRoutes } from './features/complaints/complaint.routes';
@@ -23,12 +25,11 @@ import { payrollReportRoutes } from './features/payroll/reports/payroll-report.r
 import { performanceRoutes } from './features/performance/performance.routes';
 import { recruitmentRoutes } from './features/recruitment/recruitment.routes';
 import { userRoutes } from './features/users/user.router';
+import { authorizationRoutes } from './pending-authorization/pending-authorization.routes';
 import { ApiError } from './utils/api-error';
 import { globalErrorHandler } from './utils/global-error-handler';
 import { logger } from './utils/logger';
 import { parsePageAndLimitNumber, parseQueryParams } from './utils/request-query-parser';
-import cookieParser from 'cookie-parser';
-import { dashboardRoutes } from './dashboard/dashboard.routes';
 
 const allowedOrigins = config.get<string[]>('allowedOrigins');
 
@@ -143,6 +144,7 @@ app.use('/api/v1/companies', companyRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/loans', loanRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
+app.use('/api/v1/pending-authorization', authorizationRoutes);
 
 // Swagger Documentation
 app.use(

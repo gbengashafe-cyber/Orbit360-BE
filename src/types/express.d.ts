@@ -8,6 +8,7 @@ declare module 'express-serve-static-core' {
     requestPath?: string;
     user?: {
       id: number | string;
+      email: string;
       jobRole: string;
       role: string;
       departmentName: string;

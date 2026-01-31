@@ -1,4 +1,4 @@
-import { startOfMonth } from 'date-fns';
+import { startOfMonth, subMonths } from 'date-fns';
 import { Request, Response } from 'express';
 import z from 'zod';
 import { ApiResponse } from '../utils/api-response';
@@ -15,7 +15,7 @@ export class DashboardController {
     let { department, startDate, endDate } = dashboardQuerySchema.parse(req.query || {});
 
     if (!startDate) {
-      startDate = startOfMonth(new Date());
+      startDate = startOfMonth(subMonths(new Date(), 1));
     }
 
     if (!endDate) {

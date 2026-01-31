@@ -18,7 +18,7 @@ JobRolePermissions.init(
     jobRole: {
       type: DataTypes.STRING(100),
       allowNull: false,
-      unique: 'role_permission',
+      unique: 'job_role_permission_idx',
       set(value: string) {
         this.setDataValue('jobRole', value.toUpperCase());
       },
@@ -26,10 +26,20 @@ JobRolePermissions.init(
     permission: {
       type: DataTypes.STRING(50),
       allowNull: false,
-      unique: 'role_permission',
+      unique: 'job_role_permission_idx',
     },
   },
-  { sequelize: db, underscored: true, tableName: 'job_role_permissions' },
+  {
+    sequelize: db,
+    underscored: true,
+    tableName: 'job_role_permissions',
+    indexes: [
+      {
+        unique: true,
+        fields: ['job_role', 'permission'],
+      },
+    ],
+  },
 );
 
 JobRolePermissions.belongsTo(JobRole, { foreignKey: 'jobRole', targetKey: 'title', as: 'roleObj' });

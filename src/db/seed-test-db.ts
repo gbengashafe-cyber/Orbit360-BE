@@ -32,13 +32,18 @@ async function seed() {
       { ignoreDuplicates: true },
     );
 
-    await JobRolePermissions.bulkCreate([
-      { permission: 'MANAGE_EMPLOYEES', jobRole: 'HR Operations' },
-      { permission: 'MANAGE_ONBOARDING', jobRole: 'HR Operations' },
-      { permission: 'MANAGE_LOANS', jobRole: 'HR Operations' },
-      { permission: 'MANAGE_USERS', jobRole: 'HR Operations' },
-      { permission: 'MANAGE_PAYROLLS', jobRole: 'HR Operations' },
-    ]);
+    await JobRolePermissions.bulkCreate(
+      [
+        { permission: 'MANAGE_EMPLOYEES', jobRole: 'HR Operations' },
+        { permission: 'MANAGE_ONBOARDING', jobRole: 'HR Operations' },
+        { permission: 'MANAGE_LOANS', jobRole: 'HR Operations' },
+        { permission: 'MANAGE_USERS', jobRole: 'HR Operations' },
+        { permission: 'MANAGE_PAYROLLS', jobRole: 'HR Operations' },
+        { permission: 'MANAGE_LOANS', jobRole: 'HR Manager' },
+        { permission: 'APPROVE_LOANS', jobRole: 'HR Manager' },
+      ],
+      { ignoreDuplicates: true },
+    );
 
     logger.info('Database seeding completed successfully');
     process.exit(0);

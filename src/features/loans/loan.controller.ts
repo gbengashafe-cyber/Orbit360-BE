@@ -4,6 +4,7 @@ import { ApiError } from '../../utils/api-error';
 import { ApiResponse } from '../../utils/api-response';
 import { Loan } from './loan.model';
 import { LoanRepository } from './loan.repository';
+import { LoanService } from './loan-service';
 
 export class LoanController {
   static readonly getDashboard = async (req: Request, res: Response) => {
@@ -18,10 +19,13 @@ export class LoanController {
   };
   static readonly get = async (req: Request, res: Response) => {
     const { page, rows } = req.pagination;
+    const filters = req.parsedQuery;
 
-    const { count, rows: loans } = await LoanRepository.read({
+    const { count, rows: loans } = await LoanService.getLoans({
       rows,
       page,
+      status: filters?.search,
+      employeeId: filters?.employeeId,
     });
 
     res.json(
@@ -87,5 +91,34 @@ export class LoanController {
     await LoanRepository.delete(Number(id));
 
     res.json(ApiResponse({ data: { id }, message: 'Loan record deleted successfully' }));
+  };
+
+  static readonly approve = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const approverId = req.user?.id;
+
+    await LoanService.approveLoan(Number(id), Number(approverId));
+
+    return res.json(
+      ApiResponse({
+        data: { id },
+        message: 'Loan approved successfully and moved to disbursement queue.',
+      }),
+    );
+  };
+
+  static readonly reject = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { notes } = req.body;
+    const approverId = req.user?.id;
+
+    await LoanService.rejectLoan(Number(id), Number(approverId), notes);
+
+    return res.json(
+      ApiResponse({
+        data: { id },
+        message: 'Loan application has been rejected.',
+      }),
+    );
   };
 }

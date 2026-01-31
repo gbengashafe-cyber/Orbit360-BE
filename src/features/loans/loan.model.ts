@@ -4,7 +4,7 @@ import { db } from '../../db';
 import { Employee } from '../employee/employee.model';
 import { User } from '../users/user.model';
 
-export const loanStatus = ['pending_approval', 'pending_disbursement', 'active', 'paid_off', 'rejected'] as const;
+export const loanStatus = ['PENDING_APPROVAL', 'PENDING_DISBURSEMENT', 'ACTIVE', 'PAID_OFF', 'REJECTED'] as const;
 export const loanType = ['THRIFT', 'SALARY_ADVANCE', 'PERSONAL'] as const;
 
 export class Loan extends Model<InferAttributes<Loan>, InferCreationAttributes<Loan>> {
@@ -21,6 +21,8 @@ export class Loan extends Model<InferAttributes<Loan>, InferCreationAttributes<L
   declare approvedDate: Date;
   declare notes: string;
   declare status: CreationOptional<(typeof loanStatus)[number]>;
+  declare nextStep: (typeof loanStatus)[number];
+  declare createdAt: Date;
 }
 
 Loan.init(
@@ -61,7 +63,7 @@ Loan.init(
     approvedBy: {
       type: DataTypes.INTEGER,
       allowNull: true,
-      references: { model: 'users', key: 'id' },
+      references: { model: User, key: 'id' },
     },
     approvedDate: {
       type: DataTypes.DATEONLY,
@@ -74,6 +76,12 @@ Loan.init(
       values: loanStatus,
       defaultValue: 'pending_approval',
     },
+    nextStep: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+      defaultValue: 'pending_disbursement',
+    },
+    createdAt: { type: DataTypes.DATE },
 
     endDate: {
       type: DataTypes.VIRTUAL,

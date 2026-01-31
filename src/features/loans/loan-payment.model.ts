@@ -1,7 +1,6 @@
 import { CreationOptional, DataTypes, ForeignKey, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import { db } from '../../db';
 import { Employee } from '../employee/employee.model';
-import { Payroll } from '../payroll/payroll.model';
 import { Loan } from './loan.model';
 
 export class LoanPayment extends Model<InferAttributes<LoanPayment>, InferCreationAttributes<LoanPayment>> {

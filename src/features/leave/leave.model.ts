@@ -10,6 +10,7 @@ export interface LeaveAttributes {
   type: 'sick' | 'vacation' | 'personal' | 'maternity' | 'paternity';
   status: 'pending' | 'approved' | 'rejected';
   reason?: string;
+  createdAt: Date;
 }
 
 export class Leave extends Model<LeaveAttributes> implements LeaveAttributes {
@@ -20,6 +21,7 @@ export class Leave extends Model<LeaveAttributes> implements LeaveAttributes {
   public type!: 'sick' | 'vacation' | 'personal' | 'maternity' | 'paternity';
   public status!: 'pending' | 'approved' | 'rejected';
   public reason!: string;
+  declare createdAt: Date;
 }
 
 Leave.init(
@@ -53,6 +55,7 @@ Leave.init(
       type: DataTypes.TEXT,
       allowNull: true,
     },
+    createdAt: { type: DataTypes.DATE },
   },
   {
     sequelize: db,

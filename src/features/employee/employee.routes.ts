@@ -6,6 +6,8 @@ import { validateCreateEmployee, validateUpdateEmployee } from './employee.valid
 
 const router = Router();
 
+router.get('/me', validateAuthToken, EmployeeController.getUserEmployeeRecord);
+
 router.use([validateAuthToken, hasRequiredPermission('MANAGE_EMPLOYEES')]);
 
 router.get('/', EmployeeController.getAll);

@@ -15,7 +15,7 @@ const employeeSchema = z.object({
   firstName: z.string().min(1, 'First name is required').max(50, 'First name cannot exceed 50 characters'),
   lastName: z.string().min(1, 'Last name is required').max(50, 'Last name cannot exceed 50 characters'),
   email: z.email('Invalid email format').max(100, 'Email cannot exceed 100 characters'),
-  employeeId: z.string().min(1, 'Employee ID is required').max(10, 'Only 10 characters are allowed for employee ID'),
+  staffId: z.string().min(1, 'Staff ID is required').max(10, 'Only 10 characters are allowed for staff ID'),
   phone: z.string().min(1, 'Phone number is required').max(20, 'Phone number cannot exceed 20 characters'),
   hireDate: z.iso.date('Invalid hire date format'),
   departmentName: z.string().min(1, 'Employee department is required'),

@@ -14,5 +14,7 @@ router.get('/:id', validateAuthToken, LoanController.getById);
 router.post('/', validateAuthToken, validateLoan, LoanController.create);
 router.put('/:id', validateAuthToken, validateLoan, LoanController.update);
 router.delete('/:id', validateAuthToken, LoanController.delete);
+router.patch('/:id/approve', hasRequiredPermission('APPROVE_LOANS'), LoanController.approve);
+router.patch('/:id/reject', hasRequiredPermission('APPROVE_LOANS'), LoanController.reject);
 
 export { router as loanRoutes };

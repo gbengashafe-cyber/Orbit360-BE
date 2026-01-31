@@ -46,7 +46,7 @@ async function seed() {
     // Create Employees
     const employees = await Employee.bulkCreate([
       {
-        employeeId: '1',
+        staffId: '1',
         firstName: 'John',
         lastName: 'Doe',
         email: 'john.doe@example.com',
@@ -80,7 +80,7 @@ async function seed() {
         nhfApplicable: false,
       },
       {
-        employeeId: '2',
+        staffId: '2',
         firstName: 'Jane',
         lastName: 'Smith',
         email: 'jane.smith@example.com',
@@ -114,7 +114,7 @@ async function seed() {
         nhfApplicable: false,
       },
       {
-        employeeId: '3',
+        staffId: '3',
         firstName: 'Bob',
         lastName: 'Johnson',
         email: 'bob.johnson@example.com',

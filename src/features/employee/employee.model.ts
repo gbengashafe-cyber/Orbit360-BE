@@ -8,7 +8,7 @@ export const employeeStatus = ['active', 'suspended', 'terminated', 'on_leave'];
 export class Employee extends Model<InferAttributes<Employee>, InferCreationAttributes<Employee>> {
   declare id: CreationOptional<number>;
   // Personal Information
-  declare employeeId: string;
+  declare staffId: string;
   declare firstName: string;
   declare lastName: string;
   declare email: string;
@@ -48,6 +48,7 @@ export class Employee extends Model<InferAttributes<Employee>, InferCreationAttr
   declare leaveEntitlement: number;
   // Others
   declare nhfApplicable: boolean;
+  declare createdAt: Date;
 }
 
 Employee.init(
@@ -57,10 +58,10 @@ Employee.init(
       autoIncrement: true,
       primaryKey: true,
     },
-    employeeId: {
+    staffId: {
       type: DataTypes.STRING(10),
       allowNull: false,
-      unique: 'employeeId',
+      unique: 'staffId',
     },
     firstName: {
       type: DataTypes.STRING(50),
@@ -166,6 +167,7 @@ Employee.init(
       type: DataTypes.BOOLEAN,
       allowNull: false,
     },
+    createdAt: { type: DataTypes.DATE },
   },
   {
     sequelize: db,
