@@ -59,7 +59,6 @@ export class AuthorizationRepository {
     return { loans };
   };
   static readonly getCountsByModules = async (modules: string[], userId: number) => {
-    console.log('🚀 ~ AuthorizationRepository ~ modules:', modules);
     const tasks: Promise<{ key: string; count: number }>[] = [];
 
     if (modules.includes('LOANS')) {

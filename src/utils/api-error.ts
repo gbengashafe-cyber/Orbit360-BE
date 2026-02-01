@@ -6,6 +6,7 @@ export const HttpStatus = {
   Forbidden: 403,
   TooManyRequests: 429,
   Conflict: 409,
+  ValidationError: 422,
   InternalServerError: 500,
   NotImplemented: 501,
 } as const;
@@ -51,6 +52,9 @@ class ApiError extends Error {
   }
   static conflict(message: string): ApiError {
     return new ApiError(HttpStatus.Conflict, message);
+  }
+  static validationError(message: string): ApiError {
+    return new ApiError(HttpStatus.ValidationError, message);
   }
 
   static internalServerError(message: string): ApiError {

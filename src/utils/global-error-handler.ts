@@ -61,9 +61,11 @@ function handleSequelizeError(err: BaseError): ApiError {
       break;
     case ValidationError.name:
       message = err.message ?? 'Oops! Looks like something is wrong with the request';
+      code = 422;
       break;
     case DatabaseError.name:
-      message = 'Oops! Looks like something is wrong with the request';
+      message = 'Oops! Something went wrong.';
+      code = 500;
       break;
     case EagerLoadingError.name:
       code = 500;
@@ -78,6 +80,8 @@ function handleSequelizeError(err: BaseError): ApiError {
     return ApiError.internalServerError('Oops! Something went wrong on the server. Please try again later.');
   } else if (code === 409) {
     return ApiError.conflict(message);
+  } else if (code === 422) {
+    return ApiError.validationError(message);
   } else if (code === 500) {
     return ApiError.internalServerError(message);
   } else {
