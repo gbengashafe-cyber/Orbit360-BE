@@ -3,6 +3,7 @@ import { ApiError } from '../../utils/api-error';
 import { ApiResponse } from '../../utils/api-response';
 import { logger } from '../../utils/logger';
 import { AuthUtil } from '../authentication/auth.utils';
+import { PayrollRepository } from '../payroll/payroll.repository';
 import { UserRepository } from '../users/user.repository';
 import { EmployeeRepository } from './employee.repository';
 import { EmployeeService } from './employee.service';
@@ -46,6 +47,32 @@ export class EmployeeController {
 
     res.json(ApiResponse({ data: employee.rows[0], message: 'Employee fetched successfully' }));
   }
+
+  static async getEmployeePayrollRecords(req: Request, res: Response) {
+    const { id } = req.params;
+    const { page, rows } = req.pagination;
+
+    const { count, rows: payrolls } = await PayrollRepository.getByEmployee({
+      employeeId: id,
+      rows,
+      page,
+      filters: req.parsedQuery,
+    });
+
+    res.json(
+      ApiResponse({
+        data: payrolls,
+        message: 'Payroll record(s) fetched successfully',
+        pagination: {
+          total: count,
+          page,
+          rows,
+          pages: Math.ceil(count / rows),
+        },
+      }),
+    );
+  }
+
   static async getById(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
@@ -117,7 +144,6 @@ export class EmployeeController {
 
     return res.json(
       ApiResponse({
-        success: true,
         message: 'Active employee directory retrieved',
         ...result,
       }),

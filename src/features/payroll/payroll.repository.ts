@@ -1,4 +1,4 @@
-import { CreationAttributes, Transaction } from 'sequelize';
+import { CreationAttributes, Transaction, WhereOptions } from 'sequelize';
 import { db } from '../../db';
 import { Employee } from '../employee/employee.model';
 import { ReadAllProps } from '../employee/employee.repository';
@@ -95,5 +95,21 @@ export class PayrollRepository {
 
   static readonly deleteByPayPeriod = (payPeriod: string, transaction: Transaction) => {
     return Payroll.destroy({ where: { payPeriod }, transaction });
+  };
+
+  static readonly getByEmployee = async ({ employeeId, filters, rows, page }) => {
+    const where: WhereOptions = { employeeId, status: 'paid' };
+    const offset = (page - 1) * rows;
+
+    if (filters.payPeriod) {
+      where.payPeriod = filters.payPeriod;
+    }
+
+    return Payroll.findAndCountAll({
+      where,
+      limit: rows,
+      offset,
+      order: [['createdAt', 'DESC']],
+    });
   };
 }

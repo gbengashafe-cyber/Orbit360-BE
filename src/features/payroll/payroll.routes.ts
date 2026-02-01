@@ -18,9 +18,9 @@ router.param('employeeId', (req, res, next, val) => {
 
 router.get('/', PayrollController.getAll);
 router.get(
-  '/employee/:employeeId',
+  '/employees/:employeeId',
   validateAuthToken,
-  canAccessResource({ matcherProp: 'employeeId', requiredPermission: 'MANAGE_PAYROLLS' }),
+  hasRequiredPermission('MANAGE_PAYROLLS'),
   PayrollController.getByEmployee,
 );
 router.get('/:id', validatePayrollIdParam, PayrollController.getById);
