@@ -63,4 +63,42 @@ export class EmployeeRepository {
   static readonly update = (id: number | string, employee: InferAttributes<Employee>) => {
     return Employee.update(employee, { where: { id }, paranoid: false });
   };
+
+  static readonly findActiveDirectory = async ({
+    rows,
+    page,
+    filters,
+    orderBy = 'createdAt',
+    orderDirection = 'ASC',
+  }: ReadAllProps) => {
+    const where: any = { status: { [Op.ne]: 'terminated' } };
+
+    if (filters.search) {
+      where[Op.or] = [
+        { firstName: { [Op.like]: `%${filters.search}%` } },
+        { lastName: { [Op.like]: `%${filters.search}%` } },
+        { email: { [Op.like]: `%${filters.search}%` } },
+      ];
+    }
+
+    if (filters.departmentName) where.departmentName = filters.departmentName;
+    if (filters.position) where.position = filters.position;
+    if (filters.gender) where.gender = filters.gender;
+    if (filters.supervisorId) where.supervisorId = filters.supervisorId;
+
+    if (filters.hireDateFrom || filters.hireDateTo) {
+      where.hireDate = {
+        ...(filters.hireDateFrom && { [Op.gte]: filters.hireDateFrom }),
+        ...(filters.hireDateTo && { [Op.lte]: filters.hireDateTo }),
+      };
+    }
+
+    return Employee.findAndCountAll({
+      where,
+      limit: rows,
+      offset: (page - 1) * rows,
+      order: [[orderBy, orderDirection]],
+      nest: true,
+    });
+  };
 }

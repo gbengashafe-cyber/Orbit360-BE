@@ -11,6 +11,7 @@ router.get('/me', validateAuthToken, EmployeeController.getUserEmployeeRecord);
 router.use([validateAuthToken, hasRequiredPermission('MANAGE_EMPLOYEES')]);
 
 router.get('/', EmployeeController.getAll);
+router.get('/directory', EmployeeController.getDirectory);
 router.get('/:id', EmployeeController.getById);
 router.post('/', validateCreateEmployee, EmployeeController.create);
 router.put('/:id', validateUpdateEmployee, EmployeeController.update);

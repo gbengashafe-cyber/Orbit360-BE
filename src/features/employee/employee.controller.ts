@@ -5,34 +5,30 @@ import { logger } from '../../utils/logger';
 import { AuthUtil } from '../authentication/auth.utils';
 import { UserRepository } from '../users/user.repository';
 import { EmployeeRepository } from './employee.repository';
+import { EmployeeService } from './employee.service';
 
 export class EmployeeController {
-  static async getAll(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { page, rows } = req.pagination;
+  static async getAll(req: Request, res: Response) {
+    const { page, rows } = req.pagination;
 
-      const { count, rows: employees } = await EmployeeRepository.read({
-        rows,
-        page,
-        filters: req.parsedQuery,
-      });
+    const { count, rows: employees } = await EmployeeRepository.read({
+      rows,
+      page,
+      filters: req.parsedQuery,
+    });
 
-      res.json(
-        ApiResponse({
-          message: 'Employees fetched successfully',
-          data: employees,
-          pagination: {
-            total: count,
-            page,
-            rows,
-            pages: Math.ceil(count / rows),
-          },
-        }),
-      );
-    } catch (error) {
-      logger.error(`Error fetching employees: ${error}`);
-      next(error);
-    }
+    res.json(
+      ApiResponse({
+        message: 'Employees fetched successfully',
+        data: employees,
+        pagination: {
+          total: count,
+          page,
+          rows,
+          pages: Math.ceil(count / rows),
+        },
+      }),
+    );
   }
 
   static async getUserEmployeeRecord(req: Request, res: Response) {
@@ -113,4 +109,18 @@ export class EmployeeController {
       next(error);
     }
   }
+
+  static readonly getDirectory = async (req: Request, res: Response) => {
+    const { page, rows } = req.pagination;
+
+    const result = await EmployeeService.getDirectory({ page, rows, filters: req.parsedQuery });
+
+    return res.json(
+      ApiResponse({
+        success: true,
+        message: 'Active employee directory retrieved',
+        ...result,
+      }),
+    );
+  };
 }
