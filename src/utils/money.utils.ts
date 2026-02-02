@@ -1,23 +1,20 @@
 import { z } from 'zod';
 
-// Rounds to DECIMAL(12,2) safely
-export function roundMoney(value: number): number {
-  return Math.round((value + Number.EPSILON) * 100) / 100;
-}
-
-export const toCents = (amount: number): number => Math.round((amount + Number.EPSILON) * 100);
-
-export const fromCents = (cents: number): number => cents / 100;
-
 export const MONEY = {
   SCALE: 2,
-  MAX_KOBO: 999_999_999_999_999,
+  MAX_VALUE: 9_999_999_999_999.99,
 };
 
-export const moneySchema = z
-  .number({})
-  .nonnegative('Amount must be positive')
-  .refine((v) => Number.isFinite(v), 'Amount must be a finite number')
-  .refine((v) => Number.isInteger(v * 10 ** MONEY.SCALE), `Amount must have at most ${MONEY.SCALE} decimal places`)
-  .refine((v) => v <= MONEY.MAX_KOBO, 'Amount exceeds maximum allowed value')
-  .describe(`Money amount (DECIMAL(15,2), max ${MONEY.MAX_KOBO})`);
+export const moneySchema = z.preprocess(
+  (val) => (typeof val === 'string' ? Number(val) : val),
+  z
+    .number({
+      error: (val) => (!val ? 'Amount is required' : 'Please enter a valid number for the amount'),
+    })
+    .nonnegative('Amount cannot be a negative value')
+    .refine((v) => {
+      const parts = v.toString().split('.');
+      return !parts[1] || parts[1].length <= MONEY.SCALE;
+    }, `Please provide at most ${MONEY.SCALE} decimal places (e.g., 100.50)`)
+    .refine((v) => v <= MONEY.MAX_VALUE, `Amount is too large (maximum allowed is ${MONEY.MAX_VALUE.toLocaleString()})`),
+);

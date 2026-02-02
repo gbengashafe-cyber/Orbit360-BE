@@ -45,8 +45,8 @@ function enrichErrorWithRequestDetails(err: any, req: Request): void {
   err.referer = req.headers.referer || 'undefined';
 }
 
+let code: number = 400;
 function handleSequelizeError(err: BaseError): ApiError {
-  let code: number = 400;
   let message = '';
   switch (err.constructor.name) {
     case UniqueConstraintError.name: {
