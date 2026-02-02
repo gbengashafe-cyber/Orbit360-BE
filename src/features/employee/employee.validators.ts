@@ -41,7 +41,7 @@ const employeeSchema = z.object({
   nokName: z.string().nullable().optional(),
   nokRelationship: z.string().nullable().optional(),
   nokPhone: z.string().nullable().optional(),
-  leaveEntitlement: z.number().positive(),
+  leaveEntitlement: z.coerce.number().positive(),
   createUser: z.boolean().default(false),
 });
 
@@ -55,7 +55,7 @@ const validate = (schema: z.ZodObject<any>) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const result = schema.parse(req.body);
 
-    if (result.employeeId && result.employeeId === result.supervisorId) {
+    if (result?.id && result.id === result.supervisorId) {
       throw ApiError.badRequest('Employee and supervisor cannot be the same');
     }
 
