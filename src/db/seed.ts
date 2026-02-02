@@ -4,6 +4,7 @@ import { Department } from '../features/department/department.model';
 import { Employee } from '../features/employee/employee.model';
 import { JobRole } from '../features/job-role/job-role.model';
 import { Leave } from '../features/leave/leave.model';
+import { PayrollBatch } from '../features/payroll/payroll-batch.model';
 import { Payroll } from '../features/payroll/payroll.model';
 import { User } from '../features/users/user.model';
 import { logger } from '../utils/logger';
@@ -168,11 +169,21 @@ async function seed() {
     );
     logger.info('Leave requests created');
 
+    const batch = await PayrollBatch.create({
+      payPeriod: '2025-02',
+      status: 'APPROVED',
+      batchId: 'PAY-2025',
+      totalGross: 2000.4,
+      totalNet: 200.4,
+      recordCount: 2,
+    });
+
     // Create Payroll Records
     await Payroll.bulkCreate(
       [
         {
           employeeId: empList[0].id,
+          batchId: batch.batchId,
           payPeriod: '2026-01',
           basicSalary: 75000,
           grossSalary: 80000,
@@ -188,6 +199,7 @@ async function seed() {
         },
         {
           employeeId: empList[1].id,
+          batchId: batch.batchId,
           payPeriod: '2026-01',
           basicSalary: 65000,
           grossSalary: 70000,
@@ -199,7 +211,7 @@ async function seed() {
           nhfDeduction: 0,
           loanDeduction: 0,
           payeDeduction: 2500,
-          status: 'paid',
+          status: 'processed',
         },
       ],
       { ignoreDuplicates: true },
