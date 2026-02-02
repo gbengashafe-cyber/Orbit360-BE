@@ -33,17 +33,12 @@ export class EmployeeController {
   }
 
   static async getUserEmployeeRecord(req: Request, res: Response) {
-    const { search } = req.parsedQuery;
+    const search = req.user?.email;
 
     if (!search) {
       throw ApiError.badRequest('User email address not provided');
     }
     const employee = await EmployeeRepository.read({ rows: 1, page: 1, filters: { search } });
-
-    const isRecordOwner = req.user?.email === employee.rows?.[0]?.email;
-    if (!employee || !isRecordOwner) {
-      throw ApiError.notFound('Employee not found');
-    }
 
     res.json(ApiResponse({ data: employee.rows[0], message: 'Employee fetched successfully' }));
   }
