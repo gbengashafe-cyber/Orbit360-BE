@@ -43,6 +43,7 @@ async function seed() {
         { permission: 'MANAGE_PAYROLLS', jobRole: 'HR Manager' },
         { permission: 'MANAGE_LOANS', jobRole: 'HR Manager' },
         { permission: 'APPROVE_LOANS', jobRole: 'HR Manager' },
+        { permission: 'APPROVE_PAYROLLS', jobRole: 'HR Manager' },
       ],
       { ignoreDuplicates: true },
     );

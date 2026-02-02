@@ -1,16 +1,11 @@
 import { NextFunction, Request, Response } from 'express';
-import { CreationAttributes } from 'sequelize';
-import { db } from '../../db';
 import { ApiError } from '../../utils/api-error';
 import { ApiResponse } from '../../utils/api-response';
 import { logger } from '../../utils/logger';
 import { Employee } from '../employee/employee.model';
-import { EmployeeRepository } from '../employee/employee.repository';
-import { LoanPayment } from '../loans/loan-payment.model';
-import { LoanRepository } from '../loans/loan.repository';
 import { Payroll } from './payroll.model';
 import { PayrollRepository } from './payroll.repository';
-import { calculatePayroll } from './payroll.utils';
+import { PayrollService } from './payroll.service';
 
 export class PayrollController {
   currentPeriod = new Date(new Date().setDate(1));
@@ -122,79 +117,14 @@ export class PayrollController {
   static readonly generatePayroll = async (req: Request, res: Response, next: NextFunction) => {
     const { payPeriod } = req.body.validated.payroll;
     const overwrite = req.parsedQuery?.overwrite === 'true';
-    const CHUNK_SIZE = 500;
 
     try {
-      const payPeriodExist = await PayrollRepository.payPeriodExist(payPeriod);
-
-      if (payPeriodExist && !overwrite) {
-        throw ApiError.badRequest('Payroll for this period already exists. Kindly use overwrite to regenerate.');
+      if (!req.user?.id) {
+        throw ApiError.badRequest('Maker ID is required.');
       }
+      const result = await PayrollService.generateBatch(payPeriod, req.user.id, overwrite);
 
-      await db.transaction(async (transaction) => {
-        if (payPeriodExist && overwrite) {
-          await LoanRepository.deleteRepaymentByPayPeriod(payPeriod, transaction);
-          await PayrollRepository.deleteByPayPeriod(payPeriod, transaction);
-        }
-
-        const pensionRate = 0.08;
-        let page = 1;
-        let hasMore = true;
-
-        while (hasMore) {
-          const activeEmployees = await EmployeeRepository.activeEmployeesCompensation({ rows: CHUNK_SIZE, page });
-
-          if (!activeEmployees?.length) {
-            break;
-          }
-
-          // Fetch all loans for this chunk at once to avoid N+1 performance issues
-          const employeeIds = activeEmployees.map((e) => e.id);
-          const allLoansForChunk = await LoanRepository.readEmployeesActiveLoans(employeeIds);
-
-          const payrollData = [] as CreationAttributes<Payroll>[];
-          const loanPaymentsData = [] as CreationAttributes<LoanPayment>[];
-
-          for (const _employee of activeEmployees) {
-            const employeeActiveLoans = allLoansForChunk.filter((l) => l.employeeId === _employee.id);
-
-            const { payRoll, applicableLoansForPeriod } = calculatePayroll({
-              employee: _employee,
-              payPeriod,
-              pensionRate,
-              activeLoans: employeeActiveLoans,
-            });
-
-            // 1. Prepare Payroll record
-            payrollData.push({
-              ...payRoll,
-              payPeriod,
-              employeeId: _employee.id,
-            });
-
-            // 2. Prepare Loan Payment records with payPeriod instead of payrollId
-            if (applicableLoansForPeriod.length > 0) {
-              const mappedLoans = applicableLoansForPeriod.map((loan) => ({
-                ...loan,
-                payPeriod,
-              }));
-              loanPaymentsData.push(...mappedLoans);
-            }
-          }
-
-          // 3. Batch insert both for maximum performance
-          await PayrollRepository.bulkCreate(payrollData, transaction);
-
-          if (loanPaymentsData.length > 0) {
-            await LoanRepository.createLoanPayment(loanPaymentsData, transaction);
-          }
-
-          if (activeEmployees.length < CHUNK_SIZE) hasMore = false;
-          page++;
-        }
-      });
-
-      res.status(201).json(ApiResponse({ data: {}, message: 'Payroll generated successfully' }));
+      res.status(201).json(ApiResponse({ data: { id: result.id }, message: 'Payroll generated successfully' }));
     } catch (error) {
       next(error);
     }
@@ -208,7 +138,7 @@ export class PayrollController {
         include: [{ model: Employee, as: 'employee', attributes: ['employeeId', 'firstName', 'lastName', 'email'] }],
       });
 
-      res.status(201).json({ data: createdPayroll, message: 'Payroll created successfully' });
+      res.status(201).json(ApiResponse({ data: createdPayroll, message: 'Payroll created successfully' }));
     } catch (error) {
       logger.error(`Error creating payroll: ${error}`);
       next(error);
@@ -235,15 +165,13 @@ export class PayrollController {
   static async update(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const { basicSalary, allowances = 0, deductions = 0 } = req.body;
+      const { basicSalary } = req.body;
 
       const payroll = await Payroll.findByPk(id);
 
       if (!payroll) {
         throw ApiError.notFound('Payroll record not found');
       }
-
-      // const netSalary = (basicSalary || payroll.basicSalary) + allowances - deductions;
 
       await payroll.update({
         basicSalary,
@@ -253,56 +181,37 @@ export class PayrollController {
         include: [{ model: Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'email'] }],
       });
 
-      res.json({ data: updatedPayroll, message: 'Payroll updated successfully' });
+      res.json(ApiResponse({ data: updatedPayroll, message: 'Payroll updated successfully' }));
     } catch (error) {
       logger.error(`Error updating payroll: ${error}`);
       next(error);
     }
   }
 
-  static async markProcessed(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
+  static async markAsApproved(req: Request, res: Response) {
+    const { id } = req.params;
 
-      const payroll = await Payroll.findByPk(id);
+    const checkerId = req.user?.id;
 
-      if (!payroll) {
-        throw ApiError.notFound('Payroll record not found');
-      }
-
-      await payroll.update({ status: 'processed' });
-
-      const updatedPayroll = await Payroll.findByPk(id, {
-        include: [{ model: Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'email'] }],
-      });
-
-      res.json({ data: updatedPayroll, message: 'Payroll marked as processed' });
-    } catch (error) {
-      logger.error(`Error processing payroll: ${error}`);
-      next(error);
+    if (!checkerId) {
+      throw ApiError.forbidden('Checker ID is not provided');
     }
+
+    const result = await PayrollService.approveBatch(id, checkerId);
+    res.json(ApiResponse({ data: result, message: 'Payroll marked as approved' }));
   }
 
-  static async markPaid(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
+  static async markAsRejected(req: Request, res: Response) {
+    const { id } = req.params;
 
-      const payroll = await Payroll.findByPk(id);
-      if (!payroll) {
-        throw ApiError.notFound('Payroll record not found');
-      }
+    const checkerId = req.user?.id;
 
-      await payroll.update({ status: 'paid' });
-
-      const updatedPayroll = await Payroll.findByPk(id, {
-        include: [{ model: Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'email'] }],
-      });
-
-      res.json({ data: updatedPayroll, message: 'Payroll marked as paid' });
-    } catch (error) {
-      logger.error(`Error marking payroll as paid: ${error}`);
-      next(error);
+    if (!checkerId) {
+      throw ApiError.forbidden('Checker ID is not provided');
     }
+
+    const result = await PayrollService.rejectBatch(id, checkerId);
+    res.json(ApiResponse({ data: result, message: 'Payroll marked as rejected' }));
   }
 
   static async delete(req: Request, res: Response, next: NextFunction) {
@@ -316,7 +225,7 @@ export class PayrollController {
 
       await payroll.destroy();
 
-      res.json({ message: 'Payroll deleted successfully' });
+      res.json(ApiResponse({ data: {}, message: 'Payroll deleted successfully' }));
     } catch (error) {
       logger.error(`Error deleting payroll: ${error}`);
       next(error);

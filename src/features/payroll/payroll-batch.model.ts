@@ -1,0 +1,58 @@
+import { CreationOptional, DataTypes, ForeignKey, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
+import { db } from '../../db';
+import { User } from '../users/user.model';
+
+export const PAYROLL_BATCH_STATUS = ['PENDING_APPROVAL', 'APPROVED', 'PAID', 'CANCELLED', 'REJECTED'] as const;
+
+export class PayrollBatch extends Model<InferAttributes<PayrollBatch>, InferCreationAttributes<PayrollBatch>> {
+  declare id: CreationOptional<number>;
+  declare batchId: string;
+  declare payPeriod: string;
+  declare totalGross: number;
+  declare totalNet: number;
+  declare recordCount: number;
+  declare status: (typeof PAYROLL_BATCH_STATUS)[number];
+  declare createdBy: ForeignKey<User['id']>;
+  declare approvedBy: CreationOptional<ForeignKey<User['id']>>;
+  declare createdAt: CreationOptional<Date>;
+  declare approvalDate: CreationOptional<Date>;
+}
+
+PayrollBatch.init(
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
+    },
+    batchId: {
+      type: DataTypes.STRING(50),
+      allowNull: false,
+      unique: true,
+    },
+    payPeriod: {
+      type: DataTypes.STRING(7),
+      allowNull: false,
+    },
+    totalGross: { type: DataTypes.DECIMAL(15, 2), allowNull: false },
+    totalNet: { type: DataTypes.DECIMAL(15, 2), allowNull: false },
+    recordCount: { type: DataTypes.INTEGER, allowNull: false },
+    status: {
+      type: DataTypes.ENUM(...PAYROLL_BATCH_STATUS),
+      defaultValue: 'PENDING_APPROVAL',
+    },
+    createdBy: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: { model: 'users', key: 'id' },
+    },
+    approvedBy: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: { model: 'users', key: 'id' },
+    },
+    createdAt: DataTypes.DATE,
+    approvalDate: { type: DataTypes.DATE },
+  },
+  { sequelize: db, tableName: 'payroll_batches', underscored: true, timestamps: true },
+);

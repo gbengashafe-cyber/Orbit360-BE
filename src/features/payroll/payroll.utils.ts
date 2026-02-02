@@ -6,23 +6,10 @@ import { Loan } from '../loans/loan.model';
 
 type TaxBreakDown = {
   band: string;
-  tier: string;
   taxablePortion: number;
   rate: string;
   tax: number;
 }[];
-
-// Gross Income - Deductions
-const calculateTaxableIncome = (annualGross: number, annualPension: number, annualNhf: number) => {
-  return Number.parseFloat(Math.max(0, annualGross - annualPension - annualNhf).toFixed(2));
-};
-
-const calculateBandTax = (remainingIncome: number, bandRate: number, bandMax: number) => {
-  const bandAmount = Math.min(remainingIncome, bandMax);
-  const bandTax = Number.parseFloat((bandAmount * bandRate).toFixed(2));
-
-  return { bandAmount, bandTax };
-};
 
 type PayeProps = {
   annualGross: number;
@@ -30,133 +17,85 @@ type PayeProps = {
   annualNhf: number;
 };
 const calculatePAYE = ({ annualGross, annualPension, annualNhf }: PayeProps) => {
-  const taxableIncome = calculateTaxableIncome(annualGross, annualPension, annualNhf);
+  const gross = new Decimal(annualGross);
+  const pension = new Decimal(annualPension);
+  const nhf = new Decimal(annualNhf);
 
-  let annualTax = 0;
-  const taxBreakdown: TaxBreakDown = [];
+  const bands = [
+    { name: 'Tax-Free Threshold', limit: 800000, rate: 0.0 },
+    { name: 'First Band', limit: 2200000, rate: 0.15 }, // 800k to 3m
+    { name: 'Second Band', limit: 9000000, rate: 0.18 }, // 3m to 12m
+    { name: 'Third Band', limit: 13000000, rate: 0.21 }, // 12m to 25m
+    { name: 'Fourth Band', limit: 25000000, rate: 0.23 }, // 25m to 50m
+    { name: 'Top Band', limit: Infinity, rate: 0.25 }, // Over 50m
+  ];
+
+  // 1. Taxable Income = Gross - (Pension + NHF)
+  let taxableIncome = gross.minus(pension).minus(nhf);
+  if (taxableIncome.lt(0)) taxableIncome = new Decimal(0);
+  if (taxableIncome.lte(800000)) {
+    return {
+      annualTax: 0,
+      monthlyTax: 0,
+      taxableIncome: taxableIncome.toDecimalPlaces(2).toNumber(),
+      taxBreakdown: [{ band: bands[0].name, taxablePortion: taxableIncome.toNumber(), rate: '0%', tax: 0 }],
+    };
+  }
+
+  let totalTax = new Decimal(0);
   let remainingIncome = taxableIncome;
+  const taxBreakdown: TaxBreakDown = [];
 
-  // Band 1: First ₦800,000 @ 0% (Tax-Free Threshold)
-  if (remainingIncome > 0) {
-    const bandRate = 0;
-    const bandMax = 800_000;
-    const { bandAmount, bandTax } = calculateBandTax(remainingIncome, bandRate, bandMax);
-    annualTax += bandTax;
+  for (const band of bands) {
+    if (remainingIncome.lte(0)) break;
+
+    const incomeInBand = Decimal.min(remainingIncome, band.limit);
+    const taxInBand = incomeInBand.mul(band.rate);
+
     taxBreakdown.push({
-      band: 'Band 1',
-      tier: 'First ₦800,000 (₦0 - ₦800,000)',
-      taxablePortion: Number.parseFloat(bandAmount.toFixed(2)),
-      rate: '0%',
-      tax: bandTax,
+      band: band.name,
+      taxablePortion: incomeInBand.toDecimalPlaces(2).toNumber(),
+      rate: `${band.rate * 100}%`,
+      tax: taxInBand.toDecimalPlaces(2).toNumber(),
     });
-    remainingIncome -= bandAmount;
+
+    totalTax = totalTax.plus(taxInBand);
+    remainingIncome = remainingIncome.minus(incomeInBand);
   }
 
-  // Band 2: Next ₦2,200,000 (₦800,001 - ₦3,000,000) @ 15%
-  if (remainingIncome > 0) {
-    const bandMax = 2_200_000;
-    const bandRate = 0.15;
-    const { bandAmount, bandTax } = calculateBandTax(remainingIncome, bandRate, bandMax);
-    annualTax += bandTax;
-    taxBreakdown.push({
-      band: 'Band 2',
-      tier: 'Next ₦2,200,000 (₦800,001 - ₦3,000,000)',
-      taxablePortion: Number.parseFloat(bandAmount.toFixed(2)),
-      rate: '15%',
-      tax: bandTax,
-    });
-    remainingIncome -= bandAmount;
-  }
-
-  // Band 3: Next ₦9,000,000 (₦3,000,001 - ₦12,000,000) @ 18%
-  if (remainingIncome > 0) {
-    const bandMax = 9_000_000;
-    const bandRate = 0.18;
-    const { bandAmount, bandTax } = calculateBandTax(remainingIncome, bandRate, bandMax);
-    annualTax += bandTax;
-    taxBreakdown.push({
-      band: 'Band 3',
-      tier: 'Next ₦9,000,000 (₦3,000,001 - ₦12,000,000)',
-      taxablePortion: Number.parseFloat(bandAmount.toFixed(2)),
-      rate: '18%',
-      tax: bandTax,
-    });
-    remainingIncome -= bandAmount;
-  }
-
-  // Band 4: Next ₦13,000,000 (₦12,000,001 - ₦25,000,000) @ 21%
-  if (remainingIncome > 0) {
-    const bandMax = 13_000_000;
-    const bandRate = 0.21;
-    const { bandAmount, bandTax } = calculateBandTax(remainingIncome, bandRate, bandMax);
-    annualTax += bandTax;
-    taxBreakdown.push({
-      band: 'Band 4',
-      tier: 'Next ₦13,000,000 (₦12,000,001 - ₦25,000,000)',
-      taxablePortion: Number.parseFloat(bandAmount.toFixed(2)),
-      rate: '21%',
-      tax: bandTax,
-    });
-    remainingIncome -= bandAmount;
-  }
-
-  // Band 5: Next ₦25,000,000 (₦25,000,001 - ₦50,000,000) @ 23%
-  if (remainingIncome > 0) {
-    const bandMax = 25_000_000;
-    const bandRate = 0.23;
-    const { bandAmount, bandTax } = calculateBandTax(remainingIncome, bandRate, bandMax);
-    annualTax += bandTax;
-    taxBreakdown.push({
-      band: 'Band 5',
-      tier: 'Next ₦25,000,000 (₦25,000,001 - ₦50,000,000)',
-      taxablePortion: Number.parseFloat(bandAmount.toFixed(2)),
-      rate: '23%',
-      tax: bandTax,
-    });
-    remainingIncome -= bandAmount;
-  }
-
-  // Band 6: Above ₦50,000,000 @ 25%
-  if (remainingIncome > 0) {
-    const bandAmount = remainingIncome;
-    const bandTax = Number.parseFloat((bandAmount * 0.25).toFixed(2));
-    annualTax += bandTax;
-    taxBreakdown.push({
-      band: 'Band 6',
-      tier: 'Above ₦50,000,000',
-      taxablePortion: Number.parseFloat(bandAmount.toFixed(2)),
-      rate: '25%',
-      tax: bandTax,
-    });
-  }
-
-  // Step 3: Return Annual Tax and Monthly Tax (Annual ÷ 12)
-  const finalAnnualTax = Number.parseFloat(annualTax.toFixed(2));
-  const monthlyTax = Number.parseFloat((finalAnnualTax / 12).toFixed(2));
+  // 3. Minimum Tax Check (1% of Gross)
+  const minimumTax = gross.mul(0.01);
+  const finalAnnualTax = totalTax.gt(minimumTax) ? totalTax : minimumTax;
 
   return {
-    tax: finalAnnualTax,
-    monthlyTax,
-    taxableIncome,
-    breakdown: taxBreakdown,
+    annualTax: finalAnnualTax.toNumber(),
+    monthlyTax: finalAnnualTax.div(12).toDecimalPlaces(2).toNumber(),
+    taxableIncome: taxableIncome.toDecimalPlaces(2).toNumber(),
+    taxBreakdown,
   };
 };
 
-// 8% of (Basic + Housing + Transport)
-const calculatePension = (employee: Employee, pensionRate = 0.08) => {
-  const basic = Number(employee.annualBasicSalary);
-  const housing = Number(employee.annualHousingAllowance);
-  const transport = Number(employee.annualTransportAllowance);
-  const pensionableIncome = basic + housing + transport;
+/**
+ * Calculates monthly or annual pension deduction
+ * @param employee The employee record
+ * @param rate The pension rate (default 0.08)
+ */
+export const calculatePension = (employee: any, rate: number = 0.08): Decimal => {
+  const { annualBasicSalary, annualHousingAllowance, annualTransportAllowance } = employee;
 
-  return Number(pensionableIncome * pensionRate).toFixed(2);
+  // Pension is calculated on (Basic + Housing + Transport)
+  const pensionableIncome = new Decimal(annualBasicSalary).plus(annualHousingAllowance).plus(annualTransportAllowance);
+
+  return pensionableIncome.mul(rate);
 };
 
-// 2.5% of Basic Salary only, if applicable
-const calculateNHF = (employee: Employee, nhfRate = 0.025) => {
-  if (!employee.nhfApplicable) return 0;
-
-  return employee.annualBasicSalary * nhfRate;
+/**
+ * Calculates NHF deduction
+ * @param employee The employee record
+ * @param rate The NHF rate (default 0.025)
+ */
+export const calculateNHF = (employee: any, rate: number = 0.025): Decimal => {
+  return new Decimal(employee.annualBasicSalary).mul(rate);
 };
 
 type Year = `20${number}${number}`;
@@ -174,20 +113,32 @@ const calculatePayroll = ({ employee, activeLoans, payPeriod, pensionRate = 0.08
   const { annualBasicSalary, annualHousingAllowance, annualTransportAllowance, annualLeaveAllowance, annualOtherAllowances } =
     employee;
 
-  const basicSalary = annualBasicSalary / 12;
-  const housingAllowance = annualHousingAllowance / 12;
-  const transportAllowance = annualTransportAllowance / 12;
-  const leaveAllowance = annualLeaveAllowance / 12;
-  const otherMonthlyAllowances = annualOtherAllowances / 12;
+  const basicSalary = new Decimal(annualBasicSalary).div(12);
+  const housingAllowance = new Decimal(annualHousingAllowance).div(12);
+  const transportAllowance = new Decimal(annualTransportAllowance).div(12);
+  const leaveAllowance = new Decimal(annualLeaveAllowance).div(12);
+  const otherMonthlyAllowances = new Decimal(annualOtherAllowances).div(12);
 
-  const monthlyGross = basicSalary + housingAllowance + transportAllowance + leaveAllowance + otherMonthlyAllowances;
-  const annualGross = monthlyGross * 12;
+  const monthlyGross = basicSalary
+    .plus(housingAllowance)
+    .plus(transportAllowance)
+    .plus(leaveAllowance)
+    .plus(otherMonthlyAllowances);
 
-  const annualPension = Number(calculatePension(employee, pensionRate));
+  const monthlyPension = new Decimal(calculatePension(employee, pensionRate)).div(12);
+  const monthlyNhf = new Decimal(calculateNHF(employee, 0.025)).div(12);
+
+  const annualGross = monthlyGross.mul(12).toDecimalPlaces(2).toNumber();
+
+  const annualPension = calculatePension(employee, pensionRate);
   const annualNhf = calculateNHF(employee, 0.025);
 
-  const { tax: annualTax, breakdown: taxBreakdown } = calculatePAYE({ annualGross, annualPension, annualNhf });
-  const monthlyTax = annualTax / 12;
+  const { annualTax, taxBreakdown } = calculatePAYE({
+    annualGross,
+    annualPension: annualPension.toNumber(),
+    annualNhf: annualNhf.toNumber(),
+  });
+  const monthlyTax = new Decimal(annualTax).div(12);
 
   const applicableLoansForPeriod = [] as Omit<CreationAttributes<LoanPayment>, 'payPeriod'>[];
 
@@ -195,7 +146,7 @@ const calculatePayroll = ({ employee, activeLoans, payPeriod, pensionRate = 0.08
   const periodYear = periodDate.getFullYear();
   const periodMonth = periodDate.getMonth();
 
-  let loanDeduction = 0;
+  let loanDeduction = new Decimal(0);
   for (const loan of activeLoans) {
     const startDate = new Date(loan.startDate);
     const endDate = new Date(loan.endDate);
@@ -207,15 +158,14 @@ const calculatePayroll = ({ employee, activeLoans, payPeriod, pensionRate = 0.08
 
     // Check if the pay period falls within the loan's active period
     if (payPeriodMonth >= loanStartMonth && payPeriodMonth <= loanEndMonth) {
-      const totalInterest = Number(loan.principalAmount) * (loan.interestRate / 100) * (loan.tenureMonths / 12);
-
-      const loanMonthlyDeduction = (Number(loan.principalAmount) + totalInterest) / loan.tenureMonths;
-
-      loanDeduction = loanDeduction + loanMonthlyDeduction;
+      const principal = new Decimal(loan.principalAmount);
+      const totalInterest = principal.mul(loan.interestRate / 100).mul(loan.tenureMonths / 12);
+      const loanMonthlyDeduction = principal.plus(totalInterest).div(loan.tenureMonths);
+      loanDeduction = loanDeduction.plus(loanMonthlyDeduction);
 
       applicableLoansForPeriod.push({
         ...loan,
-        amount: loanMonthlyDeduction,
+        amount: loanMonthlyDeduction.toDecimalPlaces(2).toNumber(),
         paymentDate: periodDate,
         loanId: loan.id,
         employeeId: employee.id,
@@ -223,24 +173,29 @@ const calculatePayroll = ({ employee, activeLoans, payPeriod, pensionRate = 0.08
     }
   }
 
-  const totalDeductions = annualPension / 12 + monthlyTax + annualNhf / 12 + loanDeduction;
-  const netSalary = monthlyGross - totalDeductions;
+  const totalDeductions = monthlyPension.plus(monthlyTax).plus(monthlyNhf).plus(loanDeduction);
+  const netSalary = monthlyGross.minus(totalDeductions);
 
   const result = {
-    payRoll: {
-      basicSalary,
-      grossSalary: Number(new Decimal(monthlyGross).toFixed(2)),
-      housingAllowance,
-      transportAllowance,
-      leaveAllowance,
-      otherAllowance: otherMonthlyAllowances,
-      pensionDeduction: annualPension / 12,
-      payeDeduction: monthlyTax,
-      nhfDeduction: annualNhf / 12,
-      loanDeduction,
+    payroll: {
+      basicSalary: basicSalary.toDecimalPlaces(2).toNumber(),
+      grossSalary: monthlyGross.toDecimalPlaces(2).toNumber(),
+      housingAllowance: housingAllowance.toDecimalPlaces(2).toNumber(),
+      transportAllowance: transportAllowance.toDecimalPlaces(2).toNumber(),
+      leaveAllowance: leaveAllowance.toDecimalPlaces(2).toNumber(),
+      otherAllowance: otherMonthlyAllowances.toDecimalPlaces(2).toNumber(),
+      pensionDeduction: annualPension.div(12).toDecimalPlaces(2).toNumber(),
+      nhfDeduction: annualNhf.div(12).toDecimalPlaces(2).toNumber(),
+      payeDeduction: monthlyTax.toDecimalPlaces(2).toNumber(),
+      loanDeduction: loanDeduction.toDecimalPlaces(2).toNumber(),
     },
-    totalAllowances: housingAllowance + transportAllowance + leaveAllowance + annualOtherAllowances / 12,
-    netSalary,
+    totalAllowances: housingAllowance
+      .plus(transportAllowance)
+      .plus(leaveAllowance)
+      .plus(new Decimal(annualOtherAllowances).div(12))
+      .toDecimalPlaces(2)
+      .toNumber(),
+    netSalary: netSalary.toDecimalPlaces(2).toNumber(),
     taxBreakdown,
     annualGross,
     applicableLoansForPeriod,

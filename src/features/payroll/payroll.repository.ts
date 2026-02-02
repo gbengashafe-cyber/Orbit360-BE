@@ -2,6 +2,7 @@ import { CreationAttributes, Transaction, WhereOptions } from 'sequelize';
 import { db } from '../../db';
 import { Employee } from '../employee/employee.model';
 import { ReadAllProps } from '../employee/employee.repository';
+import { PayrollBatch } from './payroll-batch.model';
 import { Payroll, payrollStatus } from './payroll.model';
 
 export class PayrollRepository {
@@ -14,7 +15,7 @@ export class PayrollRepository {
   };
 
   static readonly payPeriodExist = (payPeriod: string) => {
-    return Payroll.findOne({ where: { payPeriod } });
+    return PayrollBatch.findOne({ where: { payPeriod } });
   };
 
   static readonly readById = (id: string | number) => {
@@ -40,7 +41,7 @@ export class PayrollRepository {
         {
           model: Employee,
           as: 'employee',
-          attributes: ['employeeId', 'firstName', 'lastName', 'email', 'departmentName', 'jobRole'],
+          attributes: ['id', 'staffId', 'firstName', 'lastName', 'email', 'departmentName', 'jobRole'],
         },
       ],
       where,
@@ -51,9 +52,9 @@ export class PayrollRepository {
 
     const totals = (await Payroll.findOne({
       attributes: [
-        [db.fn('SUM', db.col('grossSalary')), 'totalGrossPay'],
+        [db.fn('SUM', db.col('gross_salary')), 'totalGrossPay'],
         [
-          db.fn('SUM', db.literal('grossSalary - (pensionDeduction + payeDeduction + nhfDeduction + loanDeduction)')),
+          db.fn('SUM', db.literal('gross_salary - (pension_deduction + paye_deduction + nhf_deduction + loan_deduction)')),
           'totalNetPay',
         ],
       ],
@@ -111,5 +112,9 @@ export class PayrollRepository {
       offset,
       order: [['createdAt', 'DESC']],
     });
+  };
+
+  static readonly cancelBatch = async (id: number, transaction) => {
+    return PayrollBatch.update({ status: 'CANCELLED' }, { where: { id }, transaction });
   };
 }

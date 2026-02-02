@@ -2,6 +2,7 @@ import { Op } from 'sequelize';
 import { Employee } from '../features/employee/employee.model';
 import { Leave } from '../features/leave/leave.model';
 import { Loan } from '../features/loans/loan.model';
+import { PayrollBatch } from '../features/payroll/payroll-batch.model';
 import { User } from '../features/users/user.model';
 
 export class AuthorizationRepository {
@@ -69,6 +70,14 @@ export class AuthorizationRepository {
         })),
       );
     }
+    if (modules.includes('PAYROLLS')) {
+      tasks.push(
+        PayrollBatch.count({ where: { status: 'PENDING_APPROVAL', createdBy: { [Op.ne]: userId } } }).then((c) => ({
+          key: 'payrolls',
+          count: c,
+        })),
+      );
+    }
     if (modules.includes('LEAVES')) {
       tasks.push(
         Leave.count({ where: { status: 'pending', employeeId: { [Op.ne]: userId } } }).then((c) => ({ key: 'leaves', count: c })),
@@ -99,6 +108,14 @@ export class AuthorizationRepository {
             { model: Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'email', 'staffId'] },
             { model: User, as: 'initiator', attributes: ['id', 'firstName', 'lastName'] },
           ],
+          order: [['createdAt', 'DESC']],
+        });
+      case 'PAYROLLS':
+        return PayrollBatch.findAndCountAll({
+          where: { status: 'PENDING_APPROVAL' },
+          limit: rows,
+          offset: offset,
+          include: [{ model: User, as: 'initiator', attributes: ['id', 'firstName', 'lastName'] }],
           order: [['createdAt', 'DESC']],
         });
       case 'LEAVES':

@@ -7,7 +7,7 @@ declare module 'express-serve-static-core' {
     requestIp?: string;
     requestPath?: string;
     user?: {
-      id: number | string;
+      id: number;
       email: string;
       jobRole: string;
       role: string;

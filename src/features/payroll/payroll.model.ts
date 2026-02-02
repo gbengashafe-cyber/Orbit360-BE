@@ -1,23 +1,26 @@
 import { CreationOptional, DataTypes, ForeignKey, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import { db } from '../../db';
 import { Employee } from '../employee/employee.model';
+import { PayrollBatch } from './payroll-batch.model';
+import { User } from '../users/user.model';
 
-export const payrollStatus = ['generated', 'processed', 'paid', 'failed', 'cancelled'] as const;
+export const payrollStatus = ['pending_approval', 'generated', 'processed', 'cancelled', 'failed'] as const;
 
 export class Payroll extends Model<InferAttributes<Payroll>, InferCreationAttributes<Payroll>> {
   declare id: CreationOptional<number>;
+  declare batchId: ForeignKey<PayrollBatch['batchId']>;
   declare employeeId: ForeignKey<Employee['id']>;
   declare payPeriod: string;
-  public basicSalary: number;
+  declare basicSalary: number;
   declare grossSalary: number;
-  public housingAllowance: number;
-  public transportAllowance: number;
-  public leaveAllowance: number;
-  public otherAllowance: number;
-  public pensionDeduction: number;
-  public nhfDeduction: number;
-  public loanDeduction: number;
-  public payeDeduction: number;
+  declare housingAllowance: number;
+  declare transportAllowance: number;
+  declare leaveAllowance: number;
+  declare otherAllowance: number;
+  declare pensionDeduction: number;
+  declare nhfDeduction: number;
+  declare loanDeduction: number;
+  declare payeDeduction: number;
   declare status: CreationOptional<(typeof payrollStatus)[number]>;
   declare paymentDate: CreationOptional<Date>;
 
@@ -34,12 +37,16 @@ Payroll.init(
       autoIncrement: true,
       primaryKey: true,
     },
-    payPeriod: { type: DataTypes.STRING(7), allowNull: false, unique: 'employee_payPeriod' },
+    batchId: {
+      type: DataTypes.STRING(50),
+      allowNull: false,
+      references: { model: PayrollBatch, key: 'batch_id' },
+    },
+    payPeriod: { type: DataTypes.STRING(7), allowNull: false },
     employeeId: {
       type: DataTypes.INTEGER,
       references: { model: Employee, key: 'id' },
       allowNull: false,
-      unique: 'employee_payPeriod',
     },
 
     grossSalary: {
@@ -103,22 +110,18 @@ Payroll.init(
     totalDeductions: {
       type: DataTypes.VIRTUAL,
       get() {
-        return (
-          (Number(this.pensionDeduction) || 0) +
-          (Number(this.payeDeduction) || 0) +
-          (Number(this.nhfDeduction) || 0) +
-          (Number(this.loanDeduction) || 0)
+        return ['pensionDeduction', 'payeDeduction', 'nhfDeduction', 'loanDeduction'].reduce(
+          (sum, key) => sum + (Number(this.getDataValue(key as any)) || 0),
+          0,
         );
       },
     },
     totalAllowances: {
       type: DataTypes.VIRTUAL,
       get() {
-        return (
-          (Number(this.housingAllowance) || 0) +
-          (Number(this.transportAllowance) || 0) +
-          (Number(this.leaveAllowance) || 0) +
-          (Number(this.otherAllowance) || 0)
+        return ['housingAllowance', 'transportAllowance', 'leaveAllowance', 'otherAllowance'].reduce(
+          (sum, key) => sum + (Number(this.getDataValue(key as any)) || 0),
+          0,
         );
       },
     },
@@ -132,8 +135,30 @@ Payroll.init(
   {
     sequelize: db,
     tableName: 'payrolls',
+    underscored: true,
+    indexes: [
+      {
+        unique: true,
+        name: 'unique_employee_pay_period',
+        fields: ['employee_id', 'pay_period'],
+      },
+      {
+        name: 'payroll_batch_id_idx',
+        fields: ['batch_id'],
+      },
+      {
+        name: 'payroll_status_idx',
+        fields: ['status'],
+      },
+    ],
   },
 );
 
 Payroll.belongsTo(Employee, { foreignKey: 'employeeId', as: 'employee' });
 Employee.hasMany(Payroll, { foreignKey: 'employeeId', as: 'payrolls' });
+
+PayrollBatch.belongsTo(User, { foreignKey: 'createdBy', as: 'initiator' });
+PayrollBatch.belongsTo(User, { foreignKey: 'approvedBy', as: 'approver' });
+
+Payroll.belongsTo(PayrollBatch, { foreignKey: 'batchId', targetKey: 'batchId' });
+PayrollBatch.hasMany(Payroll, { foreignKey: 'batchId', sourceKey: 'batchId', as: 'items' });

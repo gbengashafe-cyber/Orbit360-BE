@@ -43,6 +43,6 @@ const hasModuleApprovalPermission = ({ moduleName, req }) => {
   const hasPermission = req.user?.permissions?.includes(requiredPermission);
 
   if (!hasPermission) {
-    throw ApiError.forbidden(`You do not have permission to approve ${moduleName} items.`);
+    throw ApiError.forbidden(`You do not have permission to approve ${moduleName}.`);
   }
 };
