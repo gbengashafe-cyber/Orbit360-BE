@@ -36,7 +36,7 @@ export class EmployeeController {
     const search = req.user?.email;
 
     if (!search) {
-      throw ApiError.badRequest('User email address not provided');
+      throw ApiError.badRequest('User email address not provided' + JSON.stringify(req.user));
     }
     const employee = await EmployeeRepository.read({ rows: 1, page: 1, filters: { search } });
 
