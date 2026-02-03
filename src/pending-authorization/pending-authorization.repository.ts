@@ -1,4 +1,6 @@
 import { Op } from 'sequelize';
+import { EmployeeChangeRequest } from '../features/employee/employee-change-request.model';
+import { EmployeeFieldChange } from '../features/employee/employee-field-change.model';
 import { Employee } from '../features/employee/employee.model';
 import { Leave } from '../features/leave/leave.model';
 import { Loan } from '../features/loans/loan.model';
@@ -127,12 +129,18 @@ export class AuthorizationRepository {
           order: [['createdAt', 'DESC']],
         });
       case 'EMPLOYEES':
-        return Employee.findAndCountAll({
-          where: { status: 'pending_approval' },
+        return EmployeeChangeRequest.findAndCountAll({
+          where: { status: 'PENDING_APPROVAL' },
           limit: rows,
-          offset: offset,
+          offset,
+          include: [
+            { model: Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'staffId'] },
+            { model: User, as: 'maker', attributes: ['id', 'firstName', 'lastName'] },
+            { model: EmployeeFieldChange, as: 'fieldChanges' },
+          ],
           order: [['createdAt', 'DESC']],
         });
+
       default:
         return null;
     }

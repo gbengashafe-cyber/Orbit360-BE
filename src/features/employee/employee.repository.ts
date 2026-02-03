@@ -1,4 +1,5 @@
-import { InferAttributes, InferCreationAttributes, Op } from 'sequelize';
+import { CreationAttributes, InferAttributes, InferCreationAttributes, Op, Transaction } from 'sequelize';
+import { EmployeeChangeRequest } from './employee-change-request.model';
 import { Employee } from './employee.model';
 
 export type ReadAllProps = {
@@ -9,8 +10,15 @@ export type ReadAllProps = {
   orderDirection?: 'ASC' | 'DESC';
 };
 export class EmployeeRepository {
-  static readonly create = (employee: InferCreationAttributes<Employee>) => {
-    return Employee.create(employee);
+  static readonly create = (employee: InferCreationAttributes<Employee>, transaction: Transaction) => {
+    return Employee.create(employee, { transaction });
+  };
+
+  static readonly createModificationRequest = (
+    changeRequest: CreationAttributes<EmployeeChangeRequest>,
+    transaction: Transaction,
+  ) => {
+    return EmployeeChangeRequest.create(changeRequest, { transaction });
   };
 
   static readonly activeEmployeesCompensation = ({ rows, page }) => {

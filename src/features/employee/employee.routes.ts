@@ -14,7 +14,8 @@ router.use([validateAuthToken, hasRequiredPermission('MANAGE_EMPLOYEES')]);
 router.get('/', EmployeeController.getAll);
 router.get('/directory', EmployeeController.getDirectory);
 router.get('/:id', EmployeeController.getById);
-router.post('/', validateCreateEmployee, EmployeeController.create);
+router.post('/', validateCreateEmployee, EmployeeController.createNewEmployee);
+router.patch('/:id', validateCreateEmployee, EmployeeController.createEmployeeModRequest);
 router.put('/:id', validateUpdateEmployee, EmployeeController.update);
 
 export default router;

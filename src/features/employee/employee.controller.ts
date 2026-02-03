@@ -7,6 +7,8 @@ import { PayrollRepository } from '../payroll/payroll.repository';
 import { UserRepository } from '../users/user.repository';
 import { EmployeeRepository } from './employee.repository';
 import { EmployeeService } from './employee.service';
+import { Transaction } from 'sequelize';
+import { db } from '../../db';
 
 export class EmployeeController {
   static async getAll(req: Request, res: Response) {
@@ -84,11 +86,50 @@ export class EmployeeController {
     }
   }
 
+  static readonly createNewEmployee = async (req: Request, res: Response) => {
+    const makerId = req.user?.id;
+    const payload = req.body.validated.employee;
+
+    if (!makerId) {
+      throw ApiError.badRequest('Missing authentication. Kindly sign in and try again');
+    }
+    const result = await EmployeeService.submitNewEmployeeRequest(makerId, payload);
+
+    return res.status(201).json({
+      success: true,
+      message: 'New employee request submitted for authorization.',
+      data: { requestId: result.id },
+    });
+  };
+
+  static readonly createEmployeeModRequest = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const makerId = req.user?.id;
+    const payload = req.body.validated.employee;
+
+    if (!id) {
+      throw ApiError.badRequest('Missing employee identifier in request');
+    }
+
+    if (!makerId) {
+      throw ApiError.badRequest('Missing authentication. Kindly sign in and try again');
+    }
+
+    const result = await EmployeeService.submitEmployeeChangeRequest(Number(id), makerId, payload);
+
+    return res.status(201).json({
+      success: true,
+      message: 'Change request submitted for authorization.',
+      data: { requestId: result.id },
+    });
+  };
+
   static async create(req: Request, res: Response, next: NextFunction) {
     try {
       const employee = req.body.validated.employee;
 
-      const createdEmployee = await EmployeeRepository.create(employee);
+      const transaction = new Transaction(db, {});
+      const createdEmployee = await EmployeeRepository.create(employee, transaction);
 
       if (employee.createUser) {
         const password = await AuthUtil.hashPassword(AuthUtil.generatePassword());

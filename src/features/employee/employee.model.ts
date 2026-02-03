@@ -4,7 +4,7 @@ import { Department } from '../department/department.model';
 import { JobRole } from '../job-role/job-role.model';
 import { User } from '../users/user.model';
 
-export const employeeStatus = ['active', 'suspended', 'terminated', 'on_leave'];
+export const employeeStatus = ['active', 'suspended', 'terminated', 'on_leave', 'pending_approval'];
 
 export class Employee extends Model<InferAttributes<Employee>, InferCreationAttributes<Employee>> {
   declare id: CreationOptional<number>;
@@ -64,7 +64,6 @@ Employee.init(
     staffId: {
       type: DataTypes.STRING(10),
       allowNull: false,
-      unique: 'staffId',
     },
     firstName: {
       type: DataTypes.STRING(50),
@@ -80,7 +79,6 @@ Employee.init(
     email: {
       type: DataTypes.STRING(100),
       allowNull: false,
-      unique: 'email',
     },
     phone: {
       type: DataTypes.STRING(20),
@@ -178,7 +176,14 @@ Employee.init(
     underscored: true,
     timestamps: true,
     paranoid: true,
-    indexes: [{ fields: ['status'] }, { fields: ['department_name'] }, { fields: ['supervisor_id'] }, { fields: ['hire_date'] }],
+    indexes: [
+      { fields: ['staff_id'], unique: true },
+      { fields: ['email'], unique: true },
+      { fields: ['status'] },
+      { fields: ['department_name'] },
+      { fields: ['supervisor_id'] },
+      { fields: ['hire_date'] },
+    ],
   },
 );
 

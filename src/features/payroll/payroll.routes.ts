@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { hasRequiredPermission, isInAllowedDepartment } from '../../utils/check-permission';
+import { hasRequiredPermission } from '../../utils/check-permission';
 import { validateAuthToken } from '../authentication/auth.middleware';
 import { PayrollController } from './payroll.controller';
 import {
@@ -22,13 +22,7 @@ router.get('/', PayrollController.getAll);
 router.get('/employees/:employeeId', hasRequiredPermission('MANAGE_PAYROLLS'), PayrollController.getByEmployee);
 router.get('/:id', validatePayrollIdParam, PayrollController.getById);
 router.get('/periods/:payPeriod', PayrollController.getByPayPeriod);
-router.post(
-  '/',
-  isInAllowedDepartment(['HR']),
-  hasRequiredPermission('MANAGE_PAYROLLS'),
-  validateGeneratePayroll,
-  PayrollController.generatePayroll,
-);
+router.post('/', hasRequiredPermission('MANAGE_PAYROLLS'), validateGeneratePayroll, PayrollController.generatePayroll);
 router.put('/:id/status', validatePayrollStatus, PayrollController.updateStatus);
 router.put('/:id', validatePayrollIdParam, validateUpdatePayroll, PayrollController.update);
 router.patch('/:id/approval', validatePayrollIdParam, PayrollController.markAsApproved);

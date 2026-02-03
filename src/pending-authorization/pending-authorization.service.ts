@@ -1,3 +1,4 @@
+import { EmployeeUtils } from '../features/employee/employee.utils';
 import { ApiError } from '../utils/api-error';
 import { AuthorizationRepository } from './pending-authorization.repository';
 
@@ -89,8 +90,24 @@ export class AuthorizationService {
       throw ApiError.badRequest(`Invalid module type: ${moduleType}`);
     }
 
+    let transformedData = result.rows;
+    if (moduleType.toUpperCase() === 'EMPLOYEES') {
+      transformedData = result.rows.map((request: any) => {
+        const plainRequest = request.get({ plain: true });
+        const currentEmployee = plainRequest.employee;
+
+        const proposedEmployee = { ...currentEmployee };
+
+        plainRequest.fieldChanges.forEach((change: any) => {
+          proposedEmployee[change.fieldName] = EmployeeUtils.parseValue(change.fieldName, change.newValue).value;
+        });
+
+        return proposedEmployee;
+      });
+    }
+
     return {
-      data: result.rows,
+      data: transformedData,
       pagination: {
         total: result.count,
         page,

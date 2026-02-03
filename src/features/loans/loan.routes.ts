@@ -6,14 +6,14 @@ import { validateLoan } from './loan.validators';
 
 const router = Router();
 
-router.use([validateAuthToken, hasRequiredPermission('MANAGE_LOANS')]);
+router.use([validateAuthToken]);
 
-router.get('/', LoanController.get);
+router.get('/', hasRequiredPermission('LIST_LOANS'), LoanController.get);
 router.get('/dashboard', LoanController.getDashboard);
-router.get('/:id', validateAuthToken, LoanController.getById);
-router.post('/', validateAuthToken, validateLoan, LoanController.create);
-router.put('/:id', validateAuthToken, validateLoan, LoanController.update);
-router.delete('/:id', validateAuthToken, LoanController.delete);
+router.get('/:id', hasRequiredPermission('MANAGE_LOANS'), LoanController.getById);
+router.post('/', hasRequiredPermission('MANAGE_LOANS'), validateLoan, LoanController.create);
+router.put('/:id', hasRequiredPermission('MANAGE_LOANS'), validateLoan, LoanController.update);
+router.delete('/:id', hasRequiredPermission('MANAGE_LOANS'), LoanController.delete);
 router.patch('/:id/approve', hasRequiredPermission('APPROVE_LOANS'), LoanController.approve);
 router.patch('/:id/reject', hasRequiredPermission('APPROVE_LOANS'), LoanController.reject);
 

@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import stoppable from 'stoppable';
 import { app } from './app';
-import { env } from './config/env';
+import { env } from './env';
 import { logger } from './utils/logger';
 
 const PORT = Number(env.PORT);
