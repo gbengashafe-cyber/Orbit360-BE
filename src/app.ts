@@ -8,6 +8,7 @@ import morgan from 'morgan';
 import { randomUUID } from 'node:crypto';
 import path from 'path';
 import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './config/swagger';
 import { dashboardRoutes } from './dashboard/dashboard.routes';
 import { authRoutes } from './features/authentication/auth.routes';
 import { companyRoutes } from './features/company/company.routes';
@@ -29,7 +30,6 @@ import { ApiError } from './utils/api-error';
 import { globalErrorHandler } from './utils/global-error-handler';
 import { logger } from './utils/logger';
 import { parsePageAndLimitNumber, parseQueryParams } from './utils/request-query-parser';
-import { swaggerSpec } from './swagger';
 
 const allowedOrigins = config.get<string[]>('allowedOrigins');
 

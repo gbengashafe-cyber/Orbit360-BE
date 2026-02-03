@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { env } from '../../env';
+import { env } from '../../config/env';
 import { ApiError } from '../../utils/api-error';
 import { logger } from '../../utils/logger';
 

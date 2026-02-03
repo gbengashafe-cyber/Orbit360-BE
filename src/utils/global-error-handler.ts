@@ -10,7 +10,7 @@ import {
   ValidationError,
 } from 'sequelize';
 import { ZodError } from 'zod';
-import { env } from '../env';
+import { env } from '../config/env';
 import { ApiError } from './api-error';
 import { logger } from './logger';
 

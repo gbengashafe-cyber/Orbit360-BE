@@ -1,5 +1,5 @@
 import { Dialect, Sequelize } from 'sequelize';
-import { env } from '../env';
+import { env } from '../config/env';
 import { logger } from '../utils/logger';
 
 const { DB_NAME, DB_USER, DB_PASSWORD, DB_HOST_NAME, DB_TYPE, DB_PORT } = env;

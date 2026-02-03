@@ -1,5 +1,5 @@
 import { db } from '.';
-import { env } from '../env';
+import { env } from '../config/env';
 import { logger } from '../utils/logger';
 import { loadModels } from './loadModels';
 
