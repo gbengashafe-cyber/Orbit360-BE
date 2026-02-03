@@ -8,7 +8,7 @@ import { UserRepository } from '../users/user.repository';
 import { AuthRepository } from './auth.repository';
 import { authenticateLDAPS, AuthUtil, REFRESH_TOKEN_COOKIE_NAME, TOKEN_FINGERPRINT_COOKIE_NAME } from './auth.utils';
 import { RefreshTokenRepository } from './refresh-token.repository';
-import { REFRESH_TOKEN_EXPIRY, TokenUtil } from './token.util';
+import { REFRESH_TOKEN_EXPIRY, RefreshTokenPayload, TokenUtil } from './token.util';
 
 export class AuthController {
   private static async handleUserLogin({
@@ -62,10 +62,12 @@ export class AuthController {
       path: '/',
     });
 
+    const decoded = TokenUtil.decodeToken(accessToken);
+
     return res.json(
       ApiResponse({
         message: 'Login successful',
-        data: { accessToken },
+        data: { accessToken, expiresAt: decoded?.exp ?? 0 * 1000 },
       }),
     );
   }
@@ -134,6 +136,15 @@ export class AuthController {
   }
 
   static async logout(req: Request, res: Response, next: NextFunction) {
+    const refreshToken = req.cookies[REFRESH_TOKEN_COOKIE_NAME];
+    if (refreshToken) {
+      const decoded = TokenUtil.decodeToken(refreshToken) as RefreshTokenPayload;
+
+      if (decoded?.rid) {
+        await RefreshTokenRepository.revoke(decoded.rid);
+      }
+    }
+
     try {
       res.clearCookie(TOKEN_FINGERPRINT_COOKIE_NAME, {
         path: '/',
@@ -208,6 +219,6 @@ export class AuthController {
 
     await RefreshTokenRepository.revoke(rid);
 
-    await this.handleUserLogin({ res, user });
+    await this.handleUserLogin({ res, user, updateLastLoginDate: false });
   };
 }

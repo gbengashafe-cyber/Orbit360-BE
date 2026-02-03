@@ -59,6 +59,10 @@ export class PayrollService {
       while (hasMore) {
         const activeEmployees = await EmployeeRepository.activeEmployeesCompensation({ rows: CHUNK_SIZE, page });
 
+        if (page === 1 && activeEmployees.length === 0) {
+          throw ApiError.badRequest('No active employee found. Kindly create employees and try again.');
+        }
+
         if (!activeEmployees?.length) {
           break;
         }

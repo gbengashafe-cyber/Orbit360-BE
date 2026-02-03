@@ -5,5 +5,6 @@
     "maxFileSizeInMB": 5,
     "storageServer": "https://localhost:3000/"
   },
-  "ldapsUrl": "ldaps:\\domain.com:639"
+  "ldapsUrl": "ldaps:\\domain.com:639",
+  "tokenExpiry": { "access": 1200, "refresh": 86400 }
 }
