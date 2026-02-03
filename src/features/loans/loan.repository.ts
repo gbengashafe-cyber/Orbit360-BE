@@ -1,11 +1,11 @@
 import { CreationAttributes, fn, InferAttributes, literal, Transaction, WhereOptions } from 'sequelize';
+import { Employee } from '../employee/employee.model';
 import { LoanPayment } from './loan-payment.model';
 import { Loan } from './loan.model';
-import { Employee } from '../employee/employee.model';
 
 type ActiveLoanAggregate = {
   activeLoanSum: string | null;
-  paidOffLoanSum: string | null;
+  paidOffLoans: string | null;
   activeLoans: string | null;
 };
 
@@ -14,7 +14,7 @@ export class LoanRepository {
     const result = (await Loan.findOne({
       attributes: [
         [fn('SUM', literal(`CASE WHEN status = 'active' THEN principalAmount ELSE 0 END`)), 'activeLoanSum'],
-        [fn('SUM', literal(`CASE WHEN status = 'paid_off' THEN principalAmount ELSE 0 END`)), 'paidOffLoanSum'],
+        [fn('COUNT', literal(`CASE WHEN status = 'paid_off' THEN id ELSE NULL END`)), 'paidOffLoans'],
         [fn('COUNT', literal(`CASE WHEN status = 'active' THEN id ELSE NULL END`)), 'activeLoans'],
       ],
       raw: true,
@@ -23,7 +23,7 @@ export class LoanRepository {
     return {
       activeLoanSum: result?.activeLoanSum || null,
       activeLoans: result?.activeLoans,
-      paidOffLoanSum: result?.paidOffLoanSum || null,
+      paidOffLoans: result?.paidOffLoans || null,
     };
   };
 

@@ -169,6 +169,11 @@ Employee.init(
       allowNull: false,
     },
     createdAt: { type: DataTypes.DATE },
+    createdBy: {
+      type: DataTypes.INTEGER,
+      references: { model: Employee, key: 'id' },
+      allowNull: true,
+    },
   },
   {
     sequelize: db,
