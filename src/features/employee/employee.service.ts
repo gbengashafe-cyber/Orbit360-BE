@@ -50,7 +50,7 @@ export class EmployeeService {
         requestId: request.id,
         fieldName: key,
         oldValue: '',
-        newValue: actualData[key].new === null ? null : String(actualData[key].new),
+        newValue: actualData[key]?.new === null ? null : String(actualData[key]?.new),
       }));
 
       await EmployeeFieldChange.bulkCreate(fieldChanges, { transaction });
@@ -73,6 +73,7 @@ export class EmployeeService {
     }
 
     const deltas = EmployeeUtils.getDelta(currentEmployee.get({ plain: true }), updateBody);
+    console.log('🚀 ~ EmployeeService ~ updateBody:', updateBody);
     if (deltas.length === 0) throw ApiError.badRequest('No changes detected.');
 
     return await db.transaction(async (transaction) => {
@@ -91,7 +92,7 @@ export class EmployeeService {
       const fieldChanges = deltas.map((d) => ({ ...d, requestId: request.id }));
       await EmployeeFieldChange.bulkCreate(fieldChanges, { transaction });
 
-      await Employee.update({ ...currentEmployee, status: 'PENDING_APPROVAL' }, { where: { id: updateBody.id }, silent: true });
+      await Employee.update({ ...currentEmployee, status: 'PENDING_APPROVAL' }, { where: { id: employeeId }, silent: true });
 
       return request;
     });

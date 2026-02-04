@@ -42,4 +42,22 @@ export class EmployeeUtils {
 
     return { type: 'string', value: value as string };
   };
+
+  static readonly getProposedState = (employee: any) => {
+    const latestRequest = employee.changeRequests?.[0];
+
+    if (!latestRequest || !latestRequest.fieldChanges) return employee;
+
+    const proposed = { ...employee.get({ plain: true }) };
+
+    latestRequest.fieldChanges.forEach((change: any) => {
+      proposed[change.fieldName] = change.newValue;
+    });
+
+    return {
+      current: employee.get({ plain: true }),
+      proposed: proposed,
+      modifiedFields: latestRequest.fieldChanges.map((c: any) => c.fieldName),
+    };
+  };
 }
