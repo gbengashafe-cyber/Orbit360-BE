@@ -11,8 +11,8 @@ export class EmployeeFieldChange extends Model<
   declare id: CreationOptional<number>;
   declare requestId: number;
   declare fieldName: string;
-  declare oldValue: string;
-  declare newValue: string;
+  declare oldValue: CreationOptional<string | null>;
+  declare newValue: CreationOptional<string | null>;
 }
 
 EmployeeFieldChange.init(
@@ -20,10 +20,16 @@ EmployeeFieldChange.init(
     id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
     requestId: { type: DataTypes.INTEGER, references: { model: EmployeeChangeRequest, key: 'id' } },
     fieldName: { type: DataTypes.STRING(50), allowNull: false },
-    oldValue: { type: DataTypes.TEXT },
-    newValue: { type: DataTypes.TEXT },
+    oldValue: { type: DataTypes.TEXT, allowNull: true },
+    newValue: { type: DataTypes.TEXT, allowNull: true },
   },
-  { sequelize: db, tableName: 'employee_field_changes', underscored: true, indexes: [{ fields: ['request_id'] }] },
+  {
+    sequelize: db,
+    tableName: 'employee_field_changes',
+    timestamps: false,
+    underscored: true,
+    indexes: [{ fields: ['request_id'] }],
+  },
 );
 
 EmployeeChangeRequest.belongsTo(Employee, { foreignKey: 'employeeId', as: 'employee' });

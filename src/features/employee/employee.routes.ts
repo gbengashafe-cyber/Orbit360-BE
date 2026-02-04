@@ -6,16 +6,25 @@ import { validateCreateEmployee, validateUpdateEmployee } from './employee.valid
 
 const router = Router();
 
-router.get('/me', validateAuthToken, EmployeeController.getUserEmployeeRecord);
-router.get('/:id/payrolls', validateAuthToken, EmployeeController.getEmployeePayrollRecords);
+router.use([validateAuthToken]);
 
-router.use([validateAuthToken, hasRequiredPermission('MANAGE_EMPLOYEES')]);
+// Employee interactions
+router.get('/me', EmployeeController.getUserEmployeeRecord);
+router.get('/:id/payrolls', EmployeeController.getEmployeePayrollRecords);
 
-router.get('/', EmployeeController.getAll);
-router.get('/directory', EmployeeController.getDirectory);
-router.get('/:id', EmployeeController.getById);
-router.post('/', validateCreateEmployee, EmployeeController.createNewEmployee);
-router.patch('/:id', validateCreateEmployee, EmployeeController.createEmployeeModRequest);
-router.put('/:id', validateUpdateEmployee, EmployeeController.update);
+// HR Interactions
+router.get('/', hasRequiredPermission('LIST_EMPLOYEES'), EmployeeController.getAll);
+router.get('/directory', hasRequiredPermission('LIST_EMPLOYEES'), EmployeeController.getDirectory);
+router.get('/:id', hasRequiredPermission('LIST_EMPLOYEES'), EmployeeController.getById);
+router.post('/', hasRequiredPermission('MANAGE_EMPLOYEES'), validateCreateEmployee, EmployeeController.createNewEmployee);
+router.patch(
+  '/:id',
+  hasRequiredPermission('MANAGE_EMPLOYEES'),
+  validateCreateEmployee,
+  EmployeeController.createEmployeeModRequest,
+);
+router.put('/:id', hasRequiredPermission('MANAGE_EMPLOYEES'), validateUpdateEmployee, EmployeeController.update);
+router.patch('/:id/approval', EmployeeController.approve);
+router.patch('/:id/rejection', EmployeeController.reject);
 
 export default router;

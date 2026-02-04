@@ -1,6 +1,7 @@
 import { CreationAttributes, InferAttributes, InferCreationAttributes, Op, Transaction } from 'sequelize';
-import { EmployeeChangeRequest } from './employee-change-request.model';
+import { changeRequestStatus, EmployeeChangeRequest } from './employee-change-request.model';
 import { Employee } from './employee.model';
+import { EmployeeFieldChange } from './employee-field-change.model';
 
 export type ReadAllProps = {
   rows: number;
@@ -21,13 +22,28 @@ export class EmployeeRepository {
     return EmployeeChangeRequest.create(changeRequest, { transaction });
   };
 
+  static readonly findRequestById = async (id: number) => {
+    return EmployeeChangeRequest.findByPk(id, {
+      include: [{ model: EmployeeFieldChange, as: 'fieldChanges' }],
+    });
+  };
+
+  static readonly updateRequestStatus = async (
+    id: number,
+    status: (typeof changeRequestStatus)[number],
+    checkerId: number,
+    transaction?: any,
+  ) => {
+    return EmployeeChangeRequest.update({ status, reviewedBy: checkerId }, { where: { id }, transaction });
+  };
+
   static readonly activeEmployeesCompensation = ({ rows, page }) => {
     const offset = (page - 1) * rows;
 
     return Employee.findAll({ where: { status: ['active', 'on_leave'] }, limit: rows, offset });
   };
 
-  static readonly read = ({ rows, page, filters, orderBy = 'createdAt', orderDirection = 'ASC' }: ReadAllProps) => {
+  static readonly read = ({ rows = 25, page = 1, filters, orderBy = 'createdAt', orderDirection = 'ASC' }: ReadAllProps) => {
     const offset = (page - 1) * rows;
 
     const where: any = {};

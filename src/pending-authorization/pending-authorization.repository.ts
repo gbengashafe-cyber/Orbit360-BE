@@ -61,7 +61,7 @@ export class AuthorizationRepository {
 
     return { loans };
   };
-  static readonly getCountsByModules = async (modules: string[], userId: number) => {
+  static readonly getCountsByModules = async (modules: string[], userId: number, employeeId: number) => {
     const tasks: Promise<{ key: string; count: number }>[] = [];
 
     if (modules.includes('LOANS')) {
@@ -82,12 +82,15 @@ export class AuthorizationRepository {
     }
     if (modules.includes('LEAVES')) {
       tasks.push(
-        Leave.count({ where: { status: 'pending', employeeId: { [Op.ne]: userId } } }).then((c) => ({ key: 'leaves', count: c })),
+        Leave.count({ where: { status: 'pending', employeeId: { [Op.ne]: employeeId } } }).then((c) => ({
+          key: 'leaves',
+          count: c,
+        })),
       );
     }
     if (modules.includes('EMPLOYEES')) {
       tasks.push(
-        Employee.count({ where: { status: 'pending_approval', createdBy: { [Op.ne]: userId } } }).then((c) => ({
+        EmployeeChangeRequest.count({ where: { status: 'pending_approval', requestedBy: { [Op.ne]: userId } } }).then((c) => ({
           key: 'employees',
           count: c,
         })),
@@ -97,7 +100,19 @@ export class AuthorizationRepository {
     return Promise.all(tasks);
   };
 
-  static readonly getPendingByModule = async (module: string, page: number, rows: number) => {
+  static readonly getPendingByModule = async ({
+    module,
+    page,
+    rows,
+    supervisorId,
+    employeeId,
+  }: {
+    module: string;
+    page: number;
+    rows: number;
+    supervisorId?: number;
+    employeeId: number;
+  }) => {
     const offset = (page - 1) * rows;
 
     switch (module.toUpperCase()) {
@@ -122,23 +137,37 @@ export class AuthorizationRepository {
         });
       case 'LEAVES':
         return Leave.findAndCountAll({
-          where: { status: 'pending' },
+          where: { status: 'pending', employeeId: { [Op.ne]: employeeId } },
           limit: rows,
           offset: offset,
-          include: ['employee'],
+          include: [
+            {
+              model: Employee,
+              as: 'employee',
+              where: supervisorId ? { supervisorId } : {},
+              include: [{ model: Employee, as: 'supervisor' }],
+            },
+          ],
           order: [['createdAt', 'DESC']],
+          distinct: true,
         });
       case 'EMPLOYEES':
         return EmployeeChangeRequest.findAndCountAll({
           where: { status: 'PENDING_APPROVAL' },
           limit: rows,
           offset,
+          order: [['createdAt', 'DESC']],
+          distinct: true,
           include: [
-            { model: Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'staffId'] },
+            {
+              model: Employee,
+              as: 'employee',
+              attributes: ['firstName', 'lastName', 'staffId', 'status', 'nokName', 'nokRelationship', 'nokPhone', 'nokAddress'],
+              include: [{ model: Employee, association: 'supervisor', attributes: ['firstName', 'lastName'] }],
+            },
             { model: User, as: 'maker', attributes: ['id', 'firstName', 'lastName'] },
             { model: EmployeeFieldChange, as: 'fieldChanges' },
           ],
-          order: [['createdAt', 'DESC']],
         });
 
       default:

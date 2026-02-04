@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
-import { validateOrThrow } from '../../utils/zod-validation-utils';
+import { LEAVE_TYPES } from './leave.model';
 
 const createLeaveSchema = z.object({
   employeeId: z.number().int('Employee ID must be an integer').min(1, 'Employee ID is required'),
@@ -10,7 +10,7 @@ const createLeaveSchema = z.object({
   endDate: z
     .union([z.string().date('Invalid end date format'), z.string().datetime()])
     .transform((val) => new Date(val).toISOString().split('T')[0]),
-  type: z.enum(['sick', 'vacation', 'personal', 'maternity', 'paternity'], { message: 'Invalid leave type' }),
+  type: z.enum(LEAVE_TYPES, { message: 'Invalid leave type' }),
   reason: z.string().optional().nullable(),
 });
 
@@ -29,14 +29,16 @@ const employeeIdParamSchema = z.object({
 });
 
 const approveDeclineSchema = z.object({
-  action: z.enum(['approved', 'rejected'], { message: "Action must be either 'approved' or 'rejected'" }),
+  action: z.preprocess(
+    (val) => (typeof val === 'string' ? val.toLowerCase() : val),
+    z.enum(['approved', 'rejected'], { message: "Action must be either 'approved' or 'rejected'" }),
+  ),
 });
 
 const validate =
   (schema: z.ZodObject<any>, source: 'body' | 'params' | 'query' = 'body') =>
   (req: Request, res: Response, next: NextFunction) => {
-    const result = schema.safeParse(req[source]);
-    validateOrThrow(result, req.requestId);
+    schema.parse(req[source]);
     next();
   };
 

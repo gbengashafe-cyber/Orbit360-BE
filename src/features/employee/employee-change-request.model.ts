@@ -1,7 +1,8 @@
-import { CreationOptional, DataTypes, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
+import { CreationOptional, DataTypes, InferAttributes, InferCreationAttributes, Model, NonAttribute } from 'sequelize';
 import { db } from '../../db';
 import { User } from '../users/user.model';
 import { Employee } from './employee.model';
+import { EmployeeFieldChange } from './employee-field-change.model';
 
 export const changeRequestStatus = ['PENDING_APPROVAL', 'APPROVED', 'REJECTED'] as const;
 export const ACTION_TYPES = ['CREATE', 'UPDATE'] as const;
@@ -12,7 +13,7 @@ export class EmployeeChangeRequest extends Model<
 > {
   declare id: CreationOptional<number>;
   declare actionType: (typeof ACTION_TYPES)[number];
-  declare employeeId: CreationOptional<number | null>;
+  declare employeeId: CreationOptional<number>;
   declare requestedBy: number;
   declare reviewedBy: CreationOptional<number>;
   declare status: (typeof changeRequestStatus)[number];
@@ -20,6 +21,8 @@ export class EmployeeChangeRequest extends Model<
   declare reviewerComment: CreationOptional<string>;
   declare reviewedDate: CreationOptional<Date>;
   declare createdAt: Date;
+
+  declare fieldChanges: NonAttribute<EmployeeFieldChange[]>;
 }
 
 EmployeeChangeRequest.init(
@@ -30,7 +33,7 @@ EmployeeChangeRequest.init(
       allowNull: false,
       defaultValue: 'UPDATE',
     },
-    employeeId: { type: DataTypes.INTEGER, allowNull: true, defaultValue: null, references: { model: Employee, key: 'id' } },
+    employeeId: { type: DataTypes.INTEGER, defaultValue: null, references: { model: Employee, key: 'id' } },
     requestedBy: { type: DataTypes.INTEGER, allowNull: false, references: { model: User, key: 'id' } },
     reviewedBy: { type: DataTypes.INTEGER, allowNull: true, references: { model: User, key: 'id' } },
     status: { type: DataTypes.ENUM(...changeRequestStatus), defaultValue: 'PENDING_APPROVAL' },

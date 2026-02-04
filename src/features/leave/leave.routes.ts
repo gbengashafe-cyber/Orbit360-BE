@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import { hasRequiredPermission, isInAllowedDepartment } from '../../utils/check-permission';
 import { validateAuthToken } from '../authentication/auth.middleware';
 import { LeaveController } from './leave.controller';
 import { validateApproveDecline, validateCreateLeave, validateEmployeeIdParam, validateLeaveIdParam } from './leave.validators';

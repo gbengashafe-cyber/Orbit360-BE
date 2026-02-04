@@ -26,6 +26,7 @@ export class EmployeeService {
         {
           ...employeeData,
           status: 'pending_approval',
+          createdBy: makerId,
         },
         transaction,
       );
@@ -49,7 +50,7 @@ export class EmployeeService {
         requestId: request.id,
         fieldName: key,
         oldValue: '',
-        newValue: String(actualData[key]),
+        newValue: actualData[key].new === null ? null : String(actualData[key].new),
       }));
 
       await EmployeeFieldChange.bulkCreate(fieldChanges, { transaction });
@@ -64,6 +65,13 @@ export class EmployeeService {
     if (!currentEmployee) {
       throw ApiError.notFound('Employee not found');
     }
+
+    if (currentEmployee.status === 'PENDING_APPROVAL') {
+      throw ApiError.badRequest(
+        'There is a pending maintenance on this record. Kindly clear the maintenance and before trying again.',
+      );
+    }
+
     const deltas = EmployeeUtils.getDelta(currentEmployee.get({ plain: true }), updateBody);
     if (deltas.length === 0) throw ApiError.badRequest('No changes detected.');
 
@@ -83,7 +91,45 @@ export class EmployeeService {
       const fieldChanges = deltas.map((d) => ({ ...d, requestId: request.id }));
       await EmployeeFieldChange.bulkCreate(fieldChanges, { transaction });
 
+      await Employee.update({ ...currentEmployee, status: 'PENDING_APPROVAL' }, { where: { id: updateBody.id }, silent: true });
+
       return request;
+    });
+  };
+
+  static readonly processModification = async (requestId: number, checkerId: number, action: 'APPROVE' | 'REJECT') => {
+    const request = await EmployeeRepository.findRequestById(requestId);
+
+    if (!request || request.status !== 'PENDING_APPROVAL') {
+      throw ApiError.notFound('Modification request not found or already processed.');
+    }
+
+    if (request.requestedBy === checkerId) {
+      throw ApiError.badRequest('Maker-Checker violation: You cannot process your own request.');
+    }
+
+    // If old status = null, use active
+    // If new value is not the same as old value, use new value,
+    // else use old value
+    // const newStatus =
+    return await db.transaction(async (t) => {
+      if (action === 'REJECT') {
+        return EmployeeRepository.updateRequestStatus(requestId, 'REJECTED', checkerId, t);
+      }
+
+      const updatePayload: any = {};
+      request.fieldChanges.forEach((change: any) => {
+        const sanitizedValue = change.newValue === 'null' || change.newValue === '' ? null : change.newValue;
+        updatePayload[change.fieldName] = sanitizedValue;
+        updatePayload.status = 'ACTIVE';
+      });
+
+      await Employee.update(updatePayload, {
+        where: { id: request.employeeId },
+        transaction: t,
+      });
+
+      return EmployeeRepository.updateRequestStatus(requestId, 'APPROVED', checkerId, t);
     });
   };
 }

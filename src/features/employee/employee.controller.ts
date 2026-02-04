@@ -104,15 +104,11 @@ export class EmployeeController {
 
   static readonly createEmployeeModRequest = async (req: Request, res: Response) => {
     const { id } = req.params;
-    const makerId = req.user?.id;
+    const makerId = req.user?.id as number;
     const payload = req.body.validated.employee;
 
     if (!id) {
       throw ApiError.badRequest('Missing employee identifier in request');
-    }
-
-    if (!makerId) {
-      throw ApiError.badRequest('Missing authentication. Kindly sign in and try again');
     }
 
     const result = await EmployeeService.submitEmployeeChangeRequest(Number(id), makerId, payload);
@@ -142,6 +138,34 @@ export class EmployeeController {
       next(error);
     }
   }
+
+  static readonly approve = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const checkerId = req.user?.id as number;
+
+    await EmployeeService.processModification(Number(id), checkerId, 'APPROVE');
+
+    return res.status(200).json(
+      ApiResponse({
+        data: {},
+        message: 'Employee modification approved and data updated successfully.',
+      }),
+    );
+  };
+
+  static readonly reject = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const checkerId = req.user?.id as number;
+
+    await EmployeeService.processModification(Number(id), checkerId, 'REJECT');
+
+    return res.status(200).json(
+      ApiResponse({
+        data: {},
+        message: 'Employee modification rejected.',
+      }),
+    );
+  };
 
   static async update(req: Request, res: Response, next: NextFunction) {
     try {

@@ -5,6 +5,7 @@ import { Employee } from '../employee/employee.model';
 import { LeaveBalance } from './leave-balance.model';
 import { LeaveType } from './leave-type.model';
 import { Leave } from './leave.model';
+import { ApiResponse } from '../../utils/api-response';
 
 export class LeaveController {
   static async create(req: Request, res: Response, next: NextFunction) {
@@ -140,7 +141,7 @@ export class LeaveController {
       const { id } = req.params;
       const { action } = req.body;
 
-      if (!['approved', 'rejected'].includes(action)) {
+      if (!['approved', 'rejected'].includes(action.toLowerCase())) {
         throw ApiError.badRequest('Invalid action. Must be "approved" or "rejected"');
       }
 
@@ -159,7 +160,7 @@ export class LeaveController {
         include: [{ model: Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'email'] }],
       });
 
-      res.json({ data: updatedLeave, message: `Leave request ${action}` });
+      res.json(ApiResponse({ data: updatedLeave, message: `Leave request ${action}` }));
     } catch (error) {
       logger.error(`Error updating leave status: ${error}`);
       next(error);

@@ -13,9 +13,10 @@ export class AuthorizationController {
 
   static readonly getCounts = async (req: Request, res: Response) => {
     const permissions = req.user?.permissions || [];
-    const userId = req.user?.id;
+    const userId = req.user?.id as number;
+    const userEmail = req.user?.email as string;
 
-    const data = await AuthorizationService.getBadgeCounts(permissions, Number(userId));
+    const data = await AuthorizationService.getBadgeCounts(permissions, userId, userEmail);
 
     return res.json(ApiResponse({ data }));
   };
@@ -23,10 +24,13 @@ export class AuthorizationController {
   static readonly getModulePending = async (req: Request, res: Response) => {
     const { moduleName } = req.params;
     const { page, rows } = req.pagination;
+    const viewerEmail = req.user?.email as string;
 
-    hasModuleApprovalPermission({ moduleName, req });
+    if (!['LEAVES'].includes(moduleName.toLocaleUpperCase())) {
+      hasModuleApprovalPermission({ moduleName, req });
+    }
 
-    const result = await AuthorizationService.getPendingModuleItems(moduleName, page, rows);
+    const result = await AuthorizationService.getPendingModuleItems(moduleName, page, rows, viewerEmail);
 
     return res.json(
       ApiResponse({
