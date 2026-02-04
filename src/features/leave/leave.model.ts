@@ -2,7 +2,17 @@ import { CreationOptional, DataTypes, ForeignKey, InferAttributes, InferCreation
 import { db } from '../../db';
 import { Employee } from '../employee/employee.model';
 
-export const LEAVE_TYPES = ['sick', 'vacation', 'personal', 'maternity', 'paternity'];
+export const LEAVE_TYPES = [
+  'annual',
+  'compassionate',
+  'study',
+  'unpaid',
+  'sick',
+  'vacation',
+  'personal',
+  'maternity',
+  'paternity',
+];
 
 export class Leave extends Model<InferAttributes<Leave>, InferCreationAttributes<Leave>> {
   declare id: CreationOptional<number>;
@@ -10,6 +20,7 @@ export class Leave extends Model<InferAttributes<Leave>, InferCreationAttributes
   declare startDate: Date;
   declare endDate: Date;
   declare type: (typeof LEAVE_TYPES)[number];
+  declare numberOfDays: CreationOptional<number>;
   declare status: CreationOptional<'pending' | 'approved' | 'rejected'>;
   declare reason: CreationOptional<string | null>;
   declare createdAt: CreationOptional<Date>;
@@ -39,6 +50,11 @@ Leave.init(
       type: DataTypes.ENUM,
       values: LEAVE_TYPES,
       allowNull: false,
+    },
+    numberOfDays: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: 0,
     },
     status: {
       type: DataTypes.ENUM('pending', 'approved', 'rejected'),

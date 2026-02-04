@@ -5,11 +5,21 @@ import { Employee } from '../employee/employee.model';
 import { LeaveBalance } from './leave-balance.model';
 import { LeaveType } from './leave-type.model';
 import { Leave } from './leave.model';
+import { calculateWorkingDays, validateLeaveDates } from './leave.utils';
 
 export class LeaveController {
   static async create(req: Request, res: Response, next: NextFunction) {
     try {
       const { employeeId, startDate, endDate, type, reason } = req.body;
+
+      // Validate leave dates
+      const dateError = validateLeaveDates(startDate, endDate);
+      if (dateError) {
+        throw ApiError.badRequest(dateError);
+      }
+
+      // Calculate working days (excluding weekends)
+      const workingDays = calculateWorkingDays(startDate, endDate);
 
       const leave = await Leave.create({
         employeeId,
@@ -18,15 +28,65 @@ export class LeaveController {
         type,
         reason,
         status: 'pending',
+        numberOfDays: workingDays,
       });
 
       const createdLeave = await Leave.findByPk(leave.id, {
         include: [{ model: Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'email'] }],
       });
 
-      res.status(201).json({ data: createdLeave, message: 'Leave request created successfully' });
+      // Get leave balance for this employee and leave type
+      const leaveBalance = await LeaveBalance.findOne({
+        where: { employeeId, leaveType: type, year: new Date().getFullYear() },
+      });
+
+      res.status(201).json({
+        data: createdLeave,
+        message: 'Leave request created successfully',
+        leaveInfo: {
+          calculatedDays: workingDays,
+          allocatedDays: leaveBalance?.totalDays || 0,
+          remainingDays: leaveBalance ? leaveBalance.remainingDays - workingDays : 0,
+        },
+      });
     } catch (error) {
       logger.error(`Error creating leave: ${error}`);
+      next(error);
+    }
+  }
+
+  static async calculateLeaveDays(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { employeeId, startDate, endDate, type } = req.body;
+
+      // Validate leave dates
+      const dateError = validateLeaveDates(startDate, endDate);
+      if (dateError) {
+        throw ApiError.badRequest(dateError);
+      }
+
+      // Calculate working days (excluding weekends)
+      const workingDays = calculateWorkingDays(startDate, endDate);
+
+      // Get leave balance for this employee and leave type
+      const leaveBalance = await LeaveBalance.findOne({
+        where: { employeeId, leaveType: type, year: new Date().getFullYear() },
+      });
+
+      res.json({
+        message: 'Leave days calculated successfully',
+        data: {
+          calculatedDays: workingDays,
+          allocatedDays: leaveBalance?.totalDays || 0,
+          usedDays: leaveBalance?.usedDays || 0,
+          remainingDays: leaveBalance ? leaveBalance.remainingDays - workingDays : 0,
+          startDate,
+          endDate,
+          leaveType: type,
+        },
+      });
+    } catch (error) {
+      logger.error(`Error calculating leave days: ${error}`);
       next(error);
     }
   }

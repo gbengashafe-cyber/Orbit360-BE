@@ -10,7 +10,9 @@ const createLeaveSchema = z.object({
   endDate: z
     .union([z.string().date('Invalid end date format'), z.string().datetime()])
     .transform((val) => new Date(val).toISOString().split('T')[0]),
-  type: z.enum(['sick', 'vacation', 'personal', 'maternity', 'paternity'], { message: 'Invalid leave type' }),
+  type: z.enum(['annual', 'compassionate', 'study', 'unpaid', 'sick', 'vacation', 'personal', 'maternity', 'paternity'], {
+    message: 'Invalid leave type',
+  }),
   reason: z.string().optional().nullable(),
 });
 

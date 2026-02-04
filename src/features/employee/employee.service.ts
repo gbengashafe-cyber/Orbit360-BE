@@ -59,7 +59,9 @@ export class EmployeeService {
   };
 
   static readonly submitEmployeeChangeRequest = async (employeeId: number, makerId: number, updateBody: any) => {
-    const currentEmployee = await Employee.findByPk(employeeId);
+    const currentEmployee = await Employee.findByPk(employeeId, {
+      attributes: { exclude: ['staffId', 'approvedBy'] },
+    });
 
     if (!currentEmployee) {
       throw ApiError.notFound('Employee not found');
