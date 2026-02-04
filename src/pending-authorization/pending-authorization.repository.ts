@@ -33,7 +33,6 @@ export class AuthorizationRepository {
 
   static readonly getPendingEmployees = async (limit: number) => {
     return Employee.findAll({
-      attributes: { exclude: ['staffId', 'approvedBy'] },
       where: { status: 'pending_approval' },
       limit,
       raw: true,

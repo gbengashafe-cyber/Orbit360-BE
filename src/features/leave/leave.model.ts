@@ -20,7 +20,6 @@ export class Leave extends Model<InferAttributes<Leave>, InferCreationAttributes
   declare startDate: Date;
   declare endDate: Date;
   declare type: (typeof LEAVE_TYPES)[number];
-  declare numberOfDays: CreationOptional<number>;
   declare status: CreationOptional<'pending' | 'approved' | 'rejected'>;
   declare reason: CreationOptional<string | null>;
   declare createdAt: CreationOptional<Date>;
@@ -50,11 +49,6 @@ Leave.init(
       type: DataTypes.ENUM,
       values: LEAVE_TYPES,
       allowNull: false,
-    },
-    numberOfDays: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      defaultValue: 0,
     },
     status: {
       type: DataTypes.ENUM('pending', 'approved', 'rejected'),

@@ -28,11 +28,16 @@ export class LeaveController {
         type,
         reason,
         status: 'pending',
-        numberOfDays: workingDays,
       });
 
       const createdLeave = await Leave.findByPk(leave.id, {
-        include: [{ model: Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'email'] }],
+        include: [
+          {
+            model: Employee,
+            as: 'employee',
+            attributes: { exclude: ['staffId', 'approvedBy'] },
+          },
+        ],
       });
 
       // Get leave balance for this employee and leave type
@@ -99,7 +104,13 @@ export class LeaveController {
       const { count, rows: leaves } = await Leave.findAndCountAll({
         limit: rows,
         offset,
-        include: [{ model: Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'email'] }],
+        include: [
+          {
+            model: Employee,
+            as: 'employee',
+            attributes: { exclude: ['staffId', 'approvedBy'] },
+          },
+        ],
         order: [['createdAt', 'DESC']],
       });
 
@@ -150,7 +161,13 @@ export class LeaveController {
     try {
       const { id } = req.params;
       const leave = await Leave.findByPk(id, {
-        include: [{ model: Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'email'] }],
+        include: [
+          {
+            model: Employee,
+            as: 'employee',
+            attributes: { exclude: ['staffId', 'approvedBy'] },
+          },
+        ],
       });
 
       if (!leave) {
@@ -216,7 +233,13 @@ export class LeaveController {
       await leave.update({ status: action });
 
       const updatedLeave = await Leave.findByPk(id, {
-        include: [{ model: Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'email'] }],
+        include: [
+          {
+            model: Employee,
+            as: 'employee',
+            attributes: { exclude: ['staffId', 'approvedBy'] },
+          },
+        ],
       });
 
       res.json({ data: updatedLeave, message: `Leave request ${action}` });

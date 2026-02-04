@@ -24,12 +24,7 @@ export class EmployeeRepository {
   static readonly activeEmployeesCompensation = ({ rows, page }) => {
     const offset = (page - 1) * rows;
 
-    return Employee.findAll({
-      attributes: { exclude: ['staffId', 'approvedBy'] },
-      where: { status: ['active', 'on_leave'] },
-      limit: rows,
-      offset,
-    });
+    return Employee.findAll({ where: { status: ['active', 'on_leave'] }, limit: rows, offset });
   };
 
   static readonly read = ({ rows, page, filters, orderBy = 'createdAt', orderDirection = 'ASC' }: ReadAllProps) => {
@@ -59,7 +54,6 @@ export class EmployeeRepository {
     }
 
     return Employee.findAndCountAll({
-      attributes: { exclude: ['staffId', 'approvedBy'] },
       where,
       limit: rows,
       offset,
@@ -69,7 +63,6 @@ export class EmployeeRepository {
 
   static readonly readById = (id: string | number) => {
     return Employee.findByPk(id, {
-      attributes: { exclude: ['staffId', 'approvedBy'] },
       paranoid: false,
       include: [{ association: 'loans' }],
     });
@@ -109,7 +102,6 @@ export class EmployeeRepository {
     }
 
     return Employee.findAndCountAll({
-      attributes: { exclude: ['staffId', 'approvedBy'] },
       where,
       limit: rows,
       offset: (page - 1) * rows,
