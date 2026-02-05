@@ -1,6 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
-import { LEAVE_TYPES } from './leave.model';
 
 const createLeaveSchema = z.object({
   employeeId: z.number().int('Employee ID must be an integer').min(1, 'Employee ID is required'),
@@ -10,7 +9,9 @@ const createLeaveSchema = z.object({
   endDate: z
     .union([z.string().date('Invalid end date format'), z.string().datetime()])
     .transform((val) => new Date(val).toISOString().split('T')[0]),
-  type: z.enum(LEAVE_TYPES, { message: 'Invalid leave type' }),
+  type: z.enum(['annual', 'compassionate', 'study', 'unpaid', 'sick', 'vacation', 'personal', 'maternity', 'paternity'], {
+    message: 'Invalid leave type',
+  }),
   reason: z.string().optional().nullable(),
 });
 

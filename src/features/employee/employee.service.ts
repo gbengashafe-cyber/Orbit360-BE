@@ -144,6 +144,10 @@ export class EmployeeService {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { id, ...fieldsToUpdate } = updatePayload;
 
+      if (request.actionType === 'CREATE') {
+        (fieldsToUpdate as any).approvedBy = checkerId;
+      }
+
       await Employee.update(fieldsToUpdate, { where: { id: request.employeeId }, silent: true, transaction: t });
       const employee = await Employee.findByPk(request.employeeId, { transaction: t });
 

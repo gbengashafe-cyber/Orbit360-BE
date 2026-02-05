@@ -12,7 +12,7 @@ export class AuthorizationRepository {
     return Loan.findAll({
       where: { status: 'PENDING_APPROVAL' },
       include: [
-        { model: Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'email', 'staffId'] },
+        { model: Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'email'] },
         { model: User, as: 'initiator', attributes: ['id', 'firstName', 'lastName'] },
       ],
       limit,
@@ -24,7 +24,7 @@ export class AuthorizationRepository {
   static readonly getPendingLeaves = async (limit: number) => {
     return Leave.findAll({
       where: { status: 'pending' },
-      include: [{ model: Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'email', 'staffId'] }],
+      include: [{ model: Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'email'] }],
       limit,
       raw: true,
       nest: true,

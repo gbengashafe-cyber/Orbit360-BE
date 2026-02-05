@@ -1,0 +1,13 @@
+{
+  "allowedOrigins": ["https://yourdomain.com"],
+  "ldapsUrl": "ldaps:\\domain.com:639",
+  "tokenExpiry": {
+    "access": 1200,
+    "refresh": 86400
+  },
+  "payrollReport": {
+    "storagePath": "payroll-reports",
+    "maxFileSizeInMB": 5,
+    "storageServer": "https://yourdomain.com/"
+  }
+}

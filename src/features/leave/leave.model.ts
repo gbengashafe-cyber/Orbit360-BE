@@ -2,7 +2,17 @@ import { CreationOptional, DataTypes, ForeignKey, InferAttributes, InferCreation
 import { db } from '../../db';
 import { Employee } from '../employee/employee.model';
 
-export const LEAVE_TYPES = ['sick', 'vacation', 'personal', 'maternity', 'paternity'];
+export const LEAVE_TYPES = [
+  'annual',
+  'compassionate',
+  'study',
+  'unpaid',
+  'sick',
+  'vacation',
+  'personal',
+  'maternity',
+  'paternity',
+];
 
 export class Leave extends Model<InferAttributes<Leave>, InferCreationAttributes<Leave>> {
   declare id: CreationOptional<number>;

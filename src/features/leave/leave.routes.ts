@@ -6,6 +6,7 @@ import { validateApproveDecline, validateCreateLeave, validateEmployeeIdParam, v
 const router = Router();
 
 router.post('/', validateAuthToken, validateCreateLeave, LeaveController.create);
+router.post('/calculate/days', validateAuthToken, LeaveController.calculateLeaveDays);
 router.get('/', validateAuthToken, LeaveController.getAll);
 router.get('/employee/:employeeId', validateAuthToken, validateEmployeeIdParam, LeaveController.getByEmployee);
 router.get('/types', validateAuthToken, LeaveController.getLeaveTypes);

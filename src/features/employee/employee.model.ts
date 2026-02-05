@@ -50,6 +50,8 @@ export class Employee extends Model<InferAttributes<Employee>, InferCreationAttr
   // Others
   declare nhfApplicable: boolean;
   declare createdAt: CreationOptional<Date>;
+  declare updatedAt: CreationOptional<Date>;
+  declare deletedAt: CreationOptional<Date>;
   declare createdBy: ForeignKey<User['id']>;
   declare approvedBy: ForeignKey<User['id']>;
   declare shouldCreateUser: CreationOptional<boolean>;
@@ -172,10 +174,17 @@ Employee.init(
       allowNull: false,
     },
     createdAt: { type: DataTypes.DATE },
+    updatedAt: { type: DataTypes.DATE },
+    deletedAt: { type: DataTypes.DATE, allowNull: true },
     createdBy: {
       type: DataTypes.INTEGER,
-      references: { model: Employee, key: 'id' },
+      references: { model: User, key: 'id' },
       allowNull: false,
+    },
+    approvedBy: {
+      type: DataTypes.INTEGER,
+      references: { model: User, key: 'id' },
+      allowNull: true,
     },
     shouldCreateUser: { type: DataTypes.BOOLEAN, defaultValue: false },
   },
