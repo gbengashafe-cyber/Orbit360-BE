@@ -1,6 +1,6 @@
-import { Op } from 'sequelize';
+import { Op, WhereOptions } from 'sequelize';
 import { EmployeeChangeRequest } from '../features/employee/employee-change-request.model';
-import { EmployeeFieldChange } from '../features/employee/employee-field-change.model';
+import { EmployeeDraft } from '../features/employee/employee-draft.model';
 import { Employee } from '../features/employee/employee.model';
 import { Leave } from '../features/leave/leave.model';
 import { Loan } from '../features/loans/loan.model';
@@ -61,7 +61,7 @@ export class AuthorizationRepository {
 
     return { loans };
   };
-  static readonly getCountsByModules = async (modules: string[], userId: number, employeeId: number) => {
+  static readonly getCountsByModules = async (modules: string[], userId: number, userEmployeeId: number) => {
     const tasks: Promise<{ key: string; count: number }>[] = [];
 
     if (modules.includes('LOANS')) {
@@ -82,15 +82,23 @@ export class AuthorizationRepository {
     }
     if (modules.includes('LEAVES')) {
       tasks.push(
-        Leave.count({ where: { status: 'pending', employeeId: { [Op.ne]: employeeId } } }).then((c) => ({
+        Leave.count({ where: { status: 'pending', employeeId: { [Op.ne]: userEmployeeId } } }).then((c) => ({
           key: 'leaves',
           count: c,
         })),
       );
     }
     if (modules.includes('EMPLOYEES')) {
+      const where: WhereOptions = { status: 'PENDING_APPROVAL', requestedBy: { [Op.ne]: userId } };
+
+      if (userEmployeeId) {
+        where.employeeId = { [Op.ne]: userEmployeeId };
+      }
+
       tasks.push(
-        EmployeeChangeRequest.count({ where: { status: 'pending_approval', requestedBy: { [Op.ne]: userId } } }).then((c) => ({
+        EmployeeChangeRequest.count({
+          where,
+        }).then((c) => ({
           key: 'employees',
           count: c,
         })),
@@ -105,13 +113,15 @@ export class AuthorizationRepository {
     page,
     rows,
     supervisorId,
-    employeeId,
+    userEmployeeId,
+    userId,
   }: {
     module: string;
     page: number;
     rows: number;
     supervisorId?: number;
-    employeeId: number;
+    userEmployeeId: number;
+    userId: number;
   }) => {
     const offset = (page - 1) * rows;
 
@@ -137,7 +147,7 @@ export class AuthorizationRepository {
         });
       case 'LEAVES':
         return Leave.findAndCountAll({
-          where: { status: 'pending', employeeId: { [Op.ne]: employeeId } },
+          where: { status: 'pending', employeeId: { [Op.ne]: userEmployeeId } },
           limit: rows,
           offset: offset,
           include: [
@@ -151,24 +161,36 @@ export class AuthorizationRepository {
           order: [['createdAt', 'DESC']],
           distinct: true,
         });
-      case 'EMPLOYEES':
+      case 'EMPLOYEES': {
+        const where: WhereOptions = { status: 'PENDING_APPROVAL', requestedBy: { [Op.ne]: userId } };
+
+        if (userEmployeeId) {
+          where.employeeId = { [Op.ne]: userEmployeeId };
+        }
         return EmployeeChangeRequest.findAndCountAll({
-          where: { status: 'PENDING_APPROVAL' },
+          where,
           limit: rows,
           offset,
-          order: [['createdAt', 'DESC']],
           distinct: true,
           include: [
             {
+              model: User,
+              as: 'initiator',
+              attributes: ['id', 'firstName', 'lastName'],
+            },
+            {
+              model: EmployeeDraft,
+              as: 'employeeDraft',
+            },
+            {
               model: Employee,
               as: 'employee',
-              attributes: ['firstName', 'lastName', 'staffId', 'status', 'nokName', 'nokRelationship', 'nokPhone', 'nokAddress'],
-              include: [{ model: Employee, association: 'supervisor', attributes: ['firstName', 'lastName'] }],
+              attributes: ['id', 'staffId', 'firstName', 'lastName'],
             },
-            { model: User, as: 'maker', attributes: ['id', 'firstName', 'lastName'] },
-            { model: EmployeeFieldChange, as: 'fieldChanges' },
           ],
+          order: [['createdAt', 'DESC']],
         });
+      }
 
       default:
         return null;

@@ -28,7 +28,7 @@ In Practice:
 A user might be role='user', job_role='human_resources_manager', department='hr', with permissions=['manage_employees', 'process_payroll', 'approve_leave_requests']
 This gives them HR-specific access without full admin privileges
 */
-export const userStatusOptions = ['active', 'inactive'] as const;
+export const userStatusOptions = ['ACTIVE', 'INACTIVE'] as const;
 export const userRoleOptions = ['admin', 'user'] as const;
 
 export class User extends Model<InferAttributes<User>, InferCreationAttributes<User>> {

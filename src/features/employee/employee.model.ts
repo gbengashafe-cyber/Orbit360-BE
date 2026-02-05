@@ -4,7 +4,7 @@ import { Department } from '../department/department.model';
 import { JobRole } from '../job-role/job-role.model';
 import { User } from '../users/user.model';
 
-export const employeeStatus = ['active', 'suspended', 'terminated', 'on_leave', 'pending_approval'];
+export const employeeStatus = ['ACTIVE', 'SUSPENDED', 'TERMINATED', 'ON_LEAVE', 'PENDING_APPROVAL', 'CANCELLED'];
 
 export class Employee extends Model<InferAttributes<Employee>, InferCreationAttributes<Employee>> {
   declare id: CreationOptional<number>;
@@ -52,6 +52,7 @@ export class Employee extends Model<InferAttributes<Employee>, InferCreationAttr
   declare createdAt: CreationOptional<Date>;
   declare createdBy: ForeignKey<User['id']>;
   declare approvedBy: ForeignKey<User['id']>;
+  declare shouldCreateUser: CreationOptional<boolean>;
 }
 
 Employee.init(
@@ -117,9 +118,11 @@ Employee.init(
       },
     },
     status: {
-      type: DataTypes.ENUM,
-      values: employeeStatus,
-      defaultValue: 'active',
+      type: DataTypes.ENUM(...employeeStatus),
+      defaultValue: 'PENDING_APPROVAL',
+      set(value: string) {
+        this.setDataValue('status', value.toUpperCase());
+      },
     },
     terminationDate: {
       type: DataTypes.DATEONLY,
@@ -172,8 +175,9 @@ Employee.init(
     createdBy: {
       type: DataTypes.INTEGER,
       references: { model: Employee, key: 'id' },
-      allowNull: true,
+      allowNull: false,
     },
+    shouldCreateUser: { type: DataTypes.BOOLEAN, defaultValue: false },
   },
   {
     sequelize: db,

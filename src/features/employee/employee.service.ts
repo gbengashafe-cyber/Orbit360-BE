@@ -1,9 +1,11 @@
 import { db } from '../../db';
 import { ApiError } from '../../utils/api-error';
-import { EmployeeFieldChange } from './employee-field-change.model';
+import { AuthUtil } from '../authentication/auth.utils';
+import { UserRepository } from '../users/user.repository';
+import { EmployeeChangeRequest } from './employee-change-request.model';
+import { EmployeeDraft } from './employee-draft.model';
 import { Employee } from './employee.model';
 import { EmployeeRepository, ReadAllProps } from './employee.repository';
-import { EmployeeUtils } from './employee.utils';
 
 export class EmployeeService {
   static readonly getDirectory = async ({ page, rows, filters }: ReadAllProps) => {
@@ -20,117 +22,180 @@ export class EmployeeService {
     };
   };
 
-  static readonly submitNewEmployeeRequest = async (makerId: number, employeeData: any) => {
-    return await db.transaction(async (transaction) => {
-      const employee = await EmployeeRepository.create(
-        {
-          ...employeeData,
-          status: 'pending_approval',
-          createdBy: makerId,
-        },
-        transaction,
-      );
+  static readonly initiateEmployeeCreation = async (payload: any, makerId: number) => {
+    return await db.transaction(async (t) => {
+      // Create employee in master table
+      const employee = await EmployeeRepository.create({ ...payload, createdBy: makerId }, t);
 
-      const request = await EmployeeRepository.createModificationRequest(
+      // Create change/creation request record
+      const request = await EmployeeChangeRequest.create(
         {
           employeeId: employee.id,
           requestedBy: makerId,
           actionType: 'CREATE',
-          status: 'PENDING_APPROVAL',
-          makerComment: 'New employee creation request',
-          createdAt: new Date(),
         },
-        transaction,
+        { transaction: t },
       );
 
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { reason, ...actualData } = employeeData;
-
-      const fieldChanges = Object.keys(actualData).map((key) => ({
-        requestId: request.id,
-        fieldName: key,
-        oldValue: '',
-        newValue: actualData[key]?.new === null ? null : String(actualData[key]?.new),
-      }));
-
-      await EmployeeFieldChange.bulkCreate(fieldChanges, { transaction });
-
-      return request;
-    });
-  };
-
-  static readonly submitEmployeeChangeRequest = async (employeeId: number, makerId: number, updateBody: any) => {
-    const currentEmployee = await Employee.findByPk(employeeId);
-
-    if (!currentEmployee) {
-      throw ApiError.notFound('Employee not found');
-    }
-
-    if (currentEmployee.status === 'PENDING_APPROVAL') {
-      throw ApiError.badRequest(
-        'There is a pending maintenance on this record. Kindly clear the maintenance and before trying again.',
-      );
-    }
-
-    const deltas = EmployeeUtils.getDelta(currentEmployee.get({ plain: true }), updateBody);
-    console.log('🚀 ~ EmployeeService ~ updateBody:', updateBody);
-    if (deltas.length === 0) throw ApiError.badRequest('No changes detected.');
-
-    return await db.transaction(async (transaction) => {
-      const request = await EmployeeRepository.createModificationRequest(
+      // Create draft record
+      await EmployeeDraft.create(
         {
-          employeeId: updateBody.id,
-          requestedBy: makerId,
-          status: 'PENDING_APPROVAL',
-          actionType: 'UPDATE',
-          makerComment: updateBody.reason ?? null,
-          createdAt: new Date(),
+          ...employee.get({ plain: true }),
+          previousStatus: 'CANCELLED',
+          id: undefined,
+          requestId: request.id,
+          status: 'ACTIVE',
         },
-        transaction,
+        { transaction: t },
       );
 
-      const fieldChanges = deltas.map((d) => ({ ...d, requestId: request.id }));
-      await EmployeeFieldChange.bulkCreate(fieldChanges, { transaction });
+      return request.id;
+    });
+  };
 
-      await Employee.update({ ...currentEmployee, status: 'PENDING_APPROVAL' }, { where: { id: employeeId }, silent: true });
+  static readonly initiateEmployeeMaintenance = async ({
+    employeeId,
+    payload,
+    makerId,
+  }: {
+    employeeId: number;
+    payload: any;
+    makerId: number;
+  }) => {
+    return await db.transaction(async (t) => {
+      const pendingMaintenance = await EmployeeChangeRequest.findOne({ where: { employeeId, status: 'PENDING_APPROVAL' } });
+
+      if (pendingMaintenance) {
+        throw ApiError.conflict('There is an existing maintenance on this record. Kindly clear the maintenance and try again');
+      }
+
+      const employeeExistingData = await EmployeeRepository.readById(employeeId);
+
+      if (!employeeExistingData) {
+        throw ApiError.notFound('Employee not found');
+      }
+
+      employeeExistingData.update({ status: 'PENDING_APPROVAL' }, { silent: true });
+
+      const shouldUpdateTerminationDate =
+        employeeExistingData.status?.toUpperCase() !== 'TERMINATED' && payload?.status?.toUpperCase() === 'TERMINATED';
+
+      if (shouldUpdateTerminationDate) {
+        payload = { ...payload, terminationDate: new Date() };
+      }
+
+      const request = await EmployeeChangeRequest.create(
+        {
+          employeeId,
+          requestedBy: makerId,
+          actionType: 'UPDATE',
+        },
+        { transaction: t },
+      );
+
+      await EmployeeDraft.create(
+        {
+          ...employeeExistingData.get({ plain: true }),
+          ...payload,
+          id: undefined,
+          requestId: request.id,
+          previousStatus: employeeExistingData.status,
+        },
+        { transaction: t },
+      );
 
       return request;
     });
   };
 
-  static readonly processModification = async (requestId: number, checkerId: number, action: 'APPROVE' | 'REJECT') => {
-    const request = await EmployeeRepository.findRequestById(requestId);
+  static readonly approveMaintenance = async (requestId: number, checkerId: number, reason: string) => {
+    if (!requestId) {
+      throw ApiError.notFound('Request ID not provided');
+    }
+
+    const request = await EmployeeChangeRequest.findByPk(requestId);
 
     if (!request || request.status !== 'PENDING_APPROVAL') {
       throw ApiError.notFound('Modification request not found or already processed.');
     }
 
     if (request.requestedBy === checkerId) {
-      throw ApiError.badRequest('Maker-Checker violation: You cannot process your own request.');
+      throw ApiError.badRequest('Maker-Checker violation: You cannot approve/reject your own request.');
     }
 
-    // If old status = null, use active
-    // If new value is not the same as old value, use new value,
-    // else use old value
-    // const newStatus =
     return await db.transaction(async (t) => {
-      if (action === 'REJECT') {
-        return EmployeeRepository.updateRequestStatus(requestId, 'REJECTED', checkerId, t);
+      await request.update(
+        {
+          status: 'APPROVED',
+          reviewedBy: checkerId,
+          reviewerComment: reason || 'Approved by checker',
+        },
+        { transaction: t },
+      );
+
+      const draft = await EmployeeDraft.findOne({ where: { requestId }, transaction: t });
+
+      if (!draft) {
+        throw ApiError.internalServerError('Unable to process the request. Kindly contact the system administrator');
       }
 
-      const updatePayload: any = {};
-      request.fieldChanges.forEach((change: any) => {
-        const sanitizedValue = change.newValue === 'null' || change.newValue === '' ? null : change.newValue;
-        updatePayload[change.fieldName] = sanitizedValue;
-        updatePayload.status = 'ACTIVE';
-      });
+      const updatePayload = draft.get({ plain: true });
 
-      await Employee.update(updatePayload, {
-        where: { id: request.employeeId },
-        transaction: t,
-      });
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { id, ...fieldsToUpdate } = updatePayload;
 
-      return EmployeeRepository.updateRequestStatus(requestId, 'APPROVED', checkerId, t);
+      await Employee.update(fieldsToUpdate, { where: { id: request.employeeId }, silent: true, transaction: t });
+      const employee = await Employee.findByPk(request.employeeId, { transaction: t });
+
+      if (employee?.shouldCreateUser) {
+        const password = await AuthUtil.hashPassword(AuthUtil.generatePassword());
+        await UserRepository.create(
+          {
+            ...employee,
+            status: 'ACTIVE',
+            password,
+          },
+          t,
+        );
+      }
+    });
+  };
+
+  static readonly rejectMaintenance = async (requestId: number, checkerId: number, reason: string) => {
+    if (!requestId) {
+      throw ApiError.notFound('Request ID not provided');
+    }
+
+    const request = await EmployeeChangeRequest.findByPk(requestId);
+
+    if (!request || request.status !== 'PENDING_APPROVAL') {
+      throw ApiError.notFound('Modification request not found or already processed.');
+    }
+
+    if (request.requestedBy === checkerId) {
+      throw ApiError.badRequest('Maker-Checker violation: You cannot approve/reject your own request.');
+    }
+
+    return await db.transaction(async (t) => {
+      await request.update(
+        {
+          status: 'REJECTED',
+          reviewedBy: checkerId,
+          reviewerComment: reason || 'Rejected by checker',
+        },
+        { transaction: t },
+      );
+
+      const draft = await EmployeeDraft.findOne({ where: { requestId } });
+
+      if (!draft?.previousStatus) {
+        throw ApiError.internalServerError('Could not complete this request. Kindly contact the system administrator');
+      }
+
+      await Employee.update(
+        { status: draft.previousStatus },
+        { where: { id: request.employeeId }, fields: ['status'], silent: true, transaction: t },
+      );
     });
   };
 }

@@ -147,6 +147,7 @@ async function seed() {
         nokPhone: '',
         leaveEntitlement: 22,
         nhfApplicable: false,
+        shouldCreateUser: false,
       },
     ]);
     logger.info('Employees created');

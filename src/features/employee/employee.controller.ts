@@ -2,13 +2,9 @@ import { NextFunction, Request, Response } from 'express';
 import { ApiError } from '../../utils/api-error';
 import { ApiResponse } from '../../utils/api-response';
 import { logger } from '../../utils/logger';
-import { AuthUtil } from '../authentication/auth.utils';
 import { PayrollRepository } from '../payroll/payroll.repository';
-import { UserRepository } from '../users/user.repository';
 import { EmployeeRepository } from './employee.repository';
 import { EmployeeService } from './employee.service';
-import { Transaction } from 'sequelize';
-import { db } from '../../db';
 
 export class EmployeeController {
   static async getAll(req: Request, res: Response) {
@@ -86,32 +82,26 @@ export class EmployeeController {
     }
   }
 
-  static readonly createNewEmployee = async (req: Request, res: Response) => {
-    const makerId = req.user?.id;
-    const payload = req.body.validated.employee;
-
-    if (!makerId) {
-      throw ApiError.badRequest('Missing authentication. Kindly sign in and try again');
-    }
-    const result = await EmployeeService.submitNewEmployeeRequest(makerId, payload);
-
-    return res.status(201).json({
-      success: true,
-      message: 'New employee request submitted for authorization.',
-      data: { requestId: result.id },
-    });
-  };
-
-  static readonly createEmployeeModRequest = async (req: Request, res: Response) => {
-    const { id } = req.params;
+  static readonly createCreationRequest = async (req: Request, res: Response) => {
     const makerId = req.user?.id as number;
     const payload = req.body.validated.employee;
 
-    if (!id) {
-      throw ApiError.badRequest('Missing employee identifier in request');
-    }
+    const requestId = await EmployeeService.initiateEmployeeCreation(payload, makerId);
 
-    const result = await EmployeeService.submitEmployeeChangeRequest(Number(id), makerId, payload);
+    return res.status(201).json(
+      ApiResponse({
+        message: 'New employee request submitted for authorization.',
+        data: { requestId },
+      }),
+    );
+  };
+
+  static readonly createModificationRequest = async (req: Request, res: Response) => {
+    const id = req.params?.id;
+    const makerId = req.user?.id as number;
+    const payload = req.body.validated.employee;
+
+    const result = await EmployeeService.initiateEmployeeMaintenance({ employeeId: Number(id), makerId, payload });
 
     return res.status(201).json({
       success: true,
@@ -120,30 +110,12 @@ export class EmployeeController {
     });
   };
 
-  static async create(req: Request, res: Response, next: NextFunction) {
-    try {
-      const employee = req.body.validated.employee;
-
-      const transaction = new Transaction(db, {});
-      const createdEmployee = await EmployeeRepository.create(employee, transaction);
-
-      if (employee.createUser) {
-        const password = await AuthUtil.hashPassword(AuthUtil.generatePassword());
-        await UserRepository.create({ ...employee, password });
-      }
-
-      res.status(201).json(ApiResponse({ data: createdEmployee, message: 'Employee created successfully' }));
-    } catch (error) {
-      logger.error(`Error creating employee: ${error}`);
-      next(error);
-    }
-  }
-
   static readonly approve = async (req: Request, res: Response) => {
     const { id } = req.params;
     const checkerId = req.user?.id as number;
+    const { reason } = req.body;
 
-    await EmployeeService.processModification(Number(id), checkerId, 'APPROVE');
+    await EmployeeService.approveMaintenance(Number(id), checkerId, reason);
 
     return res.status(200).json(
       ApiResponse({
@@ -154,10 +126,11 @@ export class EmployeeController {
   };
 
   static readonly reject = async (req: Request, res: Response) => {
-    const { id } = req.params;
+    const id = req.params?.id;
     const checkerId = req.user?.id as number;
+    const { reason } = req.body;
 
-    await EmployeeService.processModification(Number(id), checkerId, 'REJECT');
+    await EmployeeService.rejectMaintenance(Number(id), checkerId, reason);
 
     return res.status(200).json(
       ApiResponse({
@@ -166,36 +139,6 @@ export class EmployeeController {
       }),
     );
   };
-
-  static async update(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-
-      let employeePayload = req.body.validated.employee;
-
-      const employeeExistingData = await EmployeeRepository.readById(id);
-
-      if (!employeeExistingData) {
-        throw ApiError.notFound('Employee not found');
-      }
-
-      const shouldUpdateTerminationDate =
-        employeeExistingData.status?.toUpperCase() !== 'TERMINATED' && employeePayload?.status?.toUpperCase() === 'TERMINATED';
-
-      if (shouldUpdateTerminationDate) {
-        employeePayload = { ...employeePayload, terminationDate: new Date() };
-      }
-
-      await EmployeeRepository.update(id, employeePayload);
-
-      const updatedEmployee = await EmployeeRepository.readById(id);
-
-      res.json(ApiResponse({ data: updatedEmployee, message: 'Employee updated successfully' }));
-    } catch (error) {
-      logger.error(`Error updating employee: ${error}`);
-      next(error);
-    }
-  }
 
   static readonly getDirectory = async (req: Request, res: Response) => {
     const { page, rows } = req.pagination;

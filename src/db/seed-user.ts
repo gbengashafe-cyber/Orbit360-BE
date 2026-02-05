@@ -1,7 +1,7 @@
-import { User } from '../features/users/user.model';
+import { Company } from '../features/company/company.model';
 import { Department } from '../features/department/department.model';
 import { JobRole } from '../features/job-role/job-role.model';
-import { Company } from '../features/company/company.model';
+import { User } from '../features/users/user.model';
 import { db } from './index';
 
 async function seedUser() {
@@ -41,7 +41,7 @@ async function seedUser() {
         role: 'admin',
         jobRole: 'Admin',
         departmentName: 'General',
-        status: 'active',
+        status: 'ACTIVE',
       },
     });
 

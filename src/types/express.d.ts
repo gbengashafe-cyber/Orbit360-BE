@@ -13,6 +13,7 @@ declare module 'express-serve-static-core' {
       role: string;
       departmentName: string;
       permissions: string[];
+      employeeRecord?: { id: number; supervisorId: number; [key: string]: any };
     };
     pagination: { page: number; rows: number };
     parsedQuery: ParsedQs;

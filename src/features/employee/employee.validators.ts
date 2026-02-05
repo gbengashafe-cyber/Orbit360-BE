@@ -42,12 +42,12 @@ const employeeSchema = z.object({
   nokRelationship: z.string().nullable().optional(),
   nokPhone: z.string().nullable().optional(),
   leaveEntitlement: z.coerce.number().positive(),
-  createUser: z.boolean().default(false),
+  shouldCreateUser: z.boolean().default(false),
 });
 
 const updateEmployeeSchema = employeeSchema
   .extend({
-    status: z.enum(employeeStatus).optional(),
+    status: z.preprocess((val) => (typeof val === 'string' ? val.toUpperCase() : val), z.enum(employeeStatus).optional()),
   })
   .partial();
 

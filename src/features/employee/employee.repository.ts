@@ -1,7 +1,6 @@
 import { CreationAttributes, InferAttributes, InferCreationAttributes, Op, Transaction } from 'sequelize';
 import { changeRequestStatus, EmployeeChangeRequest } from './employee-change-request.model';
 import { Employee } from './employee.model';
-import { EmployeeFieldChange } from './employee-field-change.model';
 
 export type ReadAllProps = {
   rows: number;
@@ -20,12 +19,6 @@ export class EmployeeRepository {
     transaction: Transaction,
   ) => {
     return EmployeeChangeRequest.create(changeRequest, { transaction });
-  };
-
-  static readonly findRequestById = async (id: number) => {
-    return EmployeeChangeRequest.findByPk(id, {
-      include: [{ model: EmployeeFieldChange, as: 'fieldChanges' }],
-    });
   };
 
   static readonly updateRequestStatus = async (

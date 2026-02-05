@@ -3,6 +3,8 @@ import { ApiError } from '../../utils/api-error';
 import { ApiResponse } from '../../utils/api-response';
 import { AuthUtil } from '../authentication/auth.utils';
 import { UserRepository } from './user.repository';
+import { Transaction } from 'sequelize';
+import { db } from '../../db';
 
 class UserController {
   static readonly create = async (req: Request, res: Response) => {
@@ -21,7 +23,8 @@ class UserController {
 
     user.password = await AuthUtil.hashPassword(user.password);
 
-    const result = await UserRepository.create(user);
+    const transaction = await db.transaction();
+    const result = await UserRepository.create(user, transaction);
     return res.send(ApiResponse({ message: 'User created successfully', data: { id: result.id } }));
   };
 

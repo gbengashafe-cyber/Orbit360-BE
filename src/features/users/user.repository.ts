@@ -1,11 +1,11 @@
-import { InferAttributes, InferCreationAttributes, Op } from 'sequelize';
+import { CreationAttributes, InferAttributes, Op, Transaction } from 'sequelize';
 import { JobRole } from '../job-role/job-role.model';
 import { JobRolePermissions } from '../permissions/permission.model';
 import { User } from './user.model';
 
 class UserRepository {
-  static create = (user: InferCreationAttributes<User>) => {
-    return User.create(user);
+  static readonly create = (user: CreationAttributes<User>, transaction: Transaction) => {
+    return User.create(user, { transaction });
   };
 
   static readonly read = async ({ page, rows, filters }) => {

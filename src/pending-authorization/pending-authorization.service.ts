@@ -1,5 +1,4 @@
 import { EmployeeRepository } from '../features/employee/employee.repository';
-import { EmployeeUtils } from '../features/employee/employee.utils';
 import { ApiError } from '../utils/api-error';
 import { AuthorizationRepository } from './pending-authorization.repository';
 
@@ -42,19 +41,17 @@ export class AuthorizationService {
     };
   };
 
-  static readonly getBadgeCounts = async (userPermissions: string[], userId: number, userEmail: string) => {
+  static readonly getBadgeCounts = async (userPermissions: string[], userId: number, userEmployeeId: number) => {
     const authorizedModules = userPermissions
       .filter((perm) => perm.startsWith('APPROVE_'))
       .map((perm) => perm.replace('APPROVE_', ''));
 
     // If the user is a supervisor, add leaves module
-    const employeeSearch = await EmployeeRepository.read({ filters: { search: userEmail }, rows: 1, page: 1 });
     const supervisorSearch = await EmployeeRepository.read({
-      filters: { supervisorId: employeeSearch.rows[0].id },
+      filters: { supervisorId: userEmployeeId },
       rows: 1,
       page: 1,
     });
-    const employeeId = employeeSearch.rows[0].id as number;
 
     if (supervisorSearch.count) {
       authorizedModules.push('LEAVES');
@@ -64,7 +61,7 @@ export class AuthorizationService {
       return { total: 0, breakdown: {} };
     }
 
-    const results = await AuthorizationRepository.getCountsByModules(authorizedModules, userId, employeeId);
+    const results = await AuthorizationRepository.getCountsByModules(authorizedModules, userId, userEmployeeId);
 
     const breakdown: Record<string, number> = {};
     let total = 0;
@@ -97,43 +94,36 @@ export class AuthorizationService {
     };
   };
 
-  static readonly getPendingModuleItems = async (moduleType: string, page: number, rows: number, userEmail: string) => {
-    let supervisorId, employeeId;
-    // Get user supervisor ID if module is LEAVE
-    if (moduleType.toLocaleUpperCase() === 'LEAVES') {
-      const employeeSearch = await EmployeeRepository.read({ filters: { search: userEmail }, rows: 1, page: 1 });
-      supervisorId = employeeSearch.rows[0].supervisorId;
-      employeeId = employeeSearch.rows[0].id;
-    }
-
-    const result = await AuthorizationRepository.getPendingByModule({ module: moduleType, page, rows, employeeId, supervisorId });
+  static readonly getPendingModuleItems = async ({
+    moduleName,
+    page,
+    rows,
+    userId,
+    userEmployeeId,
+    supervisorId,
+  }: {
+    moduleName: string;
+    page: number;
+    rows: number;
+    userId: number;
+    userEmployeeId: number;
+    supervisorId: number;
+  }) => {
+    const result = await AuthorizationRepository.getPendingByModule({
+      module: moduleName,
+      page,
+      rows,
+      userEmployeeId,
+      supervisorId,
+      userId,
+    });
 
     if (!result) {
-      throw ApiError.badRequest(`Invalid module type: ${moduleType}`);
-    }
-
-    let transformedData = result.rows;
-    if (moduleType.toUpperCase() === 'EMPLOYEES') {
-      transformedData = result.rows.map((request: any) => {
-        const plainRequest = request.get({ plain: true });
-        const currentEmployee = plainRequest.employee;
-
-        const proposedEmployee = { ...currentEmployee };
-
-        plainRequest.fieldChanges.forEach((change: any) => {
-          proposedEmployee[change.fieldName] = EmployeeUtils.parseValue(change.fieldName, change.newValue).value;
-          proposedEmployee.createdBy = plainRequest.requestedBy;
-          proposedEmployee.createdAt = plainRequest.createdAt;
-          proposedEmployee.initiator = plainRequest.maker;
-          proposedEmployee.id = plainRequest.id;
-        });
-
-        return proposedEmployee;
-      });
+      throw ApiError.badRequest(`Invalid module type: ${moduleName}`);
     }
 
     return {
-      data: transformedData,
+      data: result.rows,
       pagination: {
         total: result.count,
         page,

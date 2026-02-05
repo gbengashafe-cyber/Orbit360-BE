@@ -16,15 +16,14 @@ router.get('/:id/payrolls', EmployeeController.getEmployeePayrollRecords);
 router.get('/', hasRequiredPermission('LIST_EMPLOYEES'), EmployeeController.getAll);
 router.get('/directory', hasRequiredPermission('LIST_EMPLOYEES'), EmployeeController.getDirectory);
 router.get('/:id', hasRequiredPermission('LIST_EMPLOYEES'), EmployeeController.getById);
-router.post('/', hasRequiredPermission('MANAGE_EMPLOYEES'), validateCreateEmployee, EmployeeController.createNewEmployee);
+router.post('/', hasRequiredPermission('MANAGE_EMPLOYEES'), validateCreateEmployee, EmployeeController.createCreationRequest);
 router.patch(
   '/:id',
   hasRequiredPermission('MANAGE_EMPLOYEES'),
-  validateCreateEmployee,
-  EmployeeController.createEmployeeModRequest,
+  validateUpdateEmployee,
+  EmployeeController.createModificationRequest,
 );
-router.put('/:id', hasRequiredPermission('MANAGE_EMPLOYEES'), validateUpdateEmployee, EmployeeController.update);
-router.patch('/:id/approval', EmployeeController.approve);
-router.patch('/:id/rejection', EmployeeController.reject);
+router.post('/maintenance/:id/approval', hasRequiredPermission('APPROVE_EMPLOYEES'), EmployeeController.approve);
+router.post('/maintenance/:id/rejection', hasRequiredPermission('APPROVE_EMPLOYEES'), EmployeeController.reject);
 
-export default router;
+export { router as employeeRoutes };

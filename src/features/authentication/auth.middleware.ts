@@ -5,6 +5,7 @@ import { JobRoleRepository } from '../job-role/job-role.repository';
 import { UserRepository } from '../users/user.repository';
 import { AuthUtil, TOKEN_FINGERPRINT_COOKIE_NAME } from './auth.utils';
 import { TokenUtil } from './token.util';
+import { EmployeeRepository } from '../employee/employee.repository';
 
 const validateAuthToken = async (req: Request, res: Response, next: NextFunction) => {
   const { authorization } = req.headers;
@@ -47,6 +48,11 @@ const validateAuthToken = async (req: Request, res: Response, next: NextFunction
   const permissions = await JobRoleRepository.getJobRolePermissions(user.jobRole);
 
   req.user = { ...user, permissions: permissions };
+  const userEmployeeSearch = await EmployeeRepository.read({ rows: 1, page: 1, filters: { search: user.email } });
+
+  if (userEmployeeSearch) {
+    req.user.employeeRecord = userEmployeeSearch[0];
+  }
   next();
 };
 

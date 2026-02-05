@@ -14,7 +14,7 @@ import { authRoutes } from './features/authentication/auth.routes';
 import { companyRoutes } from './features/company/company.routes';
 import { complaintRoutes } from './features/complaints/complaint.routes';
 import departmentRoutes from './features/department/department.routes';
-import employeeRoutes from './features/employee/employee.routes';
+import { employeeRoutes } from './features/employee/employee.routes';
 import { exitRoutes } from './features/exit/exit.routes';
 import { jobRoleRoutes } from './features/job-role/job-role.routes';
 import { leaveRoutes } from './features/leave/leave.routes';
