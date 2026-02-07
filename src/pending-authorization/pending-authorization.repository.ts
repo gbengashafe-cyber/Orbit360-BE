@@ -6,6 +6,7 @@ import { Leave } from '../features/leave/leave.model';
 import { Loan } from '../features/loans/loan.model';
 import { PayrollBatch } from '../features/payroll/payroll-batch.model';
 import { User } from '../features/users/user.model';
+import { PendingModuleItemsProps } from './pending-authorization.service';
 
 export class AuthorizationRepository {
   static readonly getPendingLoans = async (limit: number) => {
@@ -109,23 +110,16 @@ export class AuthorizationRepository {
   };
 
   static readonly getPendingByModule = async ({
-    module,
+    moduleName,
     page,
     rows,
     supervisorId,
     userEmployeeId,
     userId,
-  }: {
-    module: string;
-    page: number;
-    rows: number;
-    supervisorId?: number;
-    userEmployeeId: number;
-    userId: number;
-  }) => {
+  }: PendingModuleItemsProps) => {
     const offset = (page - 1) * rows;
 
-    switch (module.toUpperCase()) {
+    switch (moduleName.toUpperCase()) {
       case 'LOANS':
         return Loan.findAndCountAll({
           where: { status: 'PENDING_APPROVAL' },
@@ -181,6 +175,7 @@ export class AuthorizationRepository {
             {
               model: EmployeeDraft,
               as: 'employeeDraft',
+              include: [{ model: Employee, as: 'supervisor', attributes: ['id', 'firstName', 'lastName'] }],
             },
             {
               model: Employee,

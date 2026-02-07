@@ -60,7 +60,7 @@ export class LoanController {
 
     const loan = await LoanRepository.create(loanPayload);
 
-    res.status(201).json(ApiResponse({ data: { id: loan.id }, message: 'loan created successfully' }));
+    res.status(201).json(ApiResponse({ data: { id: loan.id }, message: 'Loan created successfully' }));
   };
 
   static readonly update = async (req: Request, res: Response) => {

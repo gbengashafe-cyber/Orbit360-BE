@@ -6,5 +6,10 @@
     "storageServer": "https://localhost:3000/"
   },
   "ldapsUrl": "ldaps:\\domain.com:639",
-  "tokenExpiry": { "access": 1200, "refresh": 86400 }
+  "tokenExpiry": { "access": 1200, "refresh": 86400 },
+  "mail": {
+    "mailSender": "'Orbit360' notifications@theharvestword.org",
+    "server": "mail.theharvestword.org",
+    "serverPort": 587
+  }
 }

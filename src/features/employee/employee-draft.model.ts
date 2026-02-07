@@ -32,7 +32,8 @@ EmployeeDraft.init(
   },
 );
 
-// Associations
+EmployeeDraft.belongsTo(Employee, { foreignKey: 'supervisorId', as: 'supervisor' });
+
 EmployeeDraft.belongsTo(EmployeeChangeRequest, { foreignKey: 'requestId', as: 'request' });
 EmployeeChangeRequest.hasOne(EmployeeDraft, { foreignKey: 'requestId', as: 'employeeDraft' });
 

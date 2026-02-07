@@ -2,6 +2,15 @@ import { EmployeeRepository } from '../features/employee/employee.repository';
 import { ApiError } from '../utils/api-error';
 import { AuthorizationRepository } from './pending-authorization.repository';
 
+export type PendingModuleItemsProps = {
+  moduleName: string;
+  page: number;
+  rows: number;
+  userId: number;
+  userEmployeeId: number;
+  supervisorId: number;
+};
+
 export class AuthorizationService {
   static readonly getGroupedPending = async (page = 1, rows = 25) => {
     const [loans, leaves, employees] = await Promise.all([
@@ -101,16 +110,9 @@ export class AuthorizationService {
     userId,
     userEmployeeId,
     supervisorId,
-  }: {
-    moduleName: string;
-    page: number;
-    rows: number;
-    userId: number;
-    userEmployeeId: number;
-    supervisorId: number;
-  }) => {
+  }: PendingModuleItemsProps) => {
     const result = await AuthorizationRepository.getPendingByModule({
-      module: moduleName,
+      moduleName,
       page,
       rows,
       userEmployeeId,

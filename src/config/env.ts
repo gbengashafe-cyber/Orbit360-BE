@@ -11,6 +11,8 @@ const envSchema = z.object({
   DB_NAME: z.string(),
   DB_USER: z.string(),
   DB_PASSWORD: z.string(),
+  MAIL_USERNAME: z.string(),
+  MAIL_PASSWORD: z.string(),
   DB_HOST_NAME: z.string(),
   DB_PORT: z.coerce.number(),
   DB_TYPE: z.string(),
