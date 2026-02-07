@@ -9,6 +9,7 @@ export class EmployeeDraft extends Model<InferAttributes<EmployeeDraft>, InferCr
   declare id: CreationOptional<number>;
   declare requestId: ForeignKey<number>;
   declare status: (typeof employeeStatus)[number];
+  declare email: string;
   declare previousStatus: (typeof employeeStatus)[number];
 }
 

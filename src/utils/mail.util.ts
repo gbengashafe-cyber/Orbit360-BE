@@ -6,23 +6,19 @@ import { env } from '../config/env';
 import { logger } from './logger';
 
 const mailSender = config.get('mail.mailSender') as string;
-const mailServer = config.get('mail.server');
-const mailServerPort = config.get('mail.serverPort');
-console.log('🚀 ~ mailServer:', mailServer);
-console.log('🚀 ~ mailServerPort:', mailServerPort);
-console.log('🚀 ~ env.MAIL_USERNAME:', env.MAIL_USERNAME);
-console.log('🚀 ~ env.MAIL_PASSWORD:', env.MAIL_PASSWORD);
 
+// eslint-disable-next-line sonarjs/no-clear-text-protocols
 const transporter = createTransport({
-  host: mailServer,
-  port: mailServerPort,
-  secure: mailServerPort === 465,
+  host: config.get('mail.server'),
+  port: config.get('mail.serverPort') || 465,
+  secure: false,
+  // requireTLS: true,
   auth: {
     user: env.MAIL_USERNAME,
     pass: env.MAIL_PASSWORD,
   },
   tls: {
-    rejectUnauthorized: false,
+    rejectUnauthorized: true,
   },
   pool: true,
   maxConnections: 5,
@@ -62,9 +58,7 @@ export type MailWithTemplateOptions = {
 };
 
 export class MailUtil {
-  static readonly sendMail = async ({ from = mailSender, to, subject, body, attachments }: MailOptions) => {
-    // if (process.env.NODE_ENV !== 'production') return new Promise((resolve) => setTimeout(resolve, 1500, true));
-
+  static readonly sendMail = async ({ from = mailSender, to, subject, body, attachments = [] }: MailOptions) => {
     try {
       const info = await transporter.sendMail({
         from,
@@ -104,5 +98,3 @@ export class MailUtil {
     }
   };
 }
-
-MailUtil.sendMail({ to: 'oluabiolaseun@gmail.com', subject: 'Testing', body: 'Testing' });

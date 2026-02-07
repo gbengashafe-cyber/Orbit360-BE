@@ -1,11 +1,13 @@
 import { db } from '../../db';
 import { ApiError } from '../../utils/api-error';
+import { MailUtil } from '../../utils/mail.util';
 import { AuthUtil } from '../authentication/auth.utils';
 import { UserRepository } from '../users/user.repository';
 import { EmployeeChangeRequest } from './employee-change-request.model';
 import { EmployeeDraft } from './employee-draft.model';
 import { Employee } from './employee.model';
 import { EmployeeRepository, ReadAllProps } from './employee.repository';
+import config from 'config';
 
 export class EmployeeService {
   static readonly getDirectory = async ({ page, rows, filters }: ReadAllProps) => {
@@ -123,7 +125,10 @@ export class EmployeeService {
       throw ApiError.badRequest('Maker-Checker violation: You cannot approve/reject your own request.');
     }
 
-    return await db.transaction(async (t) => {
+    let employeeEmail: string = '',
+      shouldCreateUser = false;
+
+    await db.transaction(async (t) => {
       await request.update(
         {
           status: 'APPROVED',
@@ -139,6 +144,8 @@ export class EmployeeService {
         throw ApiError.internalServerError('Unable to process the request. Kindly contact the system administrator');
       }
 
+      employeeEmail = draft.email;
+
       const updatePayload = draft.get({ plain: true });
 
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -152,6 +159,7 @@ export class EmployeeService {
       const employee = await Employee.findByPk(request.employeeId, { transaction: t });
 
       if (employee?.shouldCreateUser) {
+        shouldCreateUser = true;
         const password = await AuthUtil.hashPassword(AuthUtil.generatePassword());
         await UserRepository.create(
           {
@@ -163,6 +171,20 @@ export class EmployeeService {
         );
       }
     });
+
+    if (request.actionType === 'CREATE' && shouldCreateUser) {
+      // Send profile creation request
+      MailUtil.sendMail({
+        to: employeeEmail,
+        subject: `Welcome Aboard!`,
+        body: `
+        <h3>Welcome aboard!</h3>
+        <p>An employee account has been created for you on the Orbit360 platform.</p>
+        <p>You can access the Employee Self-Service Portal by logging in to <a href="${config.get('mail.frontendURL')}">orbit360</a> with your staff credentials.</p>
+        <p>Your portal provides access to tools for leave management, performance appraisals, and more.</p>
+        <p>If you have any questions, please contact the HR department.</p>`,
+      });
+    }
   };
 
   static readonly rejectMaintenance = async (requestId: number, checkerId: number, reason: string) => {
