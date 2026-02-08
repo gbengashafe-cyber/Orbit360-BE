@@ -68,7 +68,9 @@ export class EmployeeService {
       const pendingMaintenance = await EmployeeChangeRequest.findOne({ where: { employeeId, status: 'PENDING_APPROVAL' } });
 
       if (pendingMaintenance) {
-        throw ApiError.conflict('There is an existing maintenance on this record. Kindly clear the maintenance and try again');
+        throw ApiError.conflict(
+          `You can't edit this employee's record while an approval request is in progress. Please wait until the review is completed`,
+        );
       }
 
       const employeeExistingData = await EmployeeRepository.readById(employeeId);
