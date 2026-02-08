@@ -50,6 +50,7 @@ export const EmployeeFields = {
   nokAddress: { type: DataTypes.STRING(100) },
   leaveEntitlement: { type: DataTypes.INTEGER() },
   nhfApplicable: { type: DataTypes.BOOLEAN, allowNull: false },
+  annualRentAmount: { type: DataTypes.DECIMAL(17, 2), defaultValue: 0 },
   departmentName: { type: DataTypes.STRING(100), allowNull: false },
   jobRole: { type: DataTypes.STRING(100), allowNull: false },
 };
