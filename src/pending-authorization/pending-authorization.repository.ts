@@ -179,7 +179,6 @@ export class AuthorizationRepository {
             },
             {
               model: Employee,
-              as: 'employee',
               attributes: ['id', 'staffId', 'firstName', 'lastName'],
             },
           ],

@@ -38,7 +38,7 @@ EmployeeDraft.belongsTo(Employee, { foreignKey: 'supervisorId', as: 'draftSuperv
 EmployeeDraft.belongsTo(EmployeeChangeRequest, { foreignKey: 'requestId', as: 'request' });
 EmployeeChangeRequest.hasOne(EmployeeDraft, { foreignKey: 'requestId', as: 'employeeDraft' });
 
-EmployeeChangeRequest.belongsTo(Employee, { foreignKey: 'employeeId', as: 'employee' });
+EmployeeChangeRequest.belongsTo(Employee, { foreignKey: 'employeeId' });
 Employee.hasMany(EmployeeChangeRequest, { foreignKey: 'employeeId', as: 'changeRequests' });
 
 EmployeeChangeRequest.belongsTo(User, { foreignKey: 'requestedBy', as: 'initiator' });

@@ -193,6 +193,7 @@ Employee.init(
   {
     sequelize: db,
     tableName: 'employees',
+    modelName: 'employee',
     underscored: true,
     timestamps: true,
     paranoid: true,
