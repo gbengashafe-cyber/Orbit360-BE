@@ -175,7 +175,7 @@ export class AuthorizationRepository {
             {
               model: EmployeeDraft,
               as: 'employeeDraft',
-              include: [{ model: Employee, as: 'supervisor', attributes: ['id', 'firstName', 'lastName'] }],
+              include: [{ model: Employee, as: 'draftSupervisor', attributes: ['id', 'firstName', 'lastName'] }],
             },
             {
               model: Employee,
