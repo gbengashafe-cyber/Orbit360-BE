@@ -15,11 +15,13 @@ type PayeProps = {
   annualGross: number;
   annualPension: number;
   annualNhf: number;
+  annualRentRelief: number;
 };
-const calculatePAYE = ({ annualGross, annualPension, annualNhf }: PayeProps) => {
+const calculatePAYE = ({ annualGross, annualPension, annualNhf, annualRentRelief }: PayeProps) => {
   const gross = new Decimal(annualGross);
   const pension = new Decimal(annualPension);
   const nhf = new Decimal(annualNhf);
+  const rentRelief = new Decimal(annualRentRelief);
 
   const bands = [
     { name: 'Tax-Free Threshold', limit: 800000, rate: 0.0 },
@@ -30,8 +32,8 @@ const calculatePAYE = ({ annualGross, annualPension, annualNhf }: PayeProps) => 
     { name: 'Top Band', limit: Infinity, rate: 0.25 }, // Over 50m
   ];
 
-  // 1. Taxable Income = Gross - (Pension + NHF)
-  let taxableIncome = gross.minus(pension).minus(nhf);
+  // 1. Taxable Income = Gross - (Pension + NHF + Rent Relief)
+  let taxableIncome = gross.minus(pension).minus(nhf).minus(rentRelief);
   if (taxableIncome.lt(0)) taxableIncome = new Decimal(0);
   if (taxableIncome.lte(800000)) {
     return {
@@ -98,6 +100,12 @@ export const calculateNHF = (employee: any, rate: number = 0.025): Decimal => {
   return new Decimal(employee.annualBasicSalary).mul(rate);
 };
 
+const MAX_RENT_RELIEF = 500000;
+export const calculateRentRelief = (rentAmount: number) => {
+  const rentRelief = new Decimal(rentAmount).mul(0.2);
+  return rentRelief.lessThanOrEqualTo(500000) ? rentRelief : new Decimal(MAX_RENT_RELIEF);
+};
+
 type Year = `20${number}${number}`;
 type Month = `0${1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9}` | `1${0 | 1 | 2}`;
 export type PayPeriod = `${Year}-${Month}`;
@@ -132,11 +140,13 @@ const calculatePayroll = ({ employee, activeLoans, payPeriod, pensionRate = 0.08
 
   const annualPension = calculatePension(employee, pensionRate);
   const annualNhf = calculateNHF(employee, 0.025);
+  const annualRentRelief = calculateRentRelief(employee.annualRentAmount);
 
   const { annualTax, taxBreakdown } = calculatePAYE({
     annualGross,
     annualPension: annualPension.toNumber(),
     annualNhf: annualNhf.toNumber(),
+    annualRentRelief: annualRentRelief.toNumber(),
   });
   const monthlyTax = new Decimal(annualTax).div(12);
 
@@ -188,6 +198,7 @@ const calculatePayroll = ({ employee, activeLoans, payPeriod, pensionRate = 0.08
       nhfDeduction: annualNhf.div(12).toDecimalPlaces(2).toNumber(),
       payeDeduction: monthlyTax.toDecimalPlaces(2).toNumber(),
       loanDeduction: loanDeduction.toDecimalPlaces(2).toNumber(),
+      rentRelief: annualRentRelief.div(12).toDecimalPlaces(2).toNumber(),
     },
     totalAllowances: housingAllowance
       .plus(transportAllowance)

@@ -49,6 +49,7 @@ export class Employee extends Model<InferAttributes<Employee>, InferCreationAttr
   declare leaveEntitlement: number;
   // Others
   declare nhfApplicable: boolean;
+  declare annualRentAmount: number;
   declare createdAt: CreationOptional<Date>;
   declare updatedAt: CreationOptional<Date>;
   declare deletedAt: CreationOptional<Date>;
@@ -173,6 +174,7 @@ Employee.init(
       type: DataTypes.BOOLEAN,
       allowNull: false,
     },
+    annualRentAmount: { type: DataTypes.DECIMAL(17, 2), defaultValue: 0 },
     createdAt: { type: DataTypes.DATE },
     updatedAt: { type: DataTypes.DATE },
     deletedAt: { type: DataTypes.DATE, allowNull: true },

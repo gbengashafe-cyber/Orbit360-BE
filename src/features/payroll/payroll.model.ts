@@ -1,8 +1,8 @@
 import { CreationOptional, DataTypes, ForeignKey, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import { db } from '../../db';
 import { Employee } from '../employee/employee.model';
-import { PayrollBatch } from './payroll-batch.model';
 import { User } from '../users/user.model';
+import { PayrollBatch } from './payroll-batch.model';
 
 export const payrollStatus = ['pending_approval', 'processed', 'paid', 'cancelled', 'failed'] as const;
 
@@ -19,6 +19,7 @@ export class Payroll extends Model<InferAttributes<Payroll>, InferCreationAttrib
   declare otherAllowance: number;
   declare pensionDeduction: number;
   declare nhfDeduction: number;
+  declare rentRelief: number;
   declare loanDeduction: number;
   declare payeDeduction: number;
   declare status: CreationOptional<(typeof payrollStatus)[number]>;
@@ -83,6 +84,11 @@ Payroll.init(
       defaultValue: 0,
     },
     nhfDeduction: {
+      type: DataTypes.DECIMAL(15, 2),
+      allowNull: false,
+      defaultValue: 0,
+    },
+    rentRelief: {
       type: DataTypes.DECIMAL(15, 2),
       allowNull: false,
       defaultValue: 0,

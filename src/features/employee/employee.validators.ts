@@ -35,6 +35,7 @@ const employeeSchema = z.object({
   annualTransportAllowance: moneySchema,
   annualLeaveAllowance: moneySchema,
   annualOtherAllowances: moneySchema,
+  annualRentAmount: moneySchema,
   beneficiaryName: z.string().nullable().nullable().optional(),
   beneficiaryRelationship: z.string().nullable().optional(),
   beneficiaryPhone: z.string().nullable().nullable().optional(),
