@@ -1,3 +1,4 @@
+import config from 'config';
 import { db } from '../../db';
 import { ApiError } from '../../utils/api-error';
 import { MailUtil } from '../../utils/mail.util';
@@ -7,7 +8,6 @@ import { EmployeeChangeRequest } from './employee-change-request.model';
 import { EmployeeDraft } from './employee-draft.model';
 import { Employee } from './employee.model';
 import { EmployeeRepository, ReadAllProps } from './employee.repository';
-import config from 'config';
 
 export class EmployeeService {
   static readonly getDirectory = async ({ page, rows, filters }: ReadAllProps) => {
@@ -158,7 +158,7 @@ export class EmployeeService {
       await Employee.update(fieldsToUpdate, { where: { id: request.employeeId }, silent: true, transaction: t });
       const employee = await Employee.findByPk(request.employeeId, { transaction: t });
 
-      if (employee?.shouldCreateUser) {
+      if (request.actionType === 'CREATE' && employee?.shouldCreateUser) {
         shouldCreateUser = true;
         const password = await AuthUtil.hashPassword(AuthUtil.generatePassword());
         await UserRepository.create(
