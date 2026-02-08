@@ -79,6 +79,7 @@ async function seed() {
         nokPhone: '',
         leaveEntitlement: 22,
         nhfApplicable: false,
+        annualRentAmount: 100000,
       },
       {
         staffId: '2',
@@ -113,6 +114,7 @@ async function seed() {
         nokPhone: '',
         leaveEntitlement: 22,
         nhfApplicable: false,
+        annualRentAmount: 1000000,
       },
       {
         staffId: '3',
@@ -148,6 +150,7 @@ async function seed() {
         leaveEntitlement: 22,
         nhfApplicable: false,
         shouldCreateUser: false,
+        annualRentAmount: 1000000,
       },
     ]);
     logger.info('Employees created');
@@ -196,6 +199,7 @@ async function seed() {
           nhfDeduction: 0,
           loanDeduction: 0,
           payeDeduction: 3000,
+          rentRelief: 2000,
           status: 'processed',
         },
         {
@@ -212,6 +216,7 @@ async function seed() {
           nhfDeduction: 0,
           loanDeduction: 0,
           payeDeduction: 2500,
+          rentRelief: 2000,
           status: 'processed',
         },
       ],
