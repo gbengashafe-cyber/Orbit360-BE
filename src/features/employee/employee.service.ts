@@ -77,6 +77,7 @@ export class EmployeeService {
         throw ApiError.notFound('Employee not found');
       }
 
+      const previousStatus = employeeExistingData.status;
       employeeExistingData.update({ status: 'PENDING_APPROVAL' }, { silent: true });
 
       const shouldUpdateTerminationDate =
@@ -101,7 +102,7 @@ export class EmployeeService {
           ...payload,
           id: undefined,
           requestId: request.id,
-          previousStatus: employeeExistingData.status,
+          previousStatus,
         },
         { transaction: t },
       );
@@ -212,7 +213,7 @@ export class EmployeeService {
         { transaction: t },
       );
 
-      const draft = await EmployeeDraft.findOne({ where: { requestId } });
+      const draft = await EmployeeDraft.findOne({ where: { requestId }, transaction: t });
 
       if (!draft?.previousStatus) {
         throw ApiError.internalServerError('Could not complete this request. Kindly contact the system administrator');
