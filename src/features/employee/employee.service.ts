@@ -180,8 +180,7 @@ export class EmployeeService {
     });
 
     if (request.actionType === 'CREATE' && shouldCreateUser) {
-      // Send profile creation request
-      await MailUtil.sendMail({
+      MailUtil.sendMail({
         to: employeeEmail,
         subject: `Welcome Aboard!`,
         body: `
