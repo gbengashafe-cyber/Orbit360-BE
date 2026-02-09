@@ -70,7 +70,8 @@ export class MailUtil {
       logger.info(`Mail sent successfully. response: ${info.response}`);
       return true;
     } catch (error) {
-      logger.error({ message: 'Mail sending failed.', error });
+      logger.error('Mail sending failed.');
+      logger.error(error);
       return false;
     }
   };

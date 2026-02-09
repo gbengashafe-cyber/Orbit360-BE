@@ -4,6 +4,7 @@ import { ApiError } from '../../utils/api-error';
 import { MailUtil } from '../../utils/mail.util';
 import { AuthUtil } from '../authentication/auth.utils';
 import { UserRepository } from '../users/user.repository';
+import { userSchema } from '../users/user.validation';
 import { EmployeeChangeRequest } from './employee-change-request.model';
 import { EmployeeDraft } from './employee-draft.model';
 import { Employee } from './employee.model';
@@ -163,12 +164,15 @@ export class EmployeeService {
 
       if (request.actionType === 'CREATE' && employee?.shouldCreateUser) {
         shouldCreateUser = true;
+
+        const userValidatedDetails = userSchema.parse({ ...employee.get({ plain: true }), role: 'user' });
         const password = await AuthUtil.hashPassword(AuthUtil.generatePassword());
         await UserRepository.create(
           {
-            ...employee,
+            ...userValidatedDetails,
             status: 'ACTIVE',
             password,
+            profileImage: '',
           },
           t,
         );
@@ -177,7 +181,7 @@ export class EmployeeService {
 
     if (request.actionType === 'CREATE' && shouldCreateUser) {
       // Send profile creation request
-      MailUtil.sendMail({
+      await MailUtil.sendMail({
         to: employeeEmail,
         subject: `Welcome Aboard!`,
         body: `

@@ -1,6 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
-import { validateOrThrow } from '../../utils/zod-validation-utils';
 import { userRoleOptions, userStatusOptions } from './user.model';
 
 export const userSchema = z.object({
@@ -35,11 +34,9 @@ const validateUser = async (req: Request, res: Response, next: NextFunction) => 
     schema = UpdateUserSchema;
   }
 
-  const result = schema.safeParse(req.body);
+  const result = schema.parse(req.body);
 
-  validateOrThrow(result, req.requestId);
-
-  req.validatedBody = { user: result.data };
+  req.validatedBody = { user: result };
   next();
 };
 

@@ -38,7 +38,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
   public email!: string;
   declare password: string;
   declare profileImage: CreationOptional<string>;
-  declare googleId: CreationOptional<string>;
+  declare googleId: CreationOptional<string | null>;
   // Defines what the user can do no the admin platform
   declare role: CreationOptional<(typeof userRoleOptions)[number]>;
   // Defines what the user does for the organization
