@@ -7,6 +7,8 @@ import { logger } from './logger';
 
 const mailSender = config.get('mail.mailSender') as string;
 
+logger.error(config.get('mail'));
+
 // eslint-disable-next-line sonarjs/no-clear-text-protocols
 const transporter = createTransport({
   host: config.get('mail.server'),
