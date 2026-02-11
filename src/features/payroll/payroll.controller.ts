@@ -10,6 +10,14 @@ import { PayrollService } from './payroll.service';
 export class PayrollController {
   currentPeriod = new Date(new Date().setDate(1));
 
+  static readonly getPayrollBatchByPeriod = async (req: Request, res: Response) => {
+    const payPeriod = req.params?.payPeriod;
+
+    const batch = await PayrollRepository.payPeriodExist(payPeriod);
+
+    res.json(ApiResponse({ data: batch ?? {} }));
+  };
+
   static async getAll(req: Request, res: Response, next: NextFunction) {
     try {
       const { page, rows } = req.pagination;

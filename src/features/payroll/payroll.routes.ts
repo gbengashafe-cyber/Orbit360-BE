@@ -21,6 +21,7 @@ router.param('employeeId', (req, res, next, val) => {
 router.get('/', PayrollController.getAll);
 router.get('/employees/:employeeId', hasRequiredPermission('MANAGE_PAYROLLS'), PayrollController.getByEmployee);
 router.get('/:id', validatePayrollIdParam, PayrollController.getById);
+router.get('/periods/batches/:payPeriod', PayrollController.getPayrollBatchByPeriod);
 router.get('/periods/:payPeriod', PayrollController.getByPayPeriod);
 router.post('/', hasRequiredPermission('MANAGE_PAYROLLS'), validateGeneratePayroll, PayrollController.generatePayroll);
 router.put('/:id/status', validatePayrollStatus, PayrollController.updateStatus);
