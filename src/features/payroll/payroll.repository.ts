@@ -15,7 +15,7 @@ export class PayrollRepository {
   };
 
   static readonly payPeriodExist = (payPeriod: string) => {
-    return PayrollBatch.findOne({ where: { payPeriod } });
+    return PayrollBatch.findOne({ where: { payPeriod }, order: [['id', 'desc']] });
   };
 
   static readonly readById = (id: string | number) => {

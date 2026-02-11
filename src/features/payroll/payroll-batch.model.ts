@@ -2,7 +2,7 @@ import { CreationOptional, DataTypes, ForeignKey, InferAttributes, InferCreation
 import { db } from '../../db';
 import { User } from '../users/user.model';
 
-export const PAYROLL_BATCH_STATUS = ['PENDING_APPROVAL', 'APPROVED', 'PAID', 'CANCELLED', 'REJECTED'] as const;
+export const PAYROLL_BATCH_STATUS = ['PENDING_APPROVAL', 'APPROVED', 'PAID', 'REJECTED', 'CANCELLED'] as const;
 
 export class PayrollBatch extends Model<InferAttributes<PayrollBatch>, InferCreationAttributes<PayrollBatch>> {
   declare id: CreationOptional<number>;
@@ -38,7 +38,8 @@ PayrollBatch.init(
     totalNet: { type: DataTypes.DECIMAL(15, 2), allowNull: false },
     recordCount: { type: DataTypes.INTEGER, allowNull: false },
     status: {
-      type: DataTypes.ENUM(...PAYROLL_BATCH_STATUS),
+      type: DataTypes.ENUM,
+      values: PAYROLL_BATCH_STATUS,
       defaultValue: 'PENDING_APPROVAL',
     },
     createdBy: {

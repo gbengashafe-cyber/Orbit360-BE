@@ -219,7 +219,7 @@ export class PayrollController {
     }
 
     const result = await PayrollService.rejectBatch(id, checkerId);
-    res.json(ApiResponse({ data: result, message: 'Payroll marked as rejected' }));
+    res.json(ApiResponse({ data: { id: result }, message: 'Payroll marked as rejected' }));
   }
 
   static async delete(req: Request, res: Response, next: NextFunction) {

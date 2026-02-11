@@ -42,6 +42,7 @@ Payroll.init(
       type: DataTypes.STRING(50),
       allowNull: false,
       references: { model: PayrollBatch, key: 'batch_id' },
+      onDelete: 'CASCADE',
     },
     payPeriod: { type: DataTypes.STRING(7), allowNull: false },
     employeeId: {

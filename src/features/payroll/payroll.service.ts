@@ -18,7 +18,7 @@ export class PayrollService {
     let payrollCounter = 0;
     const batchId = `${payPeriod}-${Date.now()}`;
 
-    if (existingPayroll && !overwrite) {
+    if (existingPayroll && ['APPROVED'].includes(existingPayroll.status.toUpperCase()) && !overwrite) {
       throw ApiError.badRequest('Payroll for this period already exists. Kindly use overwrite to regenerate.');
     }
 
@@ -140,7 +140,7 @@ export class PayrollService {
         },
         { transaction },
       );
-      return Payroll.update({ status: 'processed' }, { where: { batchId }, transaction });
+      return Payroll.update({ status: 'processed' }, { where: { batchId: batch.batchId }, transaction });
     });
   };
 
@@ -160,7 +160,7 @@ export class PayrollService {
         },
         { transaction },
       );
-      return Payroll.update({ status: 'cancelled' }, { where: { batchId }, transaction });
+      return Payroll.destroy({ where: { batchId: batch.batchId }, transaction });
     });
   };
 }
