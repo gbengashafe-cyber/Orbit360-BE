@@ -20,6 +20,9 @@ export class AuthController {
     user: Omit<InferAttributes<User>, 'password'>;
     updateLastLoginDate?: boolean;
   }) {
+    if (!['ACTIVE'].includes(user.status)) {
+      throw ApiError.unauthenticated('User is inactive');
+    }
     const userContext = AuthUtil.generateUserContext();
     const userContextHash = AuthUtil.hashUserContext(userContext);
 
@@ -126,6 +129,10 @@ export class AuthController {
 
       if (!user) {
         throw ApiError.notFound('User not found');
+      }
+
+      if (!['ACTIVE'].includes(user.status)) {
+        throw ApiError.unauthenticated('User is inactive');
       }
 
       res.json(ApiResponse(ApiResponse({ data: user, message: 'Fetched current user successfully' })));

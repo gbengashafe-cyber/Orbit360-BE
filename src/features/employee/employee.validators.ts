@@ -53,7 +53,7 @@ const updateEmployeeSchema = employeeSchema
   .partial();
 
 const validate = (schema: z.ZodObject<any>) => {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, _res: Response, next: NextFunction) => {
     const result = schema.parse(req.body);
 
     if (result?.id && result.id === result.supervisorId) {
@@ -65,7 +65,24 @@ const validate = (schema: z.ZodObject<any>) => {
   };
 };
 
+const employeeLoanRequest = z.object({
+  loanType: z.string().min(1, 'Loan type is required'),
+  principalAmount: z.coerce.number('Amount is required').positive('Amount must be greater than 0'),
+  tenureMonths: z.coerce
+    .number({ error: 'Loan tenure is required' })
+    .int('Tenure must be a whole number')
+    .positive('Tenure must be greater than 0'),
+  neededBy: z.iso.date().min(1, 'Please select the required date'),
+  purpose: z.string().optional(),
+});
+const validateEmployeeLoanRequest = (req: Request, _res: Response, next: NextFunction) => {
+  const result = employeeLoanRequest.parse(req.body);
+
+  req.body.validated = { loan: result };
+  next();
+};
+
 const validateCreateEmployee = validate(employeeSchema);
 const validateUpdateEmployee = validate(updateEmployeeSchema);
 
-export { validateCreateEmployee, validateUpdateEmployee };
+export { validateCreateEmployee, validateUpdateEmployee, validateEmployeeLoanRequest };

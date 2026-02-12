@@ -66,6 +66,43 @@ export class EmployeeController {
     );
   }
 
+  static readonly createLoanRequest = async (req: Request, res: Response) => {
+    const id = req.user?.id;
+    const loan = req.body?.validated?.loan;
+
+    if (!loan) {
+      throw ApiError.badRequest('Invalid loan details provided');
+    }
+
+    const response = await EmployeeService.createLoanRequest({ employeeId: id, loan });
+
+    res.status(201).json(ApiResponse({ message: 'Loan request initiated successfully', data: { id: response.id } }));
+  };
+
+  static async getLoanRecords(req: Request, res: Response) {
+    const id = req.user?.id;
+    const { page, rows } = req.pagination;
+
+    const { count, rows: loans } = await EmployeeService.getLoans({
+      employeeId: id,
+      rows,
+      page,
+    });
+
+    res.json(
+      ApiResponse({
+        data: loans,
+        message: 'Payroll record(s) fetched successfully',
+        pagination: {
+          total: count,
+          page,
+          rows,
+          pages: Math.ceil(count / rows),
+        },
+      }),
+    );
+  }
+
   static async getById(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;

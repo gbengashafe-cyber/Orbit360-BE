@@ -9,6 +9,8 @@ import { EmployeeChangeRequest } from './employee-change-request.model';
 import { EmployeeDraft } from './employee-draft.model';
 import { Employee } from './employee.model';
 import { EmployeeRepository, ReadAllProps } from './employee.repository';
+import { LoanRepository } from '../loans/loan.repository';
+import { differenceInMonths } from 'date-fns';
 
 export class EmployeeService {
   static readonly getDirectory = async ({ page, rows, filters }: ReadAllProps) => {
@@ -88,6 +90,9 @@ export class EmployeeService {
 
       if (shouldUpdateTerminationDate) {
         payload = { ...payload, terminationDate: new Date() };
+        // Revoke user access
+        const employeeUserRecord = await UserRepository.readByEmail(employeeExistingData.email);
+        await UserRepository.update(employeeUserRecord?.id, { status: 'INACTIVE' });
       }
 
       const request = await EmployeeChangeRequest.create(
@@ -229,5 +234,27 @@ export class EmployeeService {
         { where: { id: request.employeeId }, fields: ['status'], silent: true, transaction: t },
       );
     });
+  };
+
+  static readonly createLoanRequest = async ({ employeeId, loan }) => {
+    const employee = await EmployeeRepository.readById(employeeId);
+
+    if (!employee) {
+      throw ApiError.badRequest('Employee record not found');
+    }
+
+    if (!['ACTIVE', 'ON_LEAVE'].includes(employee.status)) {
+      throw ApiError.badRequest('Only active employees are allowed to initiate loan requests');
+    }
+
+    if (differenceInMonths(new Date(), employee.hireDate) < 6) {
+      throw ApiError.badRequest('Only employees that have spent minimum of six (6) months are allowed to initiate loan requests');
+    }
+
+    return LoanRepository.create(loan);
+  };
+
+  static readonly getLoans = ({ employeeId, rows, page }) => {
+    return LoanRepository.read({ rows, page, filters: { employeeId } });
   };
 }

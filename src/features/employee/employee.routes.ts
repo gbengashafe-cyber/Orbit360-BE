@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { hasRequiredPermission } from '../../utils/check-permission';
 import { validateAuthToken } from '../authentication/auth.middleware';
 import { EmployeeController } from './employee.controller';
-import { validateCreateEmployee, validateUpdateEmployee } from './employee.validators';
+import { validateCreateEmployee, validateEmployeeLoanRequest, validateUpdateEmployee } from './employee.validators';
 
 const router = Router();
 
@@ -11,6 +11,8 @@ router.use([validateAuthToken]);
 // Employee interactions
 router.get('/me', EmployeeController.getUserEmployeeRecord);
 router.get('/:id/payrolls', EmployeeController.getEmployeePayrollRecords);
+router.get('/loans', EmployeeController.getLoanRecords);
+router.post('/loans', validateEmployeeLoanRequest, EmployeeController.createLoanRequest);
 
 // HR Interactions
 router.get('/', hasRequiredPermission('LIST_EMPLOYEES'), EmployeeController.getAll);

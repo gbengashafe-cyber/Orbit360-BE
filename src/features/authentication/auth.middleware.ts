@@ -56,4 +56,24 @@ const validateAuthToken = async (req: Request, res: Response, next: NextFunction
   next();
 };
 
-export { validateAuthToken };
+const isActive = async (req: Request, _res: Response, next: NextFunction) => {
+  const userId = req?.user?.id;
+
+  if (!userId) {
+    throw ApiError.unauthenticated('Authentication failed');
+  }
+
+  const user = await UserRepository.readById(userId);
+
+  if (!user) {
+    throw ApiError.notFound('User not found');
+  }
+
+  if (!['ACTIVE'].includes(user.status)) {
+    throw ApiError.unauthenticated('User is inactive');
+  }
+
+  next();
+};
+
+export { validateAuthToken, isActive };
