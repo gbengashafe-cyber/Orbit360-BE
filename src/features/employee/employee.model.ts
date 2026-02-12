@@ -196,7 +196,6 @@ Employee.init(
     modelName: 'employee',
     underscored: true,
     timestamps: true,
-    paranoid: true,
     indexes: [
       { fields: ['staff_id'], unique: true },
       { fields: ['email'], unique: true },
