@@ -1,16 +1,20 @@
 import config from 'config';
+import { differenceInMonths } from 'date-fns';
+import { CreationAttributes } from 'sequelize';
 import { db } from '../../db';
 import { ApiError } from '../../utils/api-error';
 import { MailUtil } from '../../utils/mail.util';
 import { AuthUtil } from '../authentication/auth.utils';
+import { LoanType } from '../loans/loan-types/loan-types.model';
+import { Loan } from '../loans/loan.model';
+import { LoanRepository } from '../loans/loan.repository';
+import { calculatePayroll } from '../payroll/payroll.utils';
 import { UserRepository } from '../users/user.repository';
 import { userSchema } from '../users/user.validation';
 import { EmployeeChangeRequest } from './employee-change-request.model';
 import { EmployeeDraft } from './employee-draft.model';
 import { Employee } from './employee.model';
 import { EmployeeRepository, ReadAllProps } from './employee.repository';
-import { LoanRepository } from '../loans/loan.repository';
-import { differenceInMonths } from 'date-fns';
 
 export class EmployeeService {
   static readonly getDirectory = async ({ page, rows, filters }: ReadAllProps) => {
@@ -236,11 +240,17 @@ export class EmployeeService {
     });
   };
 
-  static readonly createLoanRequest = async ({ employeeId, loan }) => {
+  static readonly createLoanRequest = async ({ employeeId, loan }: { employeeId: number; loan: CreationAttributes<Loan> }) => {
     const employee = await EmployeeRepository.readById(employeeId);
 
     if (!employee) {
       throw ApiError.badRequest('Employee record not found');
+    }
+
+    if (['PENDING_APPROVAL'].includes(employee.status)) {
+      throw ApiError.badRequest(
+        'There is an ongoing maintenance on this employee record. Kindly clear the pending maintenance and try again.',
+      );
     }
 
     if (!['ACTIVE', 'ON_LEAVE'].includes(employee.status)) {
@@ -251,7 +261,90 @@ export class EmployeeService {
       throw ApiError.badRequest('Only employees that have spent minimum of six (6) months are allowed to initiate loan requests');
     }
 
-    return LoanRepository.create(loan);
+    const loanTypeConfiguration = await LoanType.findByPk(loan.loanTypeId);
+
+    if (!loanTypeConfiguration) {
+      throw ApiError.badRequest('Missing configuration for the loan type selected. Kindly contact the system administrator');
+    }
+
+    // Thrift is only available in January and July
+    if (loanTypeConfiguration.name.toUpperCase() === 'THRIFT' && ![0, 6].includes(new Date().getMonth())) {
+      throw ApiError.badRequest(`${loanTypeConfiguration.name} loan is only allowed in January and July`);
+    }
+
+    if (loan.tenureMonths > loanTypeConfiguration.maxTenureMonths) {
+      throw ApiError.badRequest(
+        `${loanTypeConfiguration.name} loan cannot be more than ${loanTypeConfiguration.maxTenureMonths} months`,
+      );
+    }
+
+    if (loanTypeConfiguration.name?.toUpperCase() === 'SALARY ADVANCE') {
+      const activeLoans = await LoanRepository.readEmployeesActiveLoans([employeeId]);
+
+      // Check that salary advance is not more than monthly net monthly pay
+      const payrollCalculations = calculatePayroll({
+        employee,
+        activeLoans: activeLoans,
+        payPeriod: '2025-01',
+        pensionRate: 0.08,
+      });
+
+      const maxAmount = 0.5 * payrollCalculations.netSalary;
+      if (loan.principalAmount > maxAmount) {
+        throw ApiError.badRequest('Salary advance cannot be more than 50% of monthly net');
+      }
+    }
+    return LoanRepository.create({ ...loan, employeeId, interestRate: loanTypeConfiguration.interestRate });
+  };
+
+  static readonly cancelLoanRequest = async ({ employeeId, loanId }: { employeeId: number; loanId: number }) => {
+    const loanRecord = await LoanRepository.readById(loanId);
+
+    if (!loanRecord) {
+      throw ApiError.notFound('Loan record not found');
+    }
+
+    if (!['PENDING_APPROVAL'].includes(loanRecord.status.toUpperCase())) {
+      throw ApiError.forbidden('This loan cannot be cancelled.');
+    }
+
+    if (loanRecord.employeeId !== employeeId) {
+      throw ApiError.forbidden('You are not permitted to perform this activity');
+    }
+
+    return Loan.update({ status: 'CANCELLED' }, { where: { id: loanId } });
+  };
+
+  static readonly reviewLoanRequest = async ({
+    employeeId,
+    loanId,
+    reviewerDecision,
+    reviewerId,
+  }: {
+    employeeId: number;
+    loanId: number;
+    reviewerDecision: string;
+    reviewerId: number;
+  }) => {
+    const loanRecord = await LoanRepository.readById(loanId);
+
+    if (!loanRecord) {
+      throw ApiError.notFound('Loan not found');
+    }
+
+    if (loanRecord.status.toUpperCase() !== 'PENDING_REVIEW') {
+      throw ApiError.badRequest('This loan is not pending review');
+    }
+
+    const isLoanOwner = loanRecord.employeeId === employeeId;
+    if (isLoanOwner) {
+      throw ApiError.forbidden('You cannot review/approve your own loan request');
+    }
+
+    return Loan.update(
+      { status: loanRecord.nextStep, nextStep: 'ACTIVE', reviewerDecision, reviewedBy: reviewerId },
+      { where: { id: loanId } },
+    );
   };
 
   static readonly getLoans = ({ employeeId, rows, page }) => {

@@ -15,10 +15,6 @@ const hasRequiredPermission = (requiredPermission: string) => {
 
     logger.debug(`Permissions for user: ${JSON.stringify(userJobRolePermissions)}`);
 
-    if (!userJobRolePermissions || !userJobRolePermissions.length) {
-      throw ApiError.badRequest(`No permission found for user job role.`);
-    }
-
     const userHasRequiredPermission =
       req.user.role === 'ADMIN' ||
       userJobRolePermissions.find((_result) => _result.toUpperCase() === requiredPermission.toUpperCase());
@@ -28,34 +24,6 @@ const hasRequiredPermission = (requiredPermission: string) => {
     }
 
     logger.debug(`Checking required permission: RequestId: ${req.requestId}: Successful`);
-    next();
-  };
-};
-
-const canAccessResource = ({ matcherProp, requiredPermission = '' }: { matcherProp: string; requiredPermission: string }) => {
-  return async (req: Request, res: Response, next: NextFunction) => {
-    logger.debug(
-      `Checking resource access permission: RequestId: ${req.requestId}: Matcher: ${matcherProp}. Required permission: ${requiredPermission}`,
-    );
-    logger.debug(
-      `Checking resource access permission: RequestId: ${req.requestId}: User prop: ${req.user?.[matcherProp]}. User role: ${req.user?.jobRole}`,
-    );
-
-    const resourceIdFromUrl = req.params[matcherProp];
-    const userValue = req.user?.[matcherProp as keyof typeof req.user];
-
-    const userPermissions = req.user?.permissions || [];
-
-    const isOwner = userValue === resourceIdFromUrl;
-    const isAdmin = req.user?.role === 'ADMIN';
-    const hasRolePermission = userPermissions.find((_result) => _result.toUpperCase() === requiredPermission.toUpperCase());
-
-    if (!(isAdmin || hasRolePermission || isOwner)) {
-      logger.debug(`Checking resource access permission: RequestId: ${req.requestId}: Failed`);
-      throw ApiError.forbidden('You are not authorized to perform this action');
-    }
-
-    logger.debug(`Checking resource access permission: RequestId: ${req.requestId}: Successful`);
     next();
   };
 };
@@ -81,4 +49,12 @@ const isInAllowedDepartment = (requiredDepartment: string[]) => {
   };
 };
 
-export { canAccessResource, hasRequiredPermission, isInAllowedDepartment };
+const isAdmin = (req: Request, _res: Response, next: NextFunction) => {
+  if (req.user?.role?.toUpperCase() !== 'ADMIN') {
+    throw ApiError.forbidden('You are not allowed to perform this action');
+  }
+
+  next();
+};
+
+export { hasRequiredPermission, isInAllowedDepartment, isAdmin };

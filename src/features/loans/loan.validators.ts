@@ -1,19 +1,10 @@
 import { NextFunction, Request, Response } from 'express';
 import z from 'zod';
-import { validateOrThrow } from '../../utils/zod-validation-utils';
-import { loanStatus, loanType } from './loan.model';
+import { loanStatus } from './loan.model';
 
 const loanSchema = z.object({
   employeeId: z.coerce.number('EmployeeID is required').int(),
-  loanType: z.preprocess(
-    (val) => {
-      if (typeof val === 'string') {
-        return val.toUpperCase();
-      }
-      return val;
-    },
-    z.enum(loanType, { error: `Allowed loan types are ${loanType.join(', ')}` }),
-  ),
+  loanTypeId: z.coerce.number().int().positive(),
   principalAmount: z.coerce.number<number>().positive(),
   interestRate: z.number().min(0).max(100),
   tenureMonths: z.number().int().positive(),
@@ -33,10 +24,9 @@ const validateLoan = (req: Request, res: Response, next: NextFunction) => {
     schema = updateLoanSchema;
   }
 
-  const result = schema.safeParse(req.body);
-  validateOrThrow(result, req.requestId);
+  const result = schema.parse(req.body);
 
-  req.body.validated = { loan: result.data };
+  req.body.validated = { loan: result };
   next();
 };
 

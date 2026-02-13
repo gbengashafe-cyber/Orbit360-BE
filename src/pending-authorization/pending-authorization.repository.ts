@@ -7,6 +7,7 @@ import { Loan } from '../features/loans/loan.model';
 import { PayrollBatch } from '../features/payroll/payroll-batch.model';
 import { User } from '../features/users/user.model';
 import { PendingModuleItemsProps } from './pending-authorization.service';
+import { LoanType } from '../features/loans/loan-types/loan-types.model';
 
 export class AuthorizationRepository {
   static readonly getPendingLoans = async (limit: number) => {
@@ -14,7 +15,7 @@ export class AuthorizationRepository {
       where: { status: 'PENDING_APPROVAL' },
       include: [
         { model: Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'email'] },
-        { model: User, as: 'initiator', attributes: ['id', 'firstName', 'lastName'] },
+        { model: User, as: 'reviewer', attributes: ['id', 'firstName', 'lastName'] },
       ],
       limit,
       raw: true,
@@ -67,7 +68,7 @@ export class AuthorizationRepository {
 
     if (modules.includes('LOANS')) {
       tasks.push(
-        Loan.count({ where: { status: 'PENDING_APPROVAL', createdBy: { [Op.ne]: userId } } }).then((c) => ({
+        Loan.count({ where: { status: 'PENDING_APPROVAL' } }).then((c) => ({
           key: 'loans',
           count: c,
         })),
@@ -127,7 +128,8 @@ export class AuthorizationRepository {
           offset: offset,
           include: [
             { model: Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'email', 'staffId'] },
-            { model: User, as: 'initiator', attributes: ['id', 'firstName', 'lastName'] },
+            { model: User, as: 'reviewer', attributes: ['id', 'firstName', 'lastName'] },
+            { model: LoanType },
           ],
           order: [['createdAt', 'DESC']],
         });

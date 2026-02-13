@@ -14,6 +14,14 @@ import { env } from '../config/env';
 import { ApiError } from './api-error';
 import { logger } from './logger';
 
+const fieldLabelMap: Record<string, string> = {
+  annual_basic_salary: 'Basic Salary',
+  max_tenure_months: 'Maximum Tenure',
+  interest_rate: 'Interest Rate',
+  staff_id: 'Staff ID',
+  dob: 'Date of Birth',
+};
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const globalErrorHandler: ErrorRequestHandler = (err, req: Request, res: Response, next: NextFunction): Response => {
   logger.debug(err);
@@ -52,17 +60,29 @@ function handleSequelizeError(err: BaseError): ApiError {
     case UniqueConstraintError.name: {
       const uniqueErr = err as UniqueConstraintError;
       const fieldNames = Object.keys(uniqueErr.fields || {}).join(', ');
+      const fieldNameMap = { loan_types_name: 'loan type name' };
       code = 409;
-      message = fieldNames ? `Duplicate record: The ${fieldNames} already exists.` : 'Duplicate record not allowed';
+      message = fieldNames
+        ? `Duplicate record: The ${fieldNameMap[fieldNames] || fieldNames} already exists.`
+        : 'Duplicate record not allowed';
       break;
     }
     case ForeignKeyConstraintError.name:
       message = 'Missing/invalid association field.';
       break;
-    case ValidationError.name:
-      message = err.message ?? 'Oops! Looks like something is wrong with the request';
+    case ValidationError.name: {
+      const validationError = err as ValidationError;
+
+      message = validationError.errors
+        .map((item) => {
+          const friendlyField = fieldLabelMap[item.path as string] || item.path;
+          return `${friendlyField}: ${item.message}`;
+        })
+        .join('; ');
+      message = message.split('.').pop() ?? 'Oops! Looks like something is wrong with the request';
       code = 422;
       break;
+    }
     case DatabaseError.name:
       message = 'Oops! Something went wrong.';
       code = 500;

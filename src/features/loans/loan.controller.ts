@@ -2,12 +2,12 @@ import { Request, Response } from 'express';
 import { CreationAttributes } from 'sequelize';
 import { ApiError } from '../../utils/api-error';
 import { ApiResponse } from '../../utils/api-response';
+import { LoanService } from './loan-service';
 import { Loan } from './loan.model';
 import { LoanRepository } from './loan.repository';
-import { LoanService } from './loan-service';
 
 export class LoanController {
-  static readonly getDashboard = async (req: Request, res: Response) => {
+  static readonly getDashboard = async (_req: Request, res: Response) => {
     const result = await LoanRepository.getDashboard();
 
     res.json(
@@ -17,6 +17,7 @@ export class LoanController {
       }),
     );
   };
+
   static readonly get = async (req: Request, res: Response) => {
     const { page, rows } = req.pagination;
     const filters = req.parsedQuery;
@@ -56,7 +57,7 @@ export class LoanController {
   static readonly create = async (req: Request, res: Response) => {
     const loanPayload: CreationAttributes<Loan> = req.body.validated.loan;
 
-    loanPayload.createdBy = Number(req.user?.id);
+    loanPayload.reviewedBy = Number(req.user?.id);
 
     const loan = await LoanRepository.create(loanPayload);
 

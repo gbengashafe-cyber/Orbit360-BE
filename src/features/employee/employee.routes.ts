@@ -13,6 +13,8 @@ router.get('/me', EmployeeController.getUserEmployeeRecord);
 router.get('/:id/payrolls', EmployeeController.getEmployeePayrollRecords);
 router.get('/loans', EmployeeController.getLoanRecords);
 router.post('/loans', validateEmployeeLoanRequest, EmployeeController.createLoanRequest);
+router.patch('/loans/:loanId/cancellation', EmployeeController.cancelLoanRequest);
+router.patch('/loans/:loanId/reviews', EmployeeController.reviewLoanRequest);
 
 // HR Interactions
 router.get('/', hasRequiredPermission('LIST_EMPLOYEES'), EmployeeController.getAll);

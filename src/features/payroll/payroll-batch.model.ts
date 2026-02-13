@@ -28,7 +28,7 @@ PayrollBatch.init(
     batchId: {
       type: DataTypes.STRING(50),
       allowNull: false,
-      unique: true,
+      unique: 'batchId',
     },
     payPeriod: {
       type: DataTypes.STRING(7),

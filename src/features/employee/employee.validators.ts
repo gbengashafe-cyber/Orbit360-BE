@@ -66,14 +66,14 @@ const validate = (schema: z.ZodObject<any>) => {
 };
 
 const employeeLoanRequest = z.object({
-  loanType: z.string().min(1, 'Loan type is required'),
+  loanTypeId: z.coerce.number('Invalid loan type selected').min(1, 'Loan type is required'),
   principalAmount: z.coerce.number('Amount is required').positive('Amount must be greater than 0'),
   tenureMonths: z.coerce
     .number({ error: 'Loan tenure is required' })
     .int('Tenure must be a whole number')
     .positive('Tenure must be greater than 0'),
-  neededBy: z.iso.date().min(1, 'Please select the required date'),
-  purpose: z.string().optional(),
+  startDate: z.iso.date('Kindly specify the date the loan is required').min(1, 'Please select the required date'),
+  employeeNote: z.string().optional(),
 });
 const validateEmployeeLoanRequest = (req: Request, _res: Response, next: NextFunction) => {
   const result = employeeLoanRequest.parse(req.body);
@@ -85,4 +85,4 @@ const validateEmployeeLoanRequest = (req: Request, _res: Response, next: NextFun
 const validateCreateEmployee = validate(employeeSchema);
 const validateUpdateEmployee = validate(updateEmployeeSchema);
 
-export { validateCreateEmployee, validateUpdateEmployee, validateEmployeeLoanRequest };
+export { validateCreateEmployee, validateEmployeeLoanRequest, validateUpdateEmployee };

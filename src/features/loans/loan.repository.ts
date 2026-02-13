@@ -1,6 +1,7 @@
-import { CreationAttributes, fn, InferAttributes, literal, Transaction, WhereOptions } from 'sequelize';
+import { Attributes, CreationAttributes, fn, literal, Transaction, WhereOptions } from 'sequelize';
 import { Employee } from '../employee/employee.model';
 import { LoanPayment } from './loan-payment.model';
+import { LoanType } from './loan-types/loan-types.model';
 import { Loan } from './loan.model';
 
 type ActiveLoanAggregate = {
@@ -34,7 +35,10 @@ export class LoanRepository {
       where: whereOptions,
       limit: rows,
       offset: (page - 1) * rows,
-      include: [{ model: Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'email', 'staffId'] }],
+      include: [
+        { model: Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'email', 'staffId'] },
+        { model: LoanType },
+      ],
       order: [['createdAt', 'DESC']],
       raw: false,
     });
@@ -58,7 +62,7 @@ export class LoanRepository {
     return LoanPayment.bulkCreate(loanPayment, { transaction });
   };
 
-  static readonly update = (id: number, loan: InferAttributes<Loan>) => {
+  static readonly update = (id: number, loan: Attributes<Loan>) => {
     return Loan.update(loan, { where: { id } });
   };
 

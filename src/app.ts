@@ -18,6 +18,7 @@ import { employeeRoutes } from './features/employee/employee.routes';
 import { exitRoutes } from './features/exit/exit.routes';
 import { jobRoleRoutes } from './features/job-role/job-role.routes';
 import { leaveRoutes } from './features/leave/leave.routes';
+import { loanTypeRoutes } from './features/loans/loan-types/loan-types.routes';
 import { loanRoutes } from './features/loans/loan.routes';
 import { onboardingRoutes } from './features/onboarding/onboarding.routes';
 import payrollRoutes from './features/payroll/payroll.routes';
@@ -131,7 +132,6 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/v1/complaints', complaintRoutes);
 app.use('/api/v1/departments', departmentRoutes);
-app.use('/api/v1/employees', employeeRoutes);
 app.use('/api/v1/leaves', leaveRoutes);
 app.use('/api/v1/exits', exitRoutes);
 app.use('/api/v1/onboardings', onboardingRoutes);
@@ -142,9 +142,11 @@ app.use('/api/v1/performance', performanceRoutes);
 app.use('/api/v1/job-roles', jobRoleRoutes);
 app.use('/api/v1/companies', companyRoutes);
 app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/loans/types', loanTypeRoutes);
 app.use('/api/v1/loans', loanRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/pending-authorization', authorizationRoutes);
+app.use('/api/v1/employees', employeeRoutes);
 
 // Swagger Documentation
 app.use(

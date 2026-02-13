@@ -6,7 +6,7 @@ export class LoanService {
   static readonly createLoan = async (data: any, userId: number) => {
     const loan = await LoanRepository.create({
       ...data,
-      createdBy: userId,
+      reviewedBy: userId,
       status: 'PENDING_APPROVAL',
       nextStep: 'PENDING_DISBURSEMENT',
     });
@@ -46,7 +46,7 @@ export class LoanService {
       throw ApiError.notFound('Loan record not found');
     }
 
-    if (loan.createdBy === approverId) {
+    if (loan.reviewedBy === approverId) {
       throw ApiError.badRequest('Maker-Checker violation: You cannot approve a loan you initiated.');
     }
 
@@ -77,8 +77,8 @@ export class LoanService {
       throw ApiError.notFound('Loan record not found');
     }
 
-    if (loan?.createdBy === approverId) {
-      throw ApiError.badRequest('You cannot reject a loan you initiated.');
+    if (loan?.reviewedBy === approverId) {
+      throw ApiError.badRequest('You cannot approve/reject a loan you initiated.');
     }
 
     return LoanRepository.update(loanId, {
@@ -86,7 +86,7 @@ export class LoanService {
       status: 'REJECTED',
       approvedBy: approverId,
       approvedDate: new Date(),
-      notes: notes || 'Loan application rejected by checker.',
+      approverNote: notes || 'Loan application rejected by checker.',
       nextStep: 'REJECTED',
     });
   };

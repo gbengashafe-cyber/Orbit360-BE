@@ -3,24 +3,37 @@ import { CreationOptional, DataTypes, ForeignKey, InferAttributes, InferCreation
 import { db } from '../../db';
 import { Employee } from '../employee/employee.model';
 import { User } from '../users/user.model';
+import { LoanType } from './loan-types/loan-types.model';
 
-export const loanStatus = ['PENDING_APPROVAL', 'PENDING_DISBURSEMENT', 'ACTIVE', 'PAID_OFF', 'REJECTED'] as const;
-export const loanType = ['THRIFT', 'SALARY_ADVANCE', 'PERSONAL'] as const;
+export const loanStatus = [
+  'PENDING_REVIEW',
+  'PENDING_APPROVAL',
+  'PENDING_DISBURSEMENT',
+  'ACTIVE',
+  'PAID_OFF',
+  'REJECTED',
+  'CANCELLED',
+] as const;
+
+export const reviewerDecisionOptions = ['APPROVE', 'REJECT'];
 
 export class Loan extends Model<InferAttributes<Loan>, InferCreationAttributes<Loan>> {
   declare id: CreationOptional<number>;
   declare employeeId: ForeignKey<Employee['id']>;
-  declare loanType: (typeof loanType)[number];
+  declare loanTypeId: ForeignKey<LoanType['id']>;
   declare principalAmount: number;
   declare interestRate: number;
   declare tenureMonths: number;
   declare startDate: Date;
   declare endDate: CreationOptional<string>;
-  declare createdBy: ForeignKey<User['id']>;
+  declare reviewedBy: ForeignKey<User['id']>;
+  declare reviewerDecision: (typeof reviewerDecisionOptions)[number];
+  declare reviewerNote: string;
+  declare approverNote: string;
+  declare employeeNote: string;
   declare approvedBy: ForeignKey<User['id']>;
   declare approvedDate: Date;
-  declare notes: string;
-  declare status: CreationOptional<(typeof loanStatus)[number]>;
+  declare status: (typeof loanStatus)[number];
   declare nextStep: (typeof loanStatus)[number];
   declare createdAt: Date;
 }
@@ -37,7 +50,7 @@ Loan.init(
       references: { model: Employee, key: 'id' },
       allowNull: false,
     },
-    loanType: { type: DataTypes.ENUM, allowNull: false, values: loanType },
+    loanTypeId: { type: DataTypes.INTEGER, allowNull: false, references: { model: LoanType } },
     principalAmount: {
       type: DataTypes.DECIMAL(15, 2),
       allowNull: false,
@@ -55,11 +68,12 @@ Loan.init(
       type: DataTypes.DATEONLY,
       allowNull: false,
     },
-    createdBy: {
+    reviewedBy: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       references: { model: User, key: 'id' },
     },
+    reviewerDecision: { type: DataTypes.ENUM(...reviewerDecisionOptions), allowNull: true },
     approvedBy: {
       type: DataTypes.INTEGER,
       allowNull: true,
@@ -68,18 +82,24 @@ Loan.init(
     approvedDate: {
       type: DataTypes.DATEONLY,
     },
-    notes: {
-      type: DataTypes.TEXT,
+    reviewerNote: {
+      type: DataTypes.STRING(300),
+    },
+    approverNote: {
+      type: DataTypes.STRING(300),
+    },
+    employeeNote: {
+      type: DataTypes.STRING(300),
     },
     status: {
       type: DataTypes.ENUM,
       values: loanStatus,
-      defaultValue: 'pending_approval',
+      defaultValue: 'PENDING_REVIEW',
     },
     nextStep: {
       type: DataTypes.STRING(100),
       allowNull: false,
-      defaultValue: 'pending_disbursement',
+      defaultValue: 'PENDING_APPROVAL',
     },
     createdAt: { type: DataTypes.DATE },
 
@@ -105,11 +125,14 @@ Loan.init(
   },
 );
 
+Loan.belongsTo(LoanType, { foreignKey: 'loanTypeId' });
+LoanType.hasMany(Loan, { foreignKey: 'loanTypeId' });
+
 Loan.belongsTo(Employee, { foreignKey: 'employeeId', as: 'employee' });
 Employee.hasMany(Loan, { foreignKey: 'employeeId', as: 'loans' });
 
 Loan.belongsTo(User, { foreignKey: 'approvedBy', as: 'approver' });
 User.hasMany(Loan, { foreignKey: 'approvedBy', as: 'approvedLoans' });
 
-Loan.belongsTo(User, { foreignKey: 'createdBy', as: 'initiator' });
-User.hasMany(Loan, { foreignKey: 'createdBy', as: 'initiatedLoans' });
+Loan.belongsTo(User, { foreignKey: 'reviewedBy', as: 'reviewer' });
+User.hasMany(Loan, { foreignKey: 'reviewedBy', as: 'reviewedLoans' });

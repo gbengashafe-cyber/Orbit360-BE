@@ -51,7 +51,7 @@ const validateAuthToken = async (req: Request, res: Response, next: NextFunction
   const userEmployeeSearch = await EmployeeRepository.read({ rows: 1, page: 1, filters: { search: user.email } });
 
   if (userEmployeeSearch) {
-    req.user.employeeRecord = userEmployeeSearch[0];
+    req.user.employeeRecord = userEmployeeSearch.rows[0];
   }
   next();
 };

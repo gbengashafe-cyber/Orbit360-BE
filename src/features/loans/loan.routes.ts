@@ -11,7 +11,6 @@ router.use([validateAuthToken]);
 router.get('/', hasRequiredPermission('LIST_LOANS'), LoanController.get);
 router.get('/dashboard', LoanController.getDashboard);
 router.get('/:id', hasRequiredPermission('MANAGE_LOANS'), LoanController.getById);
-router.post('/', hasRequiredPermission('MANAGE_LOANS'), validateLoan, LoanController.create);
 router.put('/:id', hasRequiredPermission('MANAGE_LOANS'), validateLoan, LoanController.update);
 router.delete('/:id', hasRequiredPermission('MANAGE_LOANS'), LoanController.delete);
 router.patch('/:id/approve', hasRequiredPermission('APPROVE_LOANS'), LoanController.approve);

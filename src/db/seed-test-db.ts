@@ -1,6 +1,7 @@
 import { Company } from '../features/company/company.model';
 import { Department } from '../features/department/department.model';
 import { JobRole } from '../features/job-role/job-role.model';
+import { LoanType } from '../features/loans/loan-types/loan-types.model';
 import { JobRolePermissions } from '../features/permissions/permission.model';
 import { User } from '../features/users/user.model';
 import { logger } from '../utils/logger';
@@ -20,7 +21,16 @@ async function seed() {
       ],
       { ignoreDuplicates: true },
     );
-    logger.info('Departments created');
+
+    await LoanType.bulkCreate(
+      [
+        { name: 'Thrift', interestRate: 0, maxTenureMonths: 6 },
+        { name: 'Salary Advance', interestRate: 15.3, maxTenureMonths: 50 },
+        { name: 'Personal', interestRate: 3, maxTenureMonths: 6 },
+      ],
+      { ignoreDuplicates: true },
+    );
+
     await JobRole.bulkCreate(
       [
         { title: 'HR Operations', description: '' },

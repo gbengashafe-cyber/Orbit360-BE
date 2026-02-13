@@ -1,5 +1,6 @@
 import { DataTypes, Model } from 'sequelize';
 import { db } from '../../db';
+import { JobApplication } from './job-application.model';
 
 export interface ApplicantAttributes {
   id?: number;
@@ -43,7 +44,7 @@ Applicant.init(
     email: {
       type: DataTypes.STRING(255),
       allowNull: false,
-      unique: true,
+      unique: 'email',
     },
     phone: {
       type: DataTypes.STRING(20),
@@ -78,11 +79,7 @@ Applicant.init(
   },
 );
 
-// Set up associations after model definition
-export function setupApplicantAssociations() {
-  const JobApplication = require('./job-application.model').JobApplication;
-  Applicant.hasMany(JobApplication, {
-    foreignKey: 'applicant_id',
-    as: 'applications',
-  });
-}
+Applicant.hasMany(JobApplication, {
+  foreignKey: 'applicant_id',
+  as: 'applications',
+});
