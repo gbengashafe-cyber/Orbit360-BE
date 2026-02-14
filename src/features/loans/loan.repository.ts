@@ -14,7 +14,7 @@ export class LoanRepository {
   static readonly getDashboard = async () => {
     const result = (await Loan.findOne({
       attributes: [
-        [fn('SUM', literal(`CASE WHEN status = 'active' THEN principalAmount ELSE 0 END`)), 'activeLoanSum'],
+        [fn('SUM', literal(`CASE WHEN status = 'active' THEN principal_amount ELSE 0 END`)), 'activeLoanSum'],
         [fn('COUNT', literal(`CASE WHEN status = 'paid_off' THEN id ELSE NULL END`)), 'paidOffLoans'],
         [fn('COUNT', literal(`CASE WHEN status = 'active' THEN id ELSE NULL END`)), 'activeLoans'],
       ],
