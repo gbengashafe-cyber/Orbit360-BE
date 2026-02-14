@@ -304,7 +304,7 @@ export class EmployeeService {
       throw ApiError.notFound('Loan record not found');
     }
 
-    if (!['PENDING_APPROVAL'].includes(loanRecord.status.toUpperCase())) {
+    if (!['PENDING_APPROVAL', 'PENDING_REVIEW'].includes(loanRecord.status.toUpperCase())) {
       throw ApiError.forbidden('This loan cannot be cancelled.');
     }
 
@@ -313,38 +313,6 @@ export class EmployeeService {
     }
 
     return Loan.update({ status: 'CANCELLED' }, { where: { id: loanId } });
-  };
-
-  static readonly reviewLoanRequest = async ({
-    employeeId,
-    loanId,
-    reviewerDecision,
-    reviewerId,
-  }: {
-    employeeId: number;
-    loanId: number;
-    reviewerDecision: string;
-    reviewerId: number;
-  }) => {
-    const loanRecord = await LoanRepository.readById(loanId);
-
-    if (!loanRecord) {
-      throw ApiError.notFound('Loan not found');
-    }
-
-    if (loanRecord.status.toUpperCase() !== 'PENDING_REVIEW') {
-      throw ApiError.badRequest('This loan is not pending review');
-    }
-
-    const isLoanOwner = loanRecord.employeeId === employeeId;
-    if (isLoanOwner) {
-      throw ApiError.forbidden('You cannot review/approve your own loan request');
-    }
-
-    return Loan.update(
-      { status: loanRecord.nextStep, nextStep: 'ACTIVE', reviewerDecision, reviewedBy: reviewerId },
-      { where: { id: loanId } },
-    );
   };
 
   static readonly getLoans = ({ employeeId, rows, page }) => {

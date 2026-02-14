@@ -1,27 +1,10 @@
 import { NextFunction, Request, Response } from 'express';
-import z from 'zod';
 import { ApiError } from '../../utils/api-error';
 import { ApiResponse } from '../../utils/api-response';
 import { logger } from '../../utils/logger';
-import { reviewerDecisionOptions } from '../loans/loan.model';
 import { PayrollRepository } from '../payroll/payroll.repository';
 import { EmployeeRepository } from './employee.repository';
 import { EmployeeService } from './employee.service';
-
-const loanReviewSchema = z
-  .object({
-    reviewerDecision: z.preprocess(
-      (val) => (typeof val === 'string' ? val.toUpperCase() : val),
-      z.enum(reviewerDecisionOptions, 'Invalid decision was provided'),
-    ),
-    reviewerNote: z.string().max(300),
-  })
-  .refine(
-    ({ reviewerDecision, reviewerNote }) => {
-      return !(reviewerDecision.toUpperCase() === 'REJECT' && reviewerNote.length < 3);
-    },
-    { message: 'Note is required if decision is `Reject`', path: ['reviewerNote'] },
-  );
 
 export class EmployeeController {
   static async getAll(req: Request, res: Response) {
@@ -101,23 +84,6 @@ export class EmployeeController {
     const loanId = req.params?.loanId;
 
     await EmployeeService.cancelLoanRequest({ employeeId: Number(employeeId), loanId: Number(loanId) });
-
-    res.status(201).json(ApiResponse({ message: 'Loan request initiated successfully', data: {} }));
-  };
-
-  static readonly reviewLoanRequest = async (req: Request, res: Response) => {
-    const employeeId = req.user?.employeeRecord?.id;
-    const loanId = req.params?.loanId;
-    const reviewerId = req.user?.id;
-
-    const validatedPayload = loanReviewSchema.parse(req.body);
-
-    await EmployeeService.reviewLoanRequest({
-      employeeId: Number(employeeId),
-      loanId: Number(loanId),
-      reviewerDecision: validatedPayload.reviewerDecision,
-      reviewerId: Number(reviewerId),
-    });
 
     res.status(201).json(ApiResponse({ message: 'Loan request initiated successfully', data: {} }));
   };

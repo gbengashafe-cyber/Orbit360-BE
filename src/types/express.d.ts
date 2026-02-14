@@ -17,7 +17,7 @@ declare module 'express-serve-static-core' {
     };
     pagination: { page: number; rows: number };
     parsedQuery: ParsedQs;
-    validatedBody?: { [key: string]: any };
+    validatedBody: { [key: string]: any };
   }
 }
 

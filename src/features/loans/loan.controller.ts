@@ -86,30 +86,55 @@ export class LoanController {
     res.json(ApiResponse({ data: { id }, message: 'Loan record deleted successfully' }));
   };
 
-  static readonly approve = async (req: Request, res: Response) => {
-    const { id } = req.params;
-    const approverId = req.user?.id;
+  static readonly reviewLoanRequest = async (req: Request, res: Response) => {
+    const employeeId = req.user?.employeeRecord?.id;
+    const loanId = req.params?.loanId;
+    const reviewerId = req.user?.id;
 
-    await LoanService.approveLoan(Number(id), Number(approverId));
+    const validatedPayload = req.body.validated?.validatedPayload;
+
+    const response = await LoanService.reviewLoanRequest({
+      employeeId: Number(employeeId),
+      loanId: Number(loanId),
+      reviewerDecision: validatedPayload.reviewerDecision,
+      reviewerNote: validatedPayload.reviewerNote,
+      reviewerId: Number(reviewerId),
+    });
+
+    res.status(201).json(ApiResponse({ message: 'Request treated successfully', data: response }));
+  };
+
+  static readonly approve = async (req: Request, res: Response) => {
+    const { loanId } = req.params;
+    const approverId = req.user?.id as number;
+    const userEmployeeId = req.user?.employeeRecord?.id as number;
+    const approverNote = req.body.validated?.approvalNote as string;
+
+    await LoanService.approveLoan({ loanId: Number(loanId), approverId, userEmployeeId, approverNote });
 
     return res.json(
       ApiResponse({
-        data: { id },
+        data: { id: loanId },
         message: 'Loan approved successfully and moved to disbursement queue.',
       }),
     );
   };
 
   static readonly reject = async (req: Request, res: Response) => {
-    const { id } = req.params;
-    const { notes } = req.body;
-    const approverId = req.user?.id;
+    const { loanId } = req.params;
+    const approverNote = req.body.validated?.approverNote as string;
+    const approverId = req.user?.id as number;
+    const userEmployeeId = req.user?.employeeRecord?.id as number;
 
-    await LoanService.rejectLoan(Number(id), Number(approverId), notes);
+    if (!loanId) {
+      throw ApiError.badRequest('The loan ID is required');
+    }
+
+    await LoanService.rejectLoan({ loanId: Number(loanId), approverId, approverNote, userEmployeeId });
 
     return res.json(
       ApiResponse({
-        data: { id },
+        data: { id: loanId },
         message: 'Loan application has been rejected.',
       }),
     );

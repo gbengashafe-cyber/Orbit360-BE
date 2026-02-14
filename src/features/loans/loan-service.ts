@@ -2,6 +2,21 @@ import { ApiError } from '../../utils/api-error';
 import { LoanAuditLog } from './loan-audit-log.model';
 import { LoanRepository } from './loan.repository';
 
+type ApprovalProps = {
+  loanId: number;
+  approverId: number;
+  userEmployeeId: number;
+  approverNote: string;
+};
+
+type ReviewProps = {
+  employeeId: number;
+  loanId: number;
+  reviewerDecision: string;
+  reviewerId: number;
+  reviewerNote: string;
+};
+
 export class LoanService {
   static readonly createLoan = async (data: any, userId: number) => {
     const loan = await LoanRepository.create({
@@ -39,55 +54,76 @@ export class LoanService {
     return updatedLoan;
   };
 
-  static readonly approveLoan = async (loanId: number, approverId: number) => {
+  static readonly reviewLoanRequest = async ({ employeeId, loanId, reviewerDecision, reviewerId, reviewerNote }: ReviewProps) => {
+    const loanRecord = await LoanRepository.readById(loanId);
+
+    if (!loanRecord) {
+      throw ApiError.notFound('Loan not found');
+    }
+
+    if (loanRecord.status.toUpperCase() !== 'PENDING_REVIEW') {
+      throw ApiError.badRequest('This loan is not pending review');
+    }
+
+    const isLoanOwner = loanRecord.employeeId === employeeId;
+    if (isLoanOwner) {
+      throw ApiError.forbidden('You cannot review/approve your own loan request');
+    }
+
+    if (reviewerDecision.toLowerCase() === 'approve') {
+      return loanRecord.update({ status: loanRecord.nextStep, nextStep: 'ACTIVE', reviewedBy: reviewerId, reviewerNote });
+    }
+
+    return loanRecord.update({ status: 'REJECTED', reviewedBy: reviewerId, reviewerNote });
+  };
+
+  private static readonly checkApproval = ({ loan, userEmployeeId, approverId }) => {
+    if (loan.employeeId === userEmployeeId) {
+      throw ApiError.badRequest('You cannot approve/reject your own loan');
+    }
+
+    if (loan.reviewedBy === approverId) {
+      throw ApiError.badRequest('Maker-Checker violation: You cannot approve/reject a loan you reviewed.');
+    }
+
+    if (loan.status !== 'PENDING_APPROVAL') {
+      throw ApiError.badRequest(`This loan is not pending approval`);
+    }
+  };
+
+  static readonly approveLoan = async ({ loanId, approverId, userEmployeeId, approverNote }: ApprovalProps) => {
     const loan = await LoanRepository.readById(loanId);
 
     if (!loan) {
       throw ApiError.notFound('Loan record not found');
     }
 
-    if (loan.reviewedBy === approverId) {
-      throw ApiError.badRequest('Maker-Checker violation: You cannot approve a loan you initiated.');
-    }
+    this.checkApproval({ loan, userEmployeeId, approverId });
 
-    if (loan.status !== 'PENDING_APPROVAL') {
-      throw ApiError.badRequest(`Cannot approve loan with status: ${loan.status}`);
-    }
-
-    await LoanRepository.update(loanId, {
+    await loan.update({
       ...loan,
       status: 'PENDING_DISBURSEMENT',
       approvedBy: approverId,
       approvedDate: new Date(),
       nextStep: 'ACTIVE',
-    });
-
-    await LoanAuditLog.create({
-      loanId: loanId,
-      userId: approverId,
-      action: 'APPROVE',
-      details: 'Loan approved by checker. Status moved to PENDING_DISBURSEMENT.',
+      approverNote,
     });
   };
 
-  static readonly rejectLoan = async (loanId: number, approverId: number, notes: string) => {
+  static readonly rejectLoan = async ({ loanId, approverId, approverNote, userEmployeeId }: ApprovalProps) => {
     const loan = await LoanRepository.readById(loanId);
 
     if (!loan) {
       throw ApiError.notFound('Loan record not found');
     }
 
-    if (loan?.reviewedBy === approverId) {
-      throw ApiError.badRequest('You cannot approve/reject a loan you initiated.');
-    }
+    this.checkApproval({ loan, userEmployeeId, approverId });
 
-    return LoanRepository.update(loanId, {
-      ...loan,
+    return loan.update({
       status: 'REJECTED',
       approvedBy: approverId,
       approvedDate: new Date(),
-      approverNote: notes || 'Loan application rejected by checker.',
-      nextStep: 'REJECTED',
+      approverNote,
     });
   };
 
