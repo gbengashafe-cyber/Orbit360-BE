@@ -142,7 +142,6 @@ Payroll.init(
   {
     sequelize: db,
     tableName: 'payrolls',
-    underscored: true,
     indexes: [
       {
         unique: true,

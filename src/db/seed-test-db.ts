@@ -1,23 +1,26 @@
 import { Company } from '../features/company/company.model';
 import { Department } from '../features/department/department.model';
+import { Employee } from '../features/employee/employee.model';
 import { JobRole } from '../features/job-role/job-role.model';
 import { LoanType } from '../features/loans/loan-types/loan-types.model';
 import { JobRolePermissions } from '../features/permissions/permission.model';
 import { User } from '../features/users/user.model';
+import { ApiError } from '../utils/api-error';
 import { logger } from '../utils/logger';
 
 async function seed() {
   try {
     const companies = await Company.findOne();
 
-    await Department.bulkCreate(
+    const departments = await Department.bulkCreate(
       [
         { name: 'Information Technology', description: '', companyId: companies?.id },
-        { name: 'Branch Operations', description: '', companyId: companies?.id },
+        { name: 'Operations', description: '', companyId: companies?.id },
         { name: 'Internal Control', description: '', companyId: companies?.id },
         { name: 'Audit', description: '', companyId: companies?.id },
         { name: 'Marketing', description: '', companyId: companies?.id },
         { name: 'Security', description: '', companyId: companies?.id },
+        { name: 'Human Resources', description: '', companyId: companies?.id },
       ],
       { ignoreDuplicates: true },
     );
@@ -31,20 +34,184 @@ async function seed() {
       { ignoreDuplicates: true },
     );
 
-    await JobRole.bulkCreate(
+    const jobRoles = await JobRole.bulkCreate(
       [
         { title: 'HR Operations', description: '' },
         { title: 'Senior Developer', description: '' },
         { title: 'Junior Developer', description: '' },
         { title: 'Sales Manager', description: '' },
         { title: 'HR Manager', description: '' },
+        { title: 'Operations Officer', description: '' },
+        { title: 'Operations Supervisor', description: '' },
       ],
       { ignoreDuplicates: true },
     );
 
-    const hrOperationsRole = await JobRole.findOne({ where: { title: 'HR Operations' } });
+    const hrOperationsRole = jobRoles.find((_jobRole) => _jobRole.title.toUpperCase() == 'HR OPERATIONS');
+    const hrManagerRole = jobRoles.find((_jobRole) => _jobRole.title.toUpperCase() == 'HR MANAGER');
+    const employeeRole = jobRoles.find((_jobRole) => _jobRole.title.toUpperCase() == 'OPERATIONS OFFICER');
+    const employeeSupervisorRole = jobRoles.find((_jobRole) => _jobRole.title.toUpperCase() == 'OPERATIONS SUPERVISOR');
+    const hrDepartment = departments.find((_department) => _department.name.toUpperCase() == 'HUMAN RESOURCES');
+    const operationsDepartment = departments.find((_department) => _department.name.toUpperCase() == 'OPERATIONS');
 
-    await User.update({ jobRole: hrOperationsRole?.title }, { where: { email: 'test@gmail.com' } });
+    if (!hrOperationsRole || !hrManagerRole || !employeeRole || !employeeSupervisorRole) {
+      throw ApiError.badRequest('Missing one or more job roles set up');
+    }
+
+    if (!hrDepartment || !operationsDepartment) {
+      throw ApiError.badRequest('Missing one or more department set up');
+    }
+
+    const employees: any = [
+      {
+        firstName: 'Test',
+        lastName: 'HR',
+        email: 'test-hr@gmail.com',
+        password: '',
+        jobRole: hrOperationsRole.title,
+        departmentName: hrDepartment.name,
+        status: 'ACTIVE',
+        staffId: 'MFB001',
+        phone: '08070707',
+        dob: new Date('2000-01-01'),
+        gender: 'F',
+        nationality: 'Nigerian',
+        address: '',
+        hireDate: new Date('2018-01-01'),
+        annualBasicSalary: 200000,
+        annualHousingAllowance: 200000,
+        annualTransportAllowance: 200000,
+        annualLeaveAllowance: 200000,
+        annualOtherAllowances: 200000,
+        bankName: '',
+        bankCode: '',
+        accountNumber: '',
+        accountName: '',
+        beneficiaryName: '',
+        beneficiaryRelationship: '',
+        beneficiaryPhone: '',
+        nokName: '',
+        nokRelationship: '',
+        nokPhone: '',
+        nokAddress: '',
+        leaveEntitlement: 20,
+        nhfApplicable: false,
+        annualRentAmount: 2000000,
+      },
+      {
+        firstName: 'Test',
+        lastName: 'HR Manager',
+        email: 'test-hr-manager@gmail.com',
+        password: '',
+        jobRole: hrManagerRole.title,
+        departmentName: hrDepartment.name,
+        status: 'ACTIVE',
+        staffId: 'MFB002',
+        phone: '08070707',
+        dob: new Date('2000-01-01'),
+        gender: 'M',
+        nationality: 'Nigerian',
+        address: '',
+        hireDate: new Date('2018-01-01'),
+        annualBasicSalary: 200000,
+        annualHousingAllowance: 200000,
+        annualTransportAllowance: 200000,
+        annualLeaveAllowance: 200000,
+        annualOtherAllowances: 200000,
+        bankName: '',
+        bankCode: '',
+        accountNumber: '',
+        accountName: '',
+        beneficiaryName: '',
+        beneficiaryRelationship: '',
+        beneficiaryPhone: '',
+        nokName: '',
+        nokRelationship: '',
+        nokPhone: '',
+        nokAddress: '',
+        leaveEntitlement: 20,
+        nhfApplicable: false,
+        annualRentAmount: 2000000,
+      },
+      {
+        firstName: 'Test',
+        lastName: 'Employee',
+        email: 'test-employee@gmail.com',
+        password: '',
+        jobRole: employeeRole.title,
+        departmentName: operationsDepartment.name,
+        status: 'ACTIVE',
+        staffId: 'MFB003',
+        phone: '08070707',
+        dob: new Date('2000-01-01'),
+        gender: 'F',
+        nationality: 'Nigerian',
+        address: '',
+        hireDate: new Date('2018-01-01'),
+        annualBasicSalary: 200000,
+        annualHousingAllowance: 200000,
+        annualTransportAllowance: 200000,
+        annualLeaveAllowance: 200000,
+        annualOtherAllowances: 200000,
+        bankName: '',
+        bankCode: '',
+        accountNumber: '',
+        accountName: '',
+        beneficiaryName: '',
+        beneficiaryRelationship: '',
+        beneficiaryPhone: '',
+        nokName: '',
+        nokRelationship: '',
+        nokPhone: '',
+        nokAddress: '',
+        leaveEntitlement: 20,
+        nhfApplicable: false,
+        annualRentAmount: 2000000,
+      },
+      {
+        firstName: 'Test',
+        lastName: 'Supervisor',
+        email: 'test-supervisor@gmail.com',
+        password: '',
+        jobRole: employeeSupervisorRole.title,
+        departmentName: operationsDepartment.name,
+        status: 'ACTIVE',
+        staffId: 'MFB004',
+        phone: '08070707',
+        dob: new Date('2000-01-01'),
+        gender: 'M',
+        nationality: 'Nigerian',
+        address: '',
+        hireDate: new Date('2018-01-01'),
+        annualBasicSalary: 200000,
+        annualHousingAllowance: 200000,
+        annualTransportAllowance: 200000,
+        annualLeaveAllowance: 200000,
+        annualOtherAllowances: 200000,
+        bankName: '',
+        bankCode: '',
+        accountNumber: '',
+        accountName: '',
+        beneficiaryName: '',
+        beneficiaryRelationship: '',
+        beneficiaryPhone: '',
+        nokName: '',
+        nokRelationship: '',
+        nokPhone: '',
+        nokAddress: '',
+        leaveEntitlement: 20,
+        nhfApplicable: false,
+        annualRentAmount: 2000000,
+      },
+    ];
+
+    await User.bulkCreate(employees, { ignoreDuplicates: true });
+    const employeeRecords = await Employee.bulkCreate(employees, { ignoreDuplicates: true });
+
+    const employeeRecord = employeeRecords.find((_employee) => _employee.email === 'test-employee@gmail.com');
+    const supervisorUser = employeeRecords.find((_employee) => _employee.email === 'test-supervisor@gmail.com');
+
+    await employeeRecord?.update({ supervisorId: supervisorUser?.id });
 
     await JobRolePermissions.truncate();
 

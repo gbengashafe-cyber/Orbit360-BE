@@ -31,7 +31,6 @@ JobRolePermissions.init(
   },
   {
     sequelize: db,
-    underscored: true,
     tableName: 'job_role_permissions',
     indexes: [
       {

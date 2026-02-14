@@ -54,7 +54,6 @@ PayrollReport.init(
   {
     sequelize: db,
     tableName: 'payroll_reports',
-    underscored: true,
     timestamps: true,
   },
 );

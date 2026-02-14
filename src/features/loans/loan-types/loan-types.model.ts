@@ -24,7 +24,6 @@ LoanType.init(
   {
     sequelize: db,
     tableName: 'loan_types',
-    underscored: true,
     modelName: 'loanType',
     indexes: [{ unique: true, fields: ['name'] }],
   },

@@ -26,7 +26,6 @@ Role.init(
   },
   {
     sequelize: db,
-    underscored: true,
     tableName: 'roles',
   },
 );

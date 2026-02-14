@@ -61,7 +61,7 @@ LeaveBalance.init(
     sequelize: db,
     modelName: 'LeaveBalance',
     tableName: 'leave_balances',
-    indexes: [{ unique: true, fields: ['employeeId', 'leaveType', 'year'] }],
+    indexes: [{ unique: true, fields: ['employee_id', 'leave_type', 'year'] }],
   },
 );
 

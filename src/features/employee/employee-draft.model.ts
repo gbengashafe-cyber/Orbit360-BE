@@ -28,7 +28,6 @@ EmployeeDraft.init(
   {
     sequelize: db,
     tableName: 'employee_drafts',
-    underscored: true,
     timestamps: true,
   },
 );

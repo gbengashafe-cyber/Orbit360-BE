@@ -61,7 +61,6 @@ RefreshToken.init(
   },
   {
     sequelize: db,
-    underscored: true,
     timestamps: false,
     indexes: [{ fields: ['user_id'] }, { fields: ['parent_id'] }, { fields: ['expires_at'] }],
   },

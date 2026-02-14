@@ -38,7 +38,6 @@ EmployeeChangeRequest.init(
   {
     sequelize: db,
     tableName: 'employee_change_requests',
-    underscored: true,
     timestamps: true,
     updatedAt: 'reviewedDate',
     indexes: [{ fields: ['employee_id'] }, { fields: ['requested_by'] }, { fields: ['reviewed_by'] }, { fields: ['status'] }],

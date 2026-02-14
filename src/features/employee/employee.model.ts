@@ -194,7 +194,6 @@ Employee.init(
     sequelize: db,
     tableName: 'employees',
     modelName: 'employee',
-    underscored: true,
     timestamps: true,
     indexes: [
       { fields: ['staff_id'], unique: true },

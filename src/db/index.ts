@@ -14,6 +14,7 @@ const db = new Sequelize(DB_NAME, DB_USER, DB_PASSWORD, {
   define: {
     charset: 'utf8mb4',
     collate: 'utf8mb4_general_ci',
+    underscored: true,
   },
   dialectOptions: {
     decimalNumbers: true,

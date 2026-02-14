@@ -35,7 +35,7 @@ async function seedUser() {
       where: { email: 'o@o.com' },
       defaults: {
         email: 'o@o.com',
-        password: '$2b$08$KSiN0urPrsj.4euw2e7mxe.Q00iqohbKsYcY2o3Xu3RaSjEFWwY6e',
+        password: '',
         firstName: 'Zoe',
         lastName: 'Zebedee',
         role: 'admin',

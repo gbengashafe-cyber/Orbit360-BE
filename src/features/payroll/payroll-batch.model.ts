@@ -55,5 +55,5 @@ PayrollBatch.init(
     createdAt: DataTypes.DATE,
     approvalDate: { type: DataTypes.DATE },
   },
-  { sequelize: db, tableName: 'payroll_batches', underscored: true, timestamps: true },
+  { sequelize: db, tableName: 'payroll_batches', timestamps: true },
 );
