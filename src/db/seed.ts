@@ -182,48 +182,6 @@ async function seed() {
       recordCount: 2,
     });
 
-    // Create Payroll Records
-    await Payroll.bulkCreate(
-      [
-        {
-          employeeId: empList[0].id,
-          batchId: batch.batchId,
-          payPeriod: '2026-01',
-          basicSalary: 75000,
-          grossSalary: 80000,
-          housingAllowance: 5000,
-          transportAllowance: 3000,
-          leaveAllowance: 2000,
-          otherAllowance: 1000,
-          pensionDeduction: 0,
-          nhfDeduction: 0,
-          loanDeduction: 0,
-          payeDeduction: 3000,
-          rentRelief: 2000,
-          status: 'processed',
-        },
-        {
-          employeeId: empList[1].id,
-          batchId: batch.batchId,
-          payPeriod: '2026-01',
-          basicSalary: 65000,
-          grossSalary: 70000,
-          housingAllowance: 4000,
-          transportAllowance: 2500,
-          leaveAllowance: 1500,
-          otherAllowance: 800,
-          pensionDeduction: 0,
-          nhfDeduction: 0,
-          loanDeduction: 0,
-          payeDeduction: 2500,
-          rentRelief: 2000,
-          status: 'processed',
-        },
-      ],
-      { ignoreDuplicates: true },
-    );
-    logger.info('Payroll records created');
-
     await User.bulkCreate(
       [
         {

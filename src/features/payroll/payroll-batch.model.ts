@@ -2,7 +2,14 @@ import { CreationOptional, DataTypes, ForeignKey, InferAttributes, InferCreation
 import { db } from '../../db';
 import { User } from '../users/user.model';
 
-export const PAYROLL_BATCH_STATUS = ['PENDING_APPROVAL', 'APPROVED', 'PAID', 'REJECTED', 'CANCELLED'] as const;
+export const PAYROLL_BATCH_STATUS = [
+  'PENDING_APPROVAL',
+  'APPROVED',
+  'REJECTED',
+  'CANCELLED',
+  'PENDING_OVERRIDE_APPROVAL',
+  'OVERRIDE_APPROVED',
+] as const;
 
 export class PayrollBatch extends Model<InferAttributes<PayrollBatch>, InferCreationAttributes<PayrollBatch>> {
   declare id: CreationOptional<number>;
@@ -14,6 +21,7 @@ export class PayrollBatch extends Model<InferAttributes<PayrollBatch>, InferCrea
   declare status: (typeof PAYROLL_BATCH_STATUS)[number];
   declare createdBy: ForeignKey<User['id']>;
   declare approvedBy: CreationOptional<ForeignKey<User['id']>>;
+  declare approverNote: CreationOptional<string | null>;
   declare createdAt: CreationOptional<Date>;
   declare approvalDate: CreationOptional<Date>;
 }
@@ -52,6 +60,7 @@ PayrollBatch.init(
       allowNull: true,
       references: { model: 'users', key: 'id' },
     },
+    approverNote: { type: DataTypes.STRING(1000) },
     createdAt: DataTypes.DATE,
     approvalDate: { type: DataTypes.DATE },
   },

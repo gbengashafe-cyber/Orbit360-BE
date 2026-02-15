@@ -26,12 +26,6 @@ export class PayrollService {
       throw ApiError.badRequest('Another payroll batch is pending approval. Kindly clear and process again');
     }
 
-    if (existingPayroll?.status === 'PAID') {
-      throw ApiError.badRequest(
-        'Payroll batch cannot be overwritten. There is an existing payroll that has been marked as paid.',
-      );
-    }
-
     return await db.transaction(async (transaction) => {
       if (existingPayroll && overwrite) {
         await LoanRepository.deleteRepaymentByPayPeriod(payPeriod, transaction);
@@ -124,12 +118,17 @@ export class PayrollService {
     });
   };
 
-  static readonly approveBatch = async (batchId: string, checkerId: number) => {
+  private static readonly checkApproval = (batch, checkerId) => {
+    if (batch.createdBy === checkerId) throw ApiError.badRequest('Maker-Checker Violation: Initiator cannot approve.');
+    if (batch.status !== 'PENDING_APPROVAL') throw ApiError.badRequest('Batch is not pending approval.');
+  };
+
+  static readonly approveBatch = async (batchId: string, checkerId: number, approverNote: string) => {
     const batch = await PayrollBatch.findOne({ where: { id: batchId } });
 
     if (!batch) throw ApiError.notFound('Payroll batch not found.');
-    if (batch.createdBy === checkerId) throw ApiError.badRequest('Maker-Checker Violation: Initiator cannot approve.');
-    if (batch.status !== 'PENDING_APPROVAL') throw ApiError.badRequest('Batch is not in a pending state.');
+
+    this.checkApproval(batch, checkerId);
 
     return await db.transaction(async (transaction) => {
       await batch.update(
@@ -137,19 +136,20 @@ export class PayrollService {
           status: 'APPROVED',
           approvedBy: checkerId,
           approvalDate: new Date(),
+          approverNote,
         },
         { transaction },
       );
-      return Payroll.update({ status: 'processed' }, { where: { batchId: batch.batchId }, transaction });
+      return Payroll.update({ status: 'APPROVED' }, { where: { batchId: batch.batchId }, transaction });
     });
   };
 
-  static readonly rejectBatch = async (batchId: string, checkerId: number) => {
+  static readonly rejectBatch = async (batchId: string, checkerId: number, approverNote: string) => {
     const batch = await PayrollBatch.findOne({ where: { id: batchId } });
 
     if (!batch) throw ApiError.notFound('Payroll batch not found.');
-    if (batch.createdBy === checkerId) throw ApiError.badRequest('Maker-Checker Violation: Initiator cannot approve.');
-    if (batch.status !== 'PENDING_APPROVAL') throw ApiError.badRequest('Batch is not in a pending state.');
+
+    this.checkApproval(batch, checkerId);
 
     return await db.transaction(async (transaction) => {
       await batch.update(
@@ -157,6 +157,7 @@ export class PayrollService {
           status: 'REJECTED',
           approvedBy: checkerId,
           approvalDate: new Date(),
+          approverNote,
         },
         { transaction },
       );

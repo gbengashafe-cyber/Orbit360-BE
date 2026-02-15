@@ -4,7 +4,7 @@ import { Employee } from '../employee/employee.model';
 import { User } from '../users/user.model';
 import { PayrollBatch } from './payroll-batch.model';
 
-export const payrollStatus = ['pending_approval', 'processed', 'paid', 'cancelled', 'failed'] as const;
+export const payrollStatus = ['PENDING_APPROVAL', 'APPROVED'] as const;
 
 export class Payroll extends Model<InferAttributes<Payroll>, InferCreationAttributes<Payroll>> {
   declare id: CreationOptional<number>;
@@ -107,7 +107,7 @@ Payroll.init(
     status: {
       type: DataTypes.ENUM,
       values: payrollStatus,
-      defaultValue: 'pending_approval',
+      defaultValue: 'PENDING_APPROVAL',
     },
     paymentDate: {
       type: DataTypes.DATEONLY,

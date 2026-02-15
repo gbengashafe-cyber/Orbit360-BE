@@ -43,6 +43,30 @@ async function seed() {
         { title: 'HR Manager', description: '' },
         { title: 'Operations Officer', description: '' },
         { title: 'Operations Supervisor', description: '' },
+        { title: 'Managing Director', description: '' },
+      ],
+      { ignoreDuplicates: true },
+    );
+
+    await JobRolePermissions.truncate();
+
+    await JobRolePermissions.bulkCreate(
+      [
+        { permission: 'MANAGE_EMPLOYEES', jobRole: 'HR Operations' },
+        { permission: 'MANAGE_ONBOARDING', jobRole: 'HR Operations' },
+        { permission: 'MANAGE_USERS', jobRole: 'HR Operations' },
+        { permission: 'MANAGE_PAYROLLS', jobRole: 'HR Operations' },
+        { permission: 'MANAGE_LOANS', jobRole: 'HR Operations' },
+        { permission: 'LIST_LOANS', jobRole: 'HR Operations' },
+        { permission: 'LIST_LOANS', jobRole: 'HR Manager' },
+        { permission: 'LIST_EMPLOYEES', jobRole: 'HR Operations' },
+        { permission: 'LIST_EMPLOYEES', jobRole: 'HR Manager' },
+        { permission: 'APPROVE_LOANS', jobRole: 'HR Manager' },
+        { permission: 'APPROVE_PAYROLLS', jobRole: 'HR Manager' },
+        { permission: 'APPROVE_EMPLOYEES', jobRole: 'HR Manager' },
+        { permission: 'LIST_PAYROLLS', jobRole: 'HR Manager' },
+        { permission: 'LIST_PAYROLLS', jobRole: 'HR Operations' },
+        { permission: 'APPROVE_PAYROLL_OVERRIDE', jobRole: 'Managing Director' },
       ],
       { ignoreDuplicates: true },
     );
@@ -212,28 +236,6 @@ async function seed() {
     const supervisorUser = employeeRecords.find((_employee) => _employee.email === 'test-supervisor@gmail.com');
 
     await employeeRecord?.update({ supervisorId: supervisorUser?.id });
-
-    await JobRolePermissions.truncate();
-
-    await JobRolePermissions.bulkCreate(
-      [
-        { permission: 'MANAGE_EMPLOYEES', jobRole: 'HR Operations' },
-        { permission: 'MANAGE_ONBOARDING', jobRole: 'HR Operations' },
-        { permission: 'MANAGE_USERS', jobRole: 'HR Operations' },
-        { permission: 'MANAGE_PAYROLLS', jobRole: 'HR Operations' },
-        { permission: 'MANAGE_LOANS', jobRole: 'HR Operations' },
-        { permission: 'LIST_LOANS', jobRole: 'HR Operations' },
-        { permission: 'LIST_LOANS', jobRole: 'HR Manager' },
-        { permission: 'LIST_EMPLOYEES', jobRole: 'HR Operations' },
-        { permission: 'LIST_EMPLOYEES', jobRole: 'HR Manager' },
-        { permission: 'APPROVE_LOANS', jobRole: 'HR Manager' },
-        { permission: 'APPROVE_PAYROLLS', jobRole: 'HR Manager' },
-        { permission: 'APPROVE_EMPLOYEES', jobRole: 'HR Manager' },
-        { permission: 'LIST_PAYROLLS', jobRole: 'HR Manager' },
-        { permission: 'LIST_PAYROLLS', jobRole: 'HR Operations' },
-      ],
-      { ignoreDuplicates: true },
-    );
 
     logger.info('Database seeding completed successfully');
     process.exit(0);

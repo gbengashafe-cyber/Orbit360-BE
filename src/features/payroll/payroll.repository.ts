@@ -99,7 +99,7 @@ export class PayrollRepository {
   };
 
   static readonly getByEmployee = async ({ employeeId, filters, rows, page }) => {
-    const where: WhereOptions = { employeeId, status: 'paid' };
+    const where: WhereOptions = { employeeId, status: 'APPROVED' };
     const offset = (page - 1) * rows;
 
     if (filters.payPeriod) {
@@ -111,6 +111,7 @@ export class PayrollRepository {
       limit: rows,
       offset,
       order: [['createdAt', 'DESC']],
+      include: [{ model: Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName'] }],
     });
   };
 

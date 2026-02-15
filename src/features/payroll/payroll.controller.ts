@@ -1,8 +1,12 @@
 import { NextFunction, Request, Response } from 'express';
+import z from 'zod';
+import { AuditLog } from '../../audit-log/audit-log.model';
+import { db } from '../../db';
 import { ApiError } from '../../utils/api-error';
 import { ApiResponse } from '../../utils/api-response';
 import { logger } from '../../utils/logger';
 import { Employee } from '../employee/employee.model';
+import { PayrollBatch } from './payroll-batch.model';
 import { Payroll } from './payroll.model';
 import { PayrollRepository } from './payroll.repository';
 import { PayrollService } from './payroll.service';
@@ -52,13 +56,12 @@ export class PayrollController {
     try {
       const { employeeId } = req.params;
       const { page, rows } = req.pagination;
-      const offset = (page - 1) * rows;
 
-      const { count, rows: payrolls } = await Payroll.findAndCountAll({
-        where: { employeeId },
-        limit: rows,
-        offset,
-        order: [['createdAt', 'DESC']],
+      const { count, rows: payrolls } = await PayrollRepository.getByEmployee({
+        employeeId,
+        rows,
+        page,
+        filters: req.parsedQuery,
       });
 
       res.json(
@@ -153,23 +156,6 @@ export class PayrollController {
     }
   }
 
-  static readonly updateStatus = async (req: Request, res: Response) => {
-    const { id } = req.params;
-    const { payroll: payrollPayload } = req.body.validated;
-
-    const payroll = await PayrollRepository.readById(id);
-
-    if (!payroll) {
-      throw ApiError.notFound('Payroll record not found');
-    }
-
-    await payroll.update(payrollPayload);
-
-    const updatedPayroll = await PayrollRepository.readById(id);
-
-    res.json(ApiResponse({ data: updatedPayroll, message: 'Payroll updated successfully' }));
-  };
-
   static async update(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
@@ -197,20 +183,25 @@ export class PayrollController {
   }
 
   static async markAsApproved(req: Request, res: Response) {
-    const { id } = req.params;
-
+    const { batchId } = req.params;
     const checkerId = req.user?.id;
+
+    const validationResult = approverNoteSchema.optional().parse(req.body);
+    const approverNote = validationResult?.approverNote || '';
 
     if (!checkerId) {
       throw ApiError.forbidden('Checker ID is not provided');
     }
 
-    const result = await PayrollService.approveBatch(id, checkerId);
+    const result = await PayrollService.approveBatch(batchId, checkerId, approverNote);
     res.json(ApiResponse({ data: result, message: 'Payroll marked as approved' }));
   }
 
   static async markAsRejected(req: Request, res: Response) {
-    const { id } = req.params;
+    const { batchId } = req.params;
+
+    const validationResult = approverNoteSchema.parse(req.body);
+    const approverNote = validationResult.approverNote;
 
     const checkerId = req.user?.id;
 
@@ -218,25 +209,51 @@ export class PayrollController {
       throw ApiError.forbidden('Checker ID is not provided');
     }
 
-    const result = await PayrollService.rejectBatch(id, checkerId);
+    const result = await PayrollService.rejectBatch(batchId, checkerId, approverNote);
     res.json(ApiResponse({ data: { id: result }, message: 'Payroll marked as rejected' }));
   }
 
-  static async delete(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
+  static readonly queueForOverride = async (req: Request, res: Response) => {
+    const { batchId } = req.params;
 
-      const payroll = await Payroll.findByPk(id);
-      if (!payroll) {
-        throw ApiError.notFound('Payroll record not found');
-      }
-
-      await payroll.destroy();
-
-      res.json(ApiResponse({ data: {}, message: 'Payroll deleted successfully' }));
-    } catch (error) {
-      logger.error(`Error deleting payroll: ${error}`);
-      next(error);
+    const payrollBatch = await PayrollBatch.findByPk(batchId);
+    if (!payrollBatch) {
+      throw ApiError.notFound('Payroll batch record not found');
     }
-  }
+
+    db.transaction(async (t) => {
+      await payrollBatch.update({ status: 'PENDING_OVERRIDE_APPROVAL' }, { transaction: t });
+
+      const requesterId = req.user?.id as number;
+      await AuditLog.create(
+        { userId: requesterId, action: 'UPDATE', entity: 'Payroll', entityId: batchId, description: 'Sent payroll for override' },
+        { transaction: t },
+      );
+    });
+
+    res.json(ApiResponse({ data: {}, message: 'Payroll queued for override approval' }));
+  };
+
+  static readonly approveOverride = async (req: Request, res: Response) => {
+    const { batchId } = req.params;
+
+    const payrollBatch = await PayrollBatch.findByPk(batchId);
+    if (!payrollBatch) {
+      throw ApiError.notFound('Payroll batch record not found');
+    }
+
+    db.transaction(async (t) => {
+      await payrollBatch.update({ status: 'OVERRIDE_APPROVED' }, { transaction: t });
+
+      const requesterId = req.user?.id as number;
+      await AuditLog.create(
+        { userId: requesterId, action: 'UPDATE', entity: 'Payroll', entityId: batchId, description: 'Approved payroll override' },
+        { transaction: t },
+      );
+    });
+
+    res.json(ApiResponse({ data: {}, message: 'Payroll override approved' }));
+  };
 }
+
+const approverNoteSchema = z.object({ approverNote: z.string('Approver note should be a string of texts') });

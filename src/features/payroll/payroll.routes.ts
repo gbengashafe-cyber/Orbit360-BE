@@ -2,12 +2,7 @@ import { Router } from 'express';
 import { hasRequiredPermission } from '../../utils/check-permission';
 import { validateAuthToken } from '../authentication/auth.middleware';
 import { PayrollController } from './payroll.controller';
-import {
-  validateGeneratePayroll,
-  validatePayrollIdParam,
-  validatePayrollStatus,
-  validateUpdatePayroll,
-} from './payroll.validators';
+import { validateGeneratePayroll, validatePayrollIdParam, validateUpdatePayroll } from './payroll.validators';
 
 const router = Router();
 
@@ -24,10 +19,10 @@ router.get('/:id', validatePayrollIdParam, PayrollController.getById);
 router.get('/periods/batches/:payPeriod', PayrollController.getPayrollBatchByPeriod);
 router.get('/periods/:payPeriod', PayrollController.getByPayPeriod);
 router.post('/', hasRequiredPermission('MANAGE_PAYROLLS'), validateGeneratePayroll, PayrollController.generatePayroll);
-router.put('/:id/status', validatePayrollStatus, PayrollController.updateStatus);
 router.put('/:id', validatePayrollIdParam, validateUpdatePayroll, PayrollController.update);
-router.patch('/:id/approval', validatePayrollIdParam, PayrollController.markAsApproved);
-router.patch('/:id/rejection', validatePayrollIdParam, PayrollController.markAsRejected);
-router.delete('/:id', validatePayrollIdParam, PayrollController.delete);
+router.patch('/:batchId/approval', validatePayrollIdParam, PayrollController.markAsApproved);
+router.patch('/:batchId/rejection', validatePayrollIdParam, PayrollController.markAsRejected);
+router.patch('/:batchId/override-request', hasRequiredPermission('MANAGE_PAYROLLS'), PayrollController.queueForOverride);
+router.patch('/:batchId/override-approval', hasRequiredPermission('APPROVE_PAYROLL_OVERRIDE'), PayrollController.approveOverride);
 
 export default router;
