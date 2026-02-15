@@ -34,7 +34,7 @@ export class Loan extends Model<InferAttributes<Loan>, InferCreationAttributes<L
   declare approvedBy: ForeignKey<User['id']>;
   declare approvedDate: Date;
   declare status: (typeof loanStatus)[number];
-  declare nextStep: (typeof loanStatus)[number];
+  declare nextStep: Exclude<(typeof loanStatus)[number], 'PENDING_REVIEW'>;
   declare createdAt: Date;
 }
 

@@ -1,5 +1,5 @@
 import config from 'config';
-import { differenceInMonths } from 'date-fns';
+import { addMonths, differenceInMonths, endOfMonth, getMonth, getYear } from 'date-fns';
 import { CreationAttributes } from 'sequelize';
 import { db } from '../../db';
 import { ApiError } from '../../utils/api-error';
@@ -275,9 +275,18 @@ export class EmployeeService {
       throw ApiError.badRequest('Missing configuration for the loan type selected. Kindly contact the system administrator');
     }
 
-    // Thrift is only available in January and July
-    if (loanTypeConfiguration.name.toUpperCase() === 'THRIFT' && ![0, 6].includes(new Date().getMonth())) {
-      throw ApiError.badRequest(`${loanTypeConfiguration.name} loan is only allowed in January and July`);
+    // Thrift can only last till the end of a cycle, which is June and December
+    if (loanTypeConfiguration.name.toUpperCase() === 'THRIFT') {
+      const endDate = addMonths(loan.startDate, loan.tenureMonths);
+
+      const year = getYear(loan.startDate);
+      const month = getMonth(loan.startDate);
+
+      const cycleEnd = month <= 5 ? endOfMonth(new Date(year, 5)) : endOfMonth(new Date(year, 11));
+
+      if (endDate > cycleEnd) {
+        throw ApiError.badRequest(`${loanTypeConfiguration.name} loan tenure cannot extend beyond the end of the current cycle`);
+      }
     }
 
     if (loan.tenureMonths > loanTypeConfiguration.maxTenureMonths) {
