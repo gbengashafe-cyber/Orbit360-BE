@@ -171,6 +171,14 @@ export class EmployeeService {
       await Employee.update(fieldsToUpdate, { where: { id: request.employeeId }, silent: true, transaction: t });
       const employee = await Employee.findByPk(request.employeeId, { transaction: t });
 
+      const employeeUserRecord = await UserRepository.readByEmail(employee?.email as string);
+      if (request.actionType === 'UPDATE' && employeeUserRecord) {
+        await employeeUserRecord.update(
+          {},
+          { fields: ['email', 'firstName', 'lastName', 'jobRole', 'departmentName'], transaction: t },
+        );
+      }
+
       if (request.actionType === 'CREATE' && employee?.shouldCreateUser) {
         shouldCreateUser = true;
 
