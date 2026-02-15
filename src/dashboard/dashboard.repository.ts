@@ -1,6 +1,7 @@
-import { Op, fn, col, literal, WhereOptions } from 'sequelize';
+import { col, fn, literal, Op, WhereOptions } from 'sequelize';
 import { Employee } from '../features/employee/employee.model';
 import { Leave } from '../features/leave/leave.model';
+import { Loan } from '../features/loans/loan.model';
 
 type AggregatedMetrics = {
   totalHeadcount: number;
@@ -46,11 +47,8 @@ export class DashboardRepository {
         [
           fn(
             'SUM',
-            literal(`CASE 
-              WHEN Leave.status = 'pending'
-               AND created_at BETWEEN :startDate AND :endDate
-              THEN 1 ELSE 0 
-            END`),
+            literal(`CASE WHEN Leave.status = 'pending' AND Leave.created_at BETWEEN :startDate AND :endDate
+              THEN 1 ELSE 0 END`),
           ),
           'pendingRequests',
         ],
@@ -58,12 +56,8 @@ export class DashboardRepository {
           fn(
             'SUM',
             literal(`
-            CASE 
-              WHEN Leave.status = 'approved'
-               AND created_at between :startDate
-               AND :endDate
-              THEN 1 ELSE 0 
-            END
+            CASE WHEN Leave.status = 'approved' AND Leave.created_at between :startDate
+               AND :endDate THEN 1 ELSE 0 END
           `),
           ),
           'currentlyOnLeave',
@@ -118,5 +112,9 @@ export class DashboardRepository {
       group: ['gender'],
       raw: true,
     }) as unknown as Promise<{ name: 'M' | 'F'; value: number }[]>;
+  };
+
+  static readonly getPendingLoanRequests = async () => {
+    return Loan.count({ where: { status: 'PENDING_REVIEW' } });
   };
 }
