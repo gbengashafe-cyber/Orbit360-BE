@@ -56,10 +56,10 @@ AuditLog.init(
     updatedAt: false,
     indexes: [
       { fields: ['entity'] },
-      { fields: ['entityId'] },
-      { fields: ['userId'] },
-      { fields: ['createdAt'] },
-      { fields: ['entity', 'entityId'] },
+      { fields: ['entity_id'] },
+      { fields: ['user_id'] },
+      { fields: ['created_at'] },
+      { fields: ['entity', 'entity_id'] },
     ],
   },
 );

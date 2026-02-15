@@ -5,8 +5,6 @@ import { Employee } from '../features/employee/employee.model';
 import { JobRole } from '../features/job-role/job-role.model';
 import { Leave } from '../features/leave/leave.model';
 import { PayrollBatch } from '../features/payroll/payroll-batch.model';
-import { Payroll } from '../features/payroll/payroll.model';
-import { User } from '../features/users/user.model';
 import { logger } from '../utils/logger';
 
 async function seed() {
@@ -57,7 +55,7 @@ async function seed() {
         jobRole: jobRoles[0].title,
         status: 'active',
         dob: new Date('1990-05-15'),
-        address: '123 Main St, Cityville',
+        address: '123 Main St',
         nationality: '',
         gender: 'M',
         supervisorId: 1,
@@ -127,7 +125,7 @@ async function seed() {
         jobRole: jobRoles[2].title,
         status: 'active',
         dob: new Date('1988-11-12'),
-        address: '789 Oak St, Villagetown',
+        address: '789 Oak St, Village Town',
         nationality: '',
         gender: 'M',
         supervisorId: 1,
@@ -173,7 +171,7 @@ async function seed() {
     );
     logger.info('Leave requests created');
 
-    const batch = await PayrollBatch.create({
+    await PayrollBatch.create({
       payPeriod: '2025-02',
       status: 'APPROVED',
       batchId: 'PAY-2025',
@@ -181,20 +179,6 @@ async function seed() {
       totalNet: 200.4,
       recordCount: 2,
     });
-
-    await User.bulkCreate(
-      [
-        {
-          firstName: 'oluwaseun',
-          lastName: 'ABIOLA',
-          email: 'o@o.com',
-          departmentName: departments[1].name,
-          password: '',
-          jobRole: 'HR_OPERATIONS',
-        },
-      ],
-      { ignoreDuplicates: true },
-    );
 
     logger.info('Database seeding completed successfully');
     process.exit(0);

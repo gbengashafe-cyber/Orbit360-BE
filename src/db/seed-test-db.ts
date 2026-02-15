@@ -230,12 +230,15 @@ async function seed() {
     ];
 
     await User.bulkCreate(employees, { ignoreDuplicates: true });
-    const employeeRecords = await Employee.bulkCreate(employees, { ignoreDuplicates: true });
+    await Employee.bulkCreate(employees, { ignoreDuplicates: true });
 
-    const employeeRecord = employeeRecords.find((_employee) => _employee.email === 'test-employee@gmail.com');
-    const supervisorUser = employeeRecords.find((_employee) => _employee.email === 'test-supervisor@gmail.com');
+    const employeeRecord = await Employee.findOne({ where: { email: 'test-employee@gmail.com' } });
+    const supervisorEmployee = await Employee.findOne({ where: { email: 'test-supervisor@gmail.com' } });
+    const hrSupervisorEmployee = await Employee.findOne({ where: { email: 'test-hr-manager@gmail.com' } });
+    const hrEmployeeRecord = await Employee.findOne({ where: { email: 'test-hr@gmail.com' } });
 
-    await employeeRecord?.update({ supervisorId: supervisorUser?.id });
+    await employeeRecord?.update({ supervisorId: supervisorEmployee?.id });
+    await hrEmployeeRecord?.update({ supervisorId: hrSupervisorEmployee?.id });
 
     logger.info('Database seeding completed successfully');
     process.exit(0);
