@@ -68,13 +68,14 @@ export class EmployeeController {
 
   static readonly createLoanRequest = async (req: Request, res: Response) => {
     const employeeId = req.user?.employeeRecord?.id;
+    const userId = req.user?.id;
     const loan = req.body?.validated?.loan;
 
     if (!loan) {
       throw ApiError.badRequest('Invalid loan details provided');
     }
 
-    const response = await EmployeeService.createLoanRequest({ employeeId: Number(employeeId), loan });
+    const response = await EmployeeService.createLoanRequest({ employeeId: Number(employeeId), loan, userId: Number(userId) });
 
     res.status(201).json(ApiResponse({ message: 'Loan request initiated successfully', data: { id: response.id } }));
   };

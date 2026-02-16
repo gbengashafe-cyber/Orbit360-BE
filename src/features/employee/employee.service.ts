@@ -15,6 +15,7 @@ import { EmployeeChangeRequest } from './employee-change-request.model';
 import { EmployeeDraft } from './employee-draft.model';
 import { Employee } from './employee.model';
 import { EmployeeRepository, ReadAllProps } from './employee.repository';
+import { AuditLog } from '../../audit-log/audit-log.model';
 
 export class EmployeeService {
   static readonly getDirectory = async ({ page, rows, filters }: ReadAllProps) => {
@@ -248,13 +249,59 @@ export class EmployeeService {
     });
   };
 
-  static readonly createLoanRequest = async ({ employeeId, loan }: { employeeId: number; loan: CreationAttributes<Loan> }) => {
+  static readonly createLoanRequest = async ({
+    employeeId,
+    loan,
+    userId,
+  }: {
+    employeeId: number;
+    loan: CreationAttributes<Loan>;
+    userId: number;
+  }) => {
     const employee = await EmployeeRepository.readById(employeeId);
 
     if (!employee) {
       throw ApiError.badRequest('Employee record not found');
     }
 
+    this.checkEmployeeEligibility({ employee });
+
+    const loanTypeConfiguration = await LoanType.findByPk(loan.loanTypeId);
+
+    if (!loanTypeConfiguration) {
+      throw ApiError.badRequest('Missing configuration for the loan type selected. Kindly contact the system administrator');
+    }
+
+    if (loan.tenureMonths > loanTypeConfiguration.maxTenureMonths) {
+      throw ApiError.badRequest(
+        `${loanTypeConfiguration.name} loan cannot be more than ${loanTypeConfiguration.maxTenureMonths} months`,
+      );
+    }
+
+    this.checkThriftRequest({ loanType: loanTypeConfiguration.name, loan });
+    await this.checkSalaryAdvanceRequest({ employee, loan, loanType: loanTypeConfiguration.name });
+
+    return await db.transaction(async (transaction) => {
+      const loanRecord = await LoanRepository.create(
+        { ...loan, employeeId, interestRate: loanTypeConfiguration.interestRate },
+        { transaction },
+      );
+      await AuditLog.create(
+        {
+          action: 'CREATE',
+          entity: 'loan',
+          entityId: String(loanRecord.id),
+          userId,
+          description: `LOAN REQUEST: ${JSON.stringify(loanRecord.get({ plain: true }))} `,
+        },
+        { transaction },
+      );
+
+      return loanRecord;
+    });
+  };
+
+  private static readonly checkEmployeeEligibility = ({ employee }) => {
     if (['PENDING_APPROVAL'].includes(employee.status)) {
       throw ApiError.badRequest(
         'There is an ongoing maintenance on this employee record. Kindly clear the pending maintenance and try again.',
@@ -265,18 +312,16 @@ export class EmployeeService {
       throw ApiError.badRequest('Only active employees are allowed to initiate loan requests');
     }
 
-    if (differenceInMonths(new Date(), employee.hireDate) < 6) {
-      throw ApiError.badRequest('Only employees that have spent minimum of six (6) months are allowed to initiate loan requests');
+    if (differenceInMonths(new Date(), employee.hireDate) < 12) {
+      throw ApiError.badRequest(
+        'Only employees that have spent minimum of twelve (12) months are allowed to initiate loan requests',
+      );
     }
+  };
 
-    const loanTypeConfiguration = await LoanType.findByPk(loan.loanTypeId);
-
-    if (!loanTypeConfiguration) {
-      throw ApiError.badRequest('Missing configuration for the loan type selected. Kindly contact the system administrator');
-    }
-
+  private static readonly checkThriftRequest = ({ loanType, loan }) => {
     // Thrift can only last till the end of a cycle, which is June and December
-    if (loanTypeConfiguration.name.toUpperCase() === 'THRIFT') {
+    if (loanType.toUpperCase() === 'THRIFT') {
       const endDate = addMonths(loan.startDate, loan.tenureMonths);
 
       const year = getYear(loan.startDate);
@@ -285,18 +330,14 @@ export class EmployeeService {
       const cycleEnd = month <= 5 ? endOfMonth(new Date(year, 5)) : endOfMonth(new Date(year, 11));
 
       if (endDate > cycleEnd) {
-        throw ApiError.badRequest(`${loanTypeConfiguration.name} loan tenure cannot extend beyond the end of the current cycle`);
+        throw ApiError.badRequest(`${loanType} loan tenure cannot extend beyond the end of the current cycle`);
       }
     }
+  };
 
-    if (loan.tenureMonths > loanTypeConfiguration.maxTenureMonths) {
-      throw ApiError.badRequest(
-        `${loanTypeConfiguration.name} loan cannot be more than ${loanTypeConfiguration.maxTenureMonths} months`,
-      );
-    }
-
-    if (loanTypeConfiguration.name?.toUpperCase() === 'SALARY ADVANCE') {
-      const activeLoans = await LoanRepository.readEmployeesActiveLoans([employeeId]);
+  private static readonly checkSalaryAdvanceRequest = async ({ loanType, employee, loan }) => {
+    if (loanType?.toUpperCase() === 'SALARY ADVANCE') {
+      const activeLoans = await LoanRepository.readEmployeesActiveLoans([employee.id]);
 
       // Check that salary advance is not more than monthly net monthly pay
       const payrollCalculations = calculatePayroll({
@@ -311,7 +352,6 @@ export class EmployeeService {
         throw ApiError.badRequest('Salary advance cannot be more than 50% of monthly net');
       }
     }
-    return LoanRepository.create({ ...loan, employeeId, interestRate: loanTypeConfiguration.interestRate });
   };
 
   static readonly cancelLoanRequest = async ({ employeeId, loanId }: { employeeId: number; loanId: number }) => {

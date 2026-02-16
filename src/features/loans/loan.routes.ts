@@ -14,7 +14,12 @@ router.get('/:id', hasRequiredPermission('MANAGE_LOANS'), LoanController.getById
 router.put('/:id', hasRequiredPermission('MANAGE_LOANS'), validateLoan, LoanController.update);
 router.delete('/:id', hasRequiredPermission('MANAGE_LOANS'), LoanController.delete);
 router.patch('/:loanId/reviews', validateLoanReview, LoanController.reviewLoanRequest);
-router.patch('/:loanId/approve', hasRequiredPermission('APPROVE_LOANS'), validateLoanApproval('APPROVE'), LoanController.approve);
+router.patch(
+  '/:loanId/approve',
+  hasRequiredPermission('APPROVE_LOANS'),
+  validateLoanApproval('APPROVE'),
+  LoanController.approveReview,
+);
 router.patch('/:loanId/reject', hasRequiredPermission('APPROVE_LOANS'), validateLoanApproval('REJECT'), LoanController.reject);
 
 export { router as loanRoutes };

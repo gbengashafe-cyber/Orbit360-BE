@@ -1,5 +1,6 @@
+import { AuditLog } from '../../audit-log/audit-log.model';
+import { db } from '../../db';
 import { ApiError } from '../../utils/api-error';
-import { LoanAuditLog } from './loan-audit-log.model';
 import { LoanRepository } from './loan.repository';
 
 type ApprovalProps = {
@@ -10,32 +11,13 @@ type ApprovalProps = {
 };
 
 type ReviewProps = {
-  employeeId: number;
   loanId: number;
-  reviewerDecision: string;
+  employeeId: number;
+  payload: { reviewerDecision: string; reviewerNote: string };
   reviewerId: number;
-  reviewerNote: string;
 };
 
 export class LoanService {
-  static readonly createLoan = async (data: any, userId: number) => {
-    const loan = await LoanRepository.create({
-      ...data,
-      reviewedBy: userId,
-      status: 'PENDING_APPROVAL',
-      nextStep: 'PENDING_DISBURSEMENT',
-    });
-
-    await LoanAuditLog.create({
-      loanId: loan.id,
-      userId: userId,
-      action: 'CREATE',
-      details: 'Loan application initiated.',
-    });
-
-    return loan;
-  };
-
   static readonly editLoan = async (id: number, data: any) => {
     const loan = await LoanRepository.readById(id);
 
@@ -54,7 +36,7 @@ export class LoanService {
     return updatedLoan;
   };
 
-  static readonly reviewLoanRequest = async ({ employeeId, loanId, reviewerDecision, reviewerId, reviewerNote }: ReviewProps) => {
+  static readonly reviewLoanRequest = async ({ employeeId, loanId, reviewerId, payload }: ReviewProps) => {
     const loanRecord = await LoanRepository.readById(loanId);
 
     if (!loanRecord) {
@@ -70,11 +52,24 @@ export class LoanService {
       throw ApiError.forbidden('You cannot review/approve your own loan request');
     }
 
-    if (reviewerDecision.toLowerCase() === 'approve') {
-      return loanRecord.update({ status: loanRecord.nextStep, nextStep: 'ACTIVE', reviewedBy: reviewerId, reviewerNote });
-    }
+    const nextStep = payload.reviewerDecision.toUpperCase() === 'APPROVE' ? 'ACTIVE' : 'REJECTED';
 
-    return loanRecord.update({ status: 'REJECTED', reviewedBy: reviewerId, reviewerNote });
+    await db.transaction(async (transaction) => {
+      await loanRecord.update({ status: loanRecord.nextStep, nextStep, reviewedBy: reviewerId, ...payload }, { transaction });
+
+      await AuditLog.create(
+        {
+          entity: 'Loan',
+          entityId: String(loanRecord.id),
+          userId: reviewerId,
+          action: 'UPDATE',
+          description: `REVIEWED LOAN REQUEST. Reviewer decision: ${loanRecord.reviewerDecision}`,
+        },
+        { transaction },
+      );
+    });
+
+    return loanRecord.update({ status: loanRecord.nextStep, nextStep, reviewedBy: reviewerId, ...payload });
   };
 
   private static readonly checkApproval = ({ loan, userEmployeeId, approverId }) => {
@@ -91,7 +86,7 @@ export class LoanService {
     }
   };
 
-  static readonly approveLoan = async ({ loanId, approverId, userEmployeeId, approverNote }: ApprovalProps) => {
+  static readonly approveLoanReview = async ({ loanId, approverId, userEmployeeId, approverNote }: ApprovalProps) => {
     const loan = await LoanRepository.readById(loanId);
 
     if (!loan) {
@@ -100,17 +95,35 @@ export class LoanService {
 
     this.checkApproval({ loan, userEmployeeId, approverId });
 
-    await loan.update({
-      ...loan,
-      status: 'PENDING_DISBURSEMENT',
-      approvedBy: approverId,
-      approvedDate: new Date(),
-      nextStep: 'ACTIVE',
-      approverNote,
+    const status = loan.reviewerDecision.toUpperCase() === 'APPROVE' ? 'PENDING_DISBURSEMENT' : 'REJECTED';
+    const nextStep = status === 'PENDING_DISBURSEMENT' ? 'ACTIVE' : loan.nextStep;
+
+    await db.transaction(async (transaction) => {
+      await loan.update(
+        {
+          status,
+          approvedBy: approverId,
+          approvedDate: new Date(),
+          nextStep,
+          approverNote,
+        },
+        { transaction },
+      );
+
+      await AuditLog.create(
+        {
+          entity: 'Loan',
+          entityId: String(loan.id),
+          userId: approverId,
+          action: 'UPDATE',
+          description: `APPROVED LOAN REVIEW. Reviewer decision: ${loan.reviewerDecision}`,
+        },
+        { transaction },
+      );
     });
   };
 
-  static readonly rejectLoan = async ({ loanId, approverId, approverNote, userEmployeeId }: ApprovalProps) => {
+  static readonly rejectLoanReview = async ({ loanId, approverId, approverNote, userEmployeeId }: ApprovalProps) => {
     const loan = await LoanRepository.readById(loanId);
 
     if (!loan) {
@@ -119,11 +132,27 @@ export class LoanService {
 
     this.checkApproval({ loan, userEmployeeId, approverId });
 
-    return loan.update({
-      status: 'REJECTED',
-      approvedBy: approverId,
-      approvedDate: new Date(),
-      approverNote,
+    await db.transaction(async (transaction) => {
+      await loan.update(
+        {
+          status: 'PENDING_REVIEW',
+          approvedBy: approverId,
+          approvedDate: new Date(),
+          approverNote,
+        },
+        { transaction },
+      );
+
+      await AuditLog.create(
+        {
+          entity: 'Loan',
+          entityId: String(loan.id),
+          userId: approverId,
+          action: 'UPDATE',
+          description: `REJECTED LOAN REVIEW. Reviewer decision: ${loan.reviewerDecision}`,
+        },
+        { transaction },
+      );
     });
   };
 

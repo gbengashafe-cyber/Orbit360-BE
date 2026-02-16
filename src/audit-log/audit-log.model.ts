@@ -1,4 +1,4 @@
-import { CreationOptional, DataTypes, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
+import { CreationOptional, DataTypes, ForeignKey, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import { db } from '../db';
 import { User } from '../features/users/user.model';
 
@@ -7,7 +7,7 @@ const models = [...Object.keys(db.models)] as const;
 
 export class AuditLog extends Model<InferAttributes<AuditLog>, InferCreationAttributes<AuditLog>> {
   declare id: CreationOptional<number>;
-  declare userId: number;
+  declare userId: ForeignKey<User['id']> | null;
   declare action: (typeof AuditAction)[number];
   declare entity: (typeof models)[number];
   declare entityId: string | null;
@@ -25,6 +25,7 @@ AuditLog.init(
 
     userId: {
       type: DataTypes.INTEGER,
+      references: { model: User, key: 'id' },
       allowNull: true,
     },
 
@@ -43,7 +44,7 @@ AuditLog.init(
     },
 
     description: {
-      type: DataTypes.STRING(1000),
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     createdAt: DataTypes.DATEONLY,
@@ -65,6 +66,6 @@ AuditLog.init(
 );
 
 AuditLog.belongsTo(User, {
-  foreignKey: 'userId',
+  foreignKey: { name: 'userId', allowNull: true },
   as: 'user',
 });

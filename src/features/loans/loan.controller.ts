@@ -1,9 +1,7 @@
 import { Request, Response } from 'express';
-import { CreationAttributes } from 'sequelize';
 import { ApiError } from '../../utils/api-error';
 import { ApiResponse } from '../../utils/api-response';
 import { LoanService } from './loan-service';
-import { Loan } from './loan.model';
 import { LoanRepository } from './loan.repository';
 
 export class LoanController {
@@ -54,16 +52,6 @@ export class LoanController {
     res.json(ApiResponse({ data: loan, message: 'Loan record fetched successfully' }));
   };
 
-  static readonly create = async (req: Request, res: Response) => {
-    const loanPayload: CreationAttributes<Loan> = req.body.validated.loan;
-
-    loanPayload.reviewedBy = Number(req.user?.id);
-
-    const loan = await LoanRepository.create(loanPayload);
-
-    res.status(201).json(ApiResponse({ data: { id: loan.id }, message: 'Loan created successfully' }));
-  };
-
   static readonly update = async (req: Request, res: Response) => {
     const { id } = req.params;
     const loanRequest = req.body.validated.loan;
@@ -72,6 +60,7 @@ export class LoanController {
 
     res.json(ApiResponse({ data: updatedLoan, message: 'Payroll updated successfully' }));
   };
+
   static readonly delete = async (req: Request, res: Response) => {
     const { id } = req.params;
 
@@ -96,26 +85,25 @@ export class LoanController {
     const response = await LoanService.reviewLoanRequest({
       employeeId: Number(employeeId),
       loanId: Number(loanId),
-      reviewerDecision: validatedPayload.reviewerDecision,
-      reviewerNote: validatedPayload.reviewerNote,
+      payload: validatedPayload,
       reviewerId: Number(reviewerId),
     });
 
     res.status(201).json(ApiResponse({ message: 'Request treated successfully', data: response }));
   };
 
-  static readonly approve = async (req: Request, res: Response) => {
+  static readonly approveReview = async (req: Request, res: Response) => {
     const { loanId } = req.params;
     const approverId = req.user?.id as number;
     const userEmployeeId = req.user?.employeeRecord?.id as number;
     const approverNote = req.body.validated?.approvalNote as string;
 
-    await LoanService.approveLoan({ loanId: Number(loanId), approverId, userEmployeeId, approverNote });
+    await LoanService.approveLoanReview({ loanId: Number(loanId), approverId, userEmployeeId, approverNote });
 
     return res.json(
       ApiResponse({
         data: { id: loanId },
-        message: 'Loan approved successfully and moved to disbursement queue.',
+        message: 'Loan review has been approved',
       }),
     );
   };
@@ -130,7 +118,7 @@ export class LoanController {
       throw ApiError.badRequest('The loan ID is required');
     }
 
-    await LoanService.rejectLoan({ loanId: Number(loanId), approverId, approverNote, userEmployeeId });
+    await LoanService.rejectLoanReview({ loanId: Number(loanId), approverId, approverNote, userEmployeeId });
 
     return res.json(
       ApiResponse({

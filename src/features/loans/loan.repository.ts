@@ -54,8 +54,8 @@ export class LoanRepository {
     return Loan.findAll({ where: { employeeId, status: 'active' } });
   };
 
-  static readonly create = (loan: CreationAttributes<Loan>) => {
-    return Loan.create(loan);
+  static readonly create = (loan: CreationAttributes<Loan>, { transaction }: { transaction: Transaction }) => {
+    return Loan.create(loan, { transaction });
   };
 
   static readonly createLoanPayment = (loanPayment: CreationAttributes<LoanPayment>[], transaction: Transaction) => {

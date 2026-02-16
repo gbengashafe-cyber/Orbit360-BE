@@ -72,7 +72,7 @@ const loanReviewSchema = z
     ({ reviewerDecision, reviewerNote }) => {
       return !(reviewerDecision.toUpperCase() === 'REJECT' && reviewerNote.length < 2);
     },
-    { message: 'Note is required if decision is `Reject`', path: ['reviewerNote'] },
+    { message: 'Note is required if recommendation is `Reject`', path: ['reviewerNote'] },
   );
 
 const validateLoanReview = (req: Request, _res: Response, next: NextFunction) => {
