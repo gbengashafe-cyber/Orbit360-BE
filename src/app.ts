@@ -1,5 +1,4 @@
 import compression from 'compression';
-import config from 'config';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express, { NextFunction, Request, Response } from 'express';
@@ -8,6 +7,7 @@ import morgan from 'morgan';
 import { randomUUID } from 'node:crypto';
 import path from 'path';
 import swaggerUi from 'swagger-ui-express';
+import { configUtil } from './config/config-util';
 import { swaggerSpec } from './config/swagger';
 import { dashboardRoutes } from './dashboard/dashboard.routes';
 import { authRoutes } from './features/authentication/auth.routes';
@@ -31,7 +31,7 @@ import { globalErrorHandler } from './utils/global-error-handler';
 import { logger } from './utils/logger';
 import { parsePageAndLimitNumber, parseQueryParams } from './utils/request-query-parser';
 
-const allowedOrigins = config.get<string[]>('allowedOrigins');
+const allowedOrigins = configUtil.allowedOrigins();
 
 const app = express();
 
@@ -85,7 +85,7 @@ app.use(
 
 app.use(cookieParser());
 
-const PAYROLL_REPORT_FOLDER = config.get<string>('payrollReport.storagePath');
+const PAYROLL_REPORT_FOLDER = configUtil.payrollReportStoragePath();
 app.use(`/${PAYROLL_REPORT_FOLDER}`, express.static(path.join(process.cwd(), PAYROLL_REPORT_FOLDER)));
 
 app.use(

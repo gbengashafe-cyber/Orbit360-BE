@@ -4,6 +4,7 @@ import { Department } from '../features/department/department.model';
 import { Employee } from '../features/employee/employee.model';
 import { JobRole } from '../features/job-role/job-role.model';
 import { Leave } from '../features/leave/leave.model';
+import { LeaveBalanceService } from '../features/leave/leave-balance.service';
 import { PayrollBatch } from '../features/payroll/payroll-batch.model';
 import { Payroll } from '../features/payroll/payroll.model';
 import { User } from '../features/users/user.model';
@@ -217,6 +218,13 @@ async function seed() {
       { ignoreDuplicates: true },
     );
     logger.info('Payroll records created');
+
+    // Initialize leave balances for all employees
+    const currentYear = new Date().getFullYear();
+    for (const employee of empList) {
+      await LeaveBalanceService.initializeLeaveBalances(employee.id, currentYear);
+    }
+    logger.info('Leave balances initialized for all employees');
 
     await User.bulkCreate(
       [

@@ -1,5 +1,6 @@
 import { db } from '../../db';
 import { ApiError } from '../../utils/api-error';
+import { LeaveBalanceService } from '../leave/leave-balance.service';
 import { EmployeeFieldChange } from './employee-field-change.model';
 import { Employee } from './employee.model';
 import { EmployeeRepository, ReadAllProps } from './employee.repository';
@@ -29,6 +30,9 @@ export class EmployeeService {
         },
         transaction,
       );
+
+      // Initialize leave balances for the new employee
+      await LeaveBalanceService.initializeLeaveBalances(employee.id, new Date().getFullYear(), transaction);
 
       const request = await EmployeeRepository.createModificationRequest(
         {

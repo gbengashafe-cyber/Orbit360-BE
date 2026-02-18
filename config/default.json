@@ -6,5 +6,11 @@
     "storageServer": "https://localhost:3000/"
   },
   "ldapsUrl": "ldaps:\\domain.com:639",
-  "tokenExpiry": { "access": 1200, "refresh": 86400 }
+  "tokenExpiry": { "access": 1200, "refresh": 86400 },
+  "mail": {
+    "mailSender": "Orbit360 HR <zoezebedee1@gmail.com>",
+    "server": "smtp.gmail.com",
+    "serverPort": 587,
+    "frontendURL": "http://localhost:5173"
+  }
 }

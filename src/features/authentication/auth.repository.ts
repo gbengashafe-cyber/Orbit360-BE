@@ -4,7 +4,7 @@ import { User } from '../users/user.model';
 export class AuthRepository {
   static readonly findLoginUser = async (email: string, password: string) => {
     const result = await User.findOne({
-      attributes: ['id', 'firstName', 'lastName', 'email', 'password', 'status'],
+      attributes: ['id', 'email', 'password', 'status'],
       where: { email },
       logging: false,
       raw: true,

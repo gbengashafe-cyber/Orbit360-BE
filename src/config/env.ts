@@ -18,6 +18,8 @@ const envSchema = z.object({
   JWT_SECRET: z.string(),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
+  MAIL_USERNAME: z.string().optional(),
+  MAIL_PASSWORD: z.string().optional(),
 });
 
 const result = envSchema.safeParse(process.env);
