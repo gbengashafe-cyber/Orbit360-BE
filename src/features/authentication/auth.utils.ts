@@ -1,12 +1,10 @@
-import bcrypt from 'bcryptjs';
 import config from 'config';
+import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import generator from 'generate-password';
 import { Client } from 'ldapts';
 import owasp from 'owasp-password-strength-test';
 import { logger } from '../../utils/logger';
-
-const LDAPS_URL = config.get<string>('ldapsUrl');
 
 owasp.config({
   minLength: 12,
@@ -14,8 +12,10 @@ owasp.config({
   minOptionalTestsToPass: 4,
 });
 
+const LDAPS_URL = config.get<string>('ldapsUrl');
+
 const ldapConfig = {
-  url: LDAPS_URL ?? '',
+  url: LDAPS_URL,
   timeout: 0,
   connectTimeout: 0,
   tlsOptions: {

@@ -94,9 +94,11 @@ Employee.init(
       validate: {
         isDate: true,
         isOldEnough(value: string) {
-          const age = new Date().getFullYear() - new Date(value).getFullYear();
-          if (age < 18) {
-            throw new Error('Employee must be at least 18 years old');
+          if (value) {
+            const age = new Date().getFullYear() - new Date(value).getFullYear();
+            if (age < 18) {
+              throw new Error('Employee must be at least 18 years old');
+            }
           }
         },
       },

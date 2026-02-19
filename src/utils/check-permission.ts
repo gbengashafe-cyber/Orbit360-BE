@@ -11,13 +11,24 @@ const hasRequiredPermission = (requiredPermission: string) => {
       throw ApiError.forbidden('Missing/incomplete authorization header. You are not authorized to perform this action.');
     }
 
+    // Allow ADMIN and admin role to bypass permission checks
+    if (req.user.role === 'ADMIN' || req.user.role?.toUpperCase() === 'ADMIN') {
+      logger.debug(`Checking required permission: RequestId: ${req.requestId}: User is ADMIN - bypassing permission check`);
+      next();
+      return;
+    }
+
     const userJobRolePermissions = req.user.permissions;
 
     logger.debug(`Permissions for user: ${JSON.stringify(userJobRolePermissions)}`);
 
-    const userHasRequiredPermission =
-      req.user.role === 'ADMIN' ||
-      userJobRolePermissions.find((_result) => _result.toUpperCase() === requiredPermission.toUpperCase());
+    if (!userJobRolePermissions || !userJobRolePermissions.length) {
+      throw ApiError.badRequest(`No permission found for user job role.`);
+    }
+
+    const userHasRequiredPermission = userJobRolePermissions.find(
+      (_result) => _result.toUpperCase() === requiredPermission.toUpperCase(),
+    );
 
     if (!userHasRequiredPermission) {
       throw ApiError.forbidden('You are not authorized to perform this action');
