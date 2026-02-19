@@ -139,3 +139,10 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Database utility and reset scripts
+reset-db.sql
+check-departments.ts
+check-leave-balance.ts
+create-admin-employee.ts
+create-departments.ts

@@ -14,7 +14,6 @@ import { UserRepository } from '../users/user.repository';
 import { userSchema } from '../users/user.validation';
 import { EmployeeChangeRequest } from './employee-change-request.model';
 import { EmployeeDraft } from './employee-draft.model';
-import { EmployeeFieldChange } from './employee-field-change.model';
 import { Employee } from './employee.model';
 import { EmployeeRepository, ReadAllProps } from './employee.repository';
 import { AuditLog } from '../../audit-log/audit-log.model';
