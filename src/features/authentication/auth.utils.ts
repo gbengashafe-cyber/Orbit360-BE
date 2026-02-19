@@ -12,14 +12,16 @@ owasp.config({
   minOptionalTestsToPass: 4,
 });
 
-const getLdapConfig = () => ({
-  url: config.get<string>('ldapsUrl') ?? 'ldaps://domain.com:639',
+const LDAPS_URL = config.get<string>('ldapsUrl');
+
+const ldapConfig = {
+  url: LDAPS_URL,
   timeout: 0,
   connectTimeout: 0,
   tlsOptions: {
     minVersion: 'TLSv1.2' as const,
   },
-});
+};
 
 export const TOKEN_FINGERPRINT_COOKIE_NAME = '__Orbit360-Secure-Fgp';
 export const REFRESH_TOKEN_COOKIE_NAME = '__Orbit360-Refresh-Token';
@@ -27,7 +29,7 @@ export const REFRESH_TOKEN_COOKIE_NAME = '__Orbit360-Refresh-Token';
 const DC = 'mfb';
 
 export const authenticateLDAPS = async (username: string, password: string) => {
-  const client = new Client(getLdapConfig());
+  const client = new Client(ldapConfig);
 
   try {
     const userDN = `uid=${username},dc=${DC},dc=com`;

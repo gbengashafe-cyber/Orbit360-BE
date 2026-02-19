@@ -7,7 +7,7 @@ import { ApiResponse } from '../../../utils/api-response';
 import { logger } from '../../../utils/logger';
 import { PayrollReportRepository } from './payroll-report.repository';
 
-const STORAGE_PATH = config.get<string>('payrollReport.storagePath') || 'payroll-reports';
+const STORAGE_PATH = config.get<string>('payrollReport.storagePath');
 
 export class PayrollReportController {
   static async create(req: Request, res: Response) {

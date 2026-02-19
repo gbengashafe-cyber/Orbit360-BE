@@ -43,8 +43,8 @@ PayrollReport.init(
         const fileName = this.getDataValue('fileName');
         if (!fileName) return null;
 
-        const BASE_URL = config.get<string>('payrollReport.storageServer') || 'https://localhost:3000/';
-        const STORAGE_PATH = (config.get<string>('payrollReport.storagePath') || 'payroll-reports').replace('../', '');
+        const BASE_URL = config.get<string>('payrollReport.storageServer');
+        const STORAGE_PATH = config.get<string>('payrollReport.storagePath').replace('../', '');
 
         const encodedFileName = encodeURIComponent(fileName);
         return `${BASE_URL}/${STORAGE_PATH}/${encodedFileName}`;

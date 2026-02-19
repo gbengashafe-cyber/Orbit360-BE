@@ -5,29 +5,12 @@ import hbs from 'nodemailer-express-handlebars';
 import { env } from '../config/env';
 import { logger } from './logger';
 
-const getMailConfig = () => {
-  try {
-    return {
-      mailSender: config.get<string>('mail.mailSender'),
-      server: config.get<string>('mail.server'),
-      serverPort: config.get<number>('mail.serverPort'),
-    };
-  } catch {
-    return {
-      mailSender: 'Orbit360 HR notifications@theharvestword.org',
-      server: 'mail.theharvestword.org',
-      serverPort: 587,
-    };
-  }
-};
-
-const mailConfig = getMailConfig();
-const mailSender = mailConfig.mailSender;
+const mailSender = config.get<string>('mail.mailSender');
 
 // eslint-disable-next-line sonarjs/no-clear-text-protocols
 const transporter = createTransport({
-  host: mailConfig.server,
-  port: mailConfig.serverPort || 587,
+  host: config.get<string>('mail.server'),
+  port: config.get<number>('mail.serverPort'),
   secure: false,
   requireTLS: true,
   auth: {
