@@ -1,5 +1,5 @@
+import config from 'config';
 import { CreationOptional, DataTypes, ForeignKey, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
-import { configUtil } from '../../../config/config-util';
 import { db } from '../../../db';
 import { User } from '../../users/user.model';
 
@@ -43,8 +43,8 @@ PayrollReport.init(
         const fileName = this.getDataValue('fileName');
         if (!fileName) return null;
 
-        const BASE_URL = configUtil.payrollReportStorageServer();
-        const STORAGE_PATH = configUtil.payrollReportStoragePath().replace('../', '');
+        const BASE_URL = config.get<string>('payrollReport.storageServer') || 'https://localhost:3000/';
+        const STORAGE_PATH = (config.get<string>('payrollReport.storagePath') || 'payroll-reports').replace('../', '');
 
         const encodedFileName = encodeURIComponent(fileName);
         return `${BASE_URL}/${STORAGE_PATH}/${encodedFileName}`;

@@ -1,9 +1,9 @@
+import config from 'config';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import generator from 'generate-password';
 import { Client } from 'ldapts';
 import owasp from 'owasp-password-strength-test';
-import { configUtil } from '../../config/config-util';
 import { logger } from '../../utils/logger';
 
 owasp.config({
@@ -13,7 +13,7 @@ owasp.config({
 });
 
 const getLdapConfig = () => ({
-  url: configUtil.ldapsUrl() ?? '',
+  url: config.get<string>('ldapsUrl') ?? 'ldaps://domain.com:639',
   timeout: 0,
   connectTimeout: 0,
   tlsOptions: {

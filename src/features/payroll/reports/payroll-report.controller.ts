@@ -1,13 +1,13 @@
+import config from 'config';
 import { Request, Response } from 'express';
 import fs from 'fs/promises';
 import path from 'path';
-import { configUtil } from '../../../config/config-util';
 import { ApiError } from '../../../utils/api-error';
 import { ApiResponse } from '../../../utils/api-response';
 import { logger } from '../../../utils/logger';
 import { PayrollReportRepository } from './payroll-report.repository';
 
-const STORAGE_PATH = configUtil.payrollReportStoragePath();
+const STORAGE_PATH = config.get<string>('payrollReport.storagePath') || 'payroll-reports';
 
 export class PayrollReportController {
   static async create(req: Request, res: Response) {

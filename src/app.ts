@@ -7,7 +7,7 @@ import morgan from 'morgan';
 import { randomUUID } from 'node:crypto';
 import path from 'path';
 import swaggerUi from 'swagger-ui-express';
-import { configUtil } from './config/config-util';
+import config from 'config';
 import { swaggerSpec } from './config/swagger';
 import { dashboardRoutes } from './dashboard/dashboard.routes';
 import { authRoutes } from './features/authentication/auth.routes';
@@ -33,7 +33,7 @@ import { globalErrorHandler } from './utils/global-error-handler';
 import { logger } from './utils/logger';
 import { parsePageAndLimitNumber, parseQueryParams } from './utils/request-query-parser';
 
-const allowedOrigins = configUtil.allowedOrigins();
+const allowedOrigins = config.get<string | string[]>('allowedOrigins') || '*';
 
 const app = express();
 
@@ -87,7 +87,7 @@ app.use(
 
 app.use(cookieParser());
 
-const PAYROLL_REPORT_FOLDER = configUtil.payrollReportStoragePath();
+const PAYROLL_REPORT_FOLDER = config.get<string>('payrollReport.storagePath') || 'payroll-reports';
 app.use(`/${PAYROLL_REPORT_FOLDER}`, express.static(path.join(process.cwd(), PAYROLL_REPORT_FOLDER)));
 
 app.use(

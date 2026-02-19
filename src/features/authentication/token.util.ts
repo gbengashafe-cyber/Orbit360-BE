@@ -1,5 +1,5 @@
+import config from 'config';
 import jwt from 'jsonwebtoken';
-import { configUtil } from '../../config/config-util';
 import { env } from '../../config/env';
 import { ApiError } from '../../utils/api-error';
 import { logger } from '../../utils/logger';
@@ -15,8 +15,8 @@ export type RefreshTokenPayload = TokenPayload & {
   rid: string;
 };
 
-export const JWT_EXPIRY = configUtil.tokenExpiryAccess();
-export const REFRESH_TOKEN_EXPIRY = configUtil.tokenExpiryRefresh();
+export const JWT_EXPIRY = config.get<number>('tokenExpiry.access') || 1200;
+export const REFRESH_TOKEN_EXPIRY = config.get<number>('tokenExpiry.refresh') || 86400;
 
 export class TokenUtil {
   private static readonly handleTokenVerificationError = (error) => {
