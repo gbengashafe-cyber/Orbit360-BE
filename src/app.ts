@@ -33,7 +33,7 @@ import { globalErrorHandler } from './utils/global-error-handler';
 import { logger } from './utils/logger';
 import { parsePageAndLimitNumber, parseQueryParams } from './utils/request-query-parser';
 
-const allowedOrigins = config.get<string | string[]>('allowedOrigins') || '*';
+const allowedOrigins = config.get<string | string[]>('allowedOrigins');
 
 const app = express();
 
@@ -87,7 +87,7 @@ app.use(
 
 app.use(cookieParser());
 
-const PAYROLL_REPORT_FOLDER = config.get<string>('payrollReport.storagePath') || 'payroll-reports';
+const PAYROLL_REPORT_FOLDER = config.get<string>('payrollReport.storagePath');
 app.use(`/${PAYROLL_REPORT_FOLDER}`, express.static(path.join(process.cwd(), PAYROLL_REPORT_FOLDER)));
 
 app.use(
