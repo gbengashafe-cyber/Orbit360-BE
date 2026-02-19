@@ -1,5 +1,5 @@
 {
-  "allowedOrigins": ["https://orbit360.isaacbern.com.ng"],
+  "allowedOrigins": "https://orbit360.isaacbern.com.ng",
   "payrollReport": {
     "storagePath": "payroll-reports",
     "maxFileSizeInMB": 5,
