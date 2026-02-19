@@ -33,7 +33,7 @@ JobRolePermissions.init(
         fields: ['job_role_id', 'permission'],
       },
     ],
-    timestamps: false,
+    timestamps: true,
   },
 );
 

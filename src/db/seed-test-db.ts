@@ -12,7 +12,7 @@ async function seed() {
   try {
     const companies = await Company.findOne();
 
-    const departments = await Department.bulkCreate(
+    await Department.bulkCreate(
       [
         { name: 'Information Technology', description: '', companyId: companies?.id },
         { name: 'Operations', description: '', companyId: companies?.id },
@@ -51,12 +51,12 @@ async function seed() {
     await JobRolePermissions.truncate();
 
     const mdRole = jobRoles.find((_jobRole) => _jobRole.title.toUpperCase() == 'MANAGING DIRECTOR');
-    const hrOperationsRole = jobRoles.find((_jobRole) => _jobRole.title.toUpperCase() == 'HR OPERATIONS');
-    const hrManagerRole = jobRoles.find((_jobRole) => _jobRole.title.toUpperCase() == 'HR MANAGER');
+    const hrOperationsRole = await JobRole.findOne({ where: { title: 'HR OPERATIONS' } });
+    const hrManagerRole = await JobRole.findOne({ where: { title: 'HR MANAGER' } });
     const employeeRole = jobRoles.find((_jobRole) => _jobRole.title.toUpperCase() == 'OPERATIONS OFFICER');
     const employeeSupervisorRole = jobRoles.find((_jobRole) => _jobRole.title.toUpperCase() == 'OPERATIONS SUPERVISOR');
-    const hrDepartment = departments.find((_department) => _department.name.toUpperCase() == 'HUMAN RESOURCES');
-    const operationsDepartment = departments.find((_department) => _department.name.toUpperCase() == 'OPERATIONS');
+    const hrDepartment = await Department.findOne({ where: { name: 'HUMAN RESOURCES' } });
+    const operationsDepartment = await Department.findOne({ where: { name: 'OPERATIONS' } });
 
     if (!hrOperationsRole || !hrManagerRole || !employeeRole || !employeeSupervisorRole || !mdRole) {
       throw ApiError.badRequest('Missing one or more job roles set up');
@@ -92,8 +92,8 @@ async function seed() {
         lastName: 'HR',
         email: 'test-hr@gmail.com',
         password: '',
-        jobRole: hrOperationsRole.title,
-        departmentName: hrDepartment.name,
+        jobRoleId: hrOperationsRole.id,
+        departmentId: hrDepartment.id,
         status: 'ACTIVE',
         staffId: 'MFB001',
         phone: '08070707',
@@ -127,8 +127,8 @@ async function seed() {
         lastName: 'HR Manager',
         email: 'test-hr-manager@gmail.com',
         password: '',
-        jobRole: hrManagerRole.title,
-        departmentName: hrDepartment.name,
+        jobRoleId: hrManagerRole.id,
+        departmentId: hrDepartment.id,
         status: 'ACTIVE',
         staffId: 'MFB002',
         phone: '08070707',
@@ -162,8 +162,8 @@ async function seed() {
         lastName: 'Employee',
         email: 'test-employee@gmail.com',
         password: '',
-        jobRole: employeeRole.title,
-        departmentName: operationsDepartment.name,
+        jobRoleId: employeeRole.id,
+        departmentId: operationsDepartment.id,
         status: 'ACTIVE',
         staffId: 'MFB003',
         phone: '08070707',
@@ -197,8 +197,8 @@ async function seed() {
         lastName: 'Supervisor',
         email: 'test-supervisor@gmail.com',
         password: '',
-        jobRole: employeeSupervisorRole.title,
-        departmentName: operationsDepartment.name,
+        jobRoleId: employeeSupervisorRole.id,
+        departmentId: operationsDepartment.id,
         status: 'ACTIVE',
         staffId: 'MFB004',
         phone: '08070707',
@@ -231,7 +231,10 @@ async function seed() {
 
     await User.bulkCreate(employees, { ignoreDuplicates: true });
     await Employee.bulkCreate(employees, { ignoreDuplicates: true });
-    await User.create({ ...employees[0], role: 'admin', email: 'test-admin@gmail.com', lastName: 'Admin' });
+    await User.create(
+      { ...employees[0], role: 'admin', email: 'test-admin@gmail.com', lastName: 'Admin' },
+      { ignoreDuplicates: true },
+    );
 
     const employeeRecord = await Employee.findOne({ where: { email: 'test-employee@gmail.com' } });
     const supervisorEmployee = await Employee.findOne({ where: { email: 'test-supervisor@gmail.com' } });
