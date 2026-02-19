@@ -1,6 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
-import { validateOrThrow } from '../../utils/zod-validation-utils';
 
 const createCompanySchema = z.object({
   name: z.string().min(1, 'Name is required').max(100, 'Name cannot exceed 100 characters'),
@@ -12,10 +11,10 @@ const updateCompanySchema = z.object({
   description: z.string().optional().nullable(),
 });
 
-const validate = (schema: z.ZodObject<any>) => (req: Request, res: Response, next: NextFunction) => {
-  const result = schema.safeParse(req.body);
-  validateOrThrow(result, req.requestId);
-  req.body.validated = { company: result.data };
+const validate = (schema: z.ZodObject) => (req: Request, res: Response, next: NextFunction) => {
+  const result = schema.parse(req.body);
+
+  req.body.validated = { company: result };
   next();
 };
 

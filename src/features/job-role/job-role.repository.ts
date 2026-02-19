@@ -3,9 +3,9 @@ import { JobRolePermissions } from '../permissions/permission.model';
 import { JobRole } from './job-role.model';
 
 class JobRoleRepository {
-  static readonly getJobRolePermissions = async (jobRoleName: string) => {
+  static readonly getJobRolePermissions = async (jobRoleId: number) => {
     const results = await JobRolePermissions.findAll({
-      where: { jobRole: jobRoleName.toUpperCase() },
+      where: { jobRoleId },
       attributes: ['permission'],
       raw: true,
     });

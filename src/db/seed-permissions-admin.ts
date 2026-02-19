@@ -29,8 +29,7 @@ async function seedAdminPermissions() {
     // Assign all permissions to Admin role
     for (const perm of allPermissions) {
       await JobRolePermissions.findOrCreate({
-        where: { jobRole: 'Admin', permission: perm },
-        defaults: { jobRole: 'Admin', permission: perm },
+        where: { jobRoleId: 'Admin', permission: perm },
       });
     }
 

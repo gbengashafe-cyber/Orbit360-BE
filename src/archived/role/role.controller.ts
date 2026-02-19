@@ -1,15 +1,15 @@
-import { NextFunction, Request, Response } from 'express';
+import { Request, Response } from 'express';
 import { ApiError } from '../../utils/api-error';
 import { ApiResponse } from '../../utils/api-response';
 import { RoleRepository } from './role.repository';
 
 class RoleController {
-  static create = async (req: Request, res: Response, next: NextFunction) => {
+  static readonly create = async (req: Request, res: Response) => {
     const result = await RoleRepository.create(req.body.role);
     return res.send(ApiResponse({ message: 'Role created successfully', data: { id: result.id } }));
   };
 
-  static async get(req: Request, res: Response, next: NextFunction) {
+  static async get(req: Request, res: Response) {
     const { page, rows } = req.pagination!;
     const query = req.parsedQuery;
 
@@ -38,7 +38,7 @@ class RoleController {
     );
   }
 
-  static async getById(req: Request, res: Response, next: NextFunction) {
+  static readonly getById = async (req: Request, res: Response) => {
     const { id } = req.params;
     const role = await RoleRepository.readById(id);
 
@@ -52,9 +52,9 @@ class RoleController {
         message: 'Role fetched successfully',
       }),
     );
-  }
+  };
 
-  static async update(req: Request, res: Response, next: NextFunction) {
+  static readonly update = async (req: Request, res: Response) => {
     const { id } = req.params;
 
     await RoleRepository.update(id, req.body.role);
@@ -65,7 +65,7 @@ class RoleController {
         message: 'Role updated successfully',
       }),
     );
-  }
+  };
 }
 
 export { RoleController };

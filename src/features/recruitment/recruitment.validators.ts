@@ -1,6 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
-import { validateOrThrow } from '../../utils/zod-validation-utils';
 
 const createJobPostingSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters').max(255, 'Title must be at most 255 characters'),
@@ -77,8 +76,7 @@ const jobPostingIdRouteParamSchema = z.object({
 const validate =
   (schema: z.ZodObject<any>, source: 'body' | 'params' | 'query' = 'body') =>
   (req: Request, res: Response, next: NextFunction) => {
-    const result = schema.safeParse(req[source]);
-    validateOrThrow(result, req.requestId);
+    schema.safeParse(req[source]);
     next();
   };
 

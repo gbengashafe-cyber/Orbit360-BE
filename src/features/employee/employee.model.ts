@@ -1,10 +1,18 @@
-import { CreationOptional, DataTypes, ForeignKey, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
+import {
+  CreationOptional,
+  DataTypes,
+  ForeignKey,
+  InferAttributes,
+  InferCreationAttributes,
+  Model,
+  ModelAttributes,
+} from 'sequelize';
 import { db } from '../../db';
+import { Company } from '../company/company.model';
 import { Department } from '../department/department.model';
 import { JobRole } from '../job-role/job-role.model';
 import { User } from '../users/user.model';
-
-export const employeeStatus = ['ACTIVE', 'SUSPENDED', 'TERMINATED', 'ON_LEAVE', 'PENDING_APPROVAL', 'CANCELLED'];
+import { EmployeeFields, employeeStatus } from './employee-schema';
 
 export class Employee extends Model<InferAttributes<Employee>, InferCreationAttributes<Employee>> {
   declare id: CreationOptional<number>;
@@ -19,9 +27,10 @@ export class Employee extends Model<InferAttributes<Employee>, InferCreationAttr
   declare nationality: string;
   declare address: string;
   // Employment details
+  declare companyId: number;
+  declare departmentId: ForeignKey<Department['id']>;
+  declare jobRoleId: ForeignKey<JobRole['id']>;
   declare hireDate: Date;
-  declare departmentName: ForeignKey<Department['name']>;
-  declare jobRole: ForeignKey<JobRole['title']>;
   declare status: (typeof employeeStatus)[number];
   declare terminationDate: CreationOptional<Date>;
   // Reporting Line
@@ -52,7 +61,6 @@ export class Employee extends Model<InferAttributes<Employee>, InferCreationAttr
   declare annualRentAmount: number;
   declare createdAt: CreationOptional<Date>;
   declare updatedAt: CreationOptional<Date>;
-  declare deletedAt: CreationOptional<Date>;
   declare createdBy: ForeignKey<User['id']>;
   declare approvedBy: ForeignKey<User['id']>;
   declare shouldCreateUser: CreationOptional<boolean>;
@@ -65,119 +73,9 @@ Employee.init(
       autoIncrement: true,
       primaryKey: true,
     },
-    staffId: {
-      type: DataTypes.STRING(10),
-      allowNull: false,
-    },
-    firstName: {
-      type: DataTypes.STRING(50),
-      allowNull: false,
-    },
-    lastName: {
-      type: DataTypes.STRING(50),
-      allowNull: false,
-      set(value: string) {
-        this.setDataValue('lastName', value?.toUpperCase());
-      },
-    },
-    email: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
-    },
-    phone: {
-      type: DataTypes.STRING(20),
-      allowNull: false,
-    },
-    dob: {
-      type: DataTypes.DATEONLY,
-      allowNull: false,
-      validate: {
-        isDate: true,
-        isOldEnough(value: string) {
-          const age = new Date().getFullYear() - new Date(value).getFullYear();
-          if (age < 18) {
-            throw new Error('Employee must be at least 18 years old');
-          }
-        },
-      },
-    },
-    gender: {
-      type: DataTypes.ENUM('M', 'F'),
-    },
-    nationality: { type: DataTypes.STRING(30) },
-    address: {
-      type: DataTypes.STRING(100),
-    },
-    hireDate: {
-      type: DataTypes.DATE,
-      allowNull: false,
-      validate: {
-        isDate: true,
-        notFuture(value: Date) {
-          if (new Date(value) > new Date()) {
-            throw new Error('Hire date cannot be in the future');
-          }
-        },
-      },
-    },
-    status: {
-      type: DataTypes.ENUM(...employeeStatus),
-      defaultValue: 'PENDING_APPROVAL',
-      set(value: string) {
-        this.setDataValue('status', value.toUpperCase());
-      },
-    },
-    terminationDate: {
-      type: DataTypes.DATEONLY,
-    },
-    supervisorId: {
-      type: DataTypes.INTEGER,
-      references: { model: Employee, key: 'id' },
-      allowNull: true,
-    },
-    annualBasicSalary: { type: DataTypes.DECIMAL(17, 2), allowNull: false },
-    annualHousingAllowance: { type: DataTypes.DECIMAL(17, 2), allowNull: false },
-    annualTransportAllowance: { type: DataTypes.DECIMAL(17, 2), allowNull: false },
-    annualLeaveAllowance: { type: DataTypes.DECIMAL(17, 2), allowNull: false },
-    annualOtherAllowances: { type: DataTypes.DECIMAL(17, 2), allowNull: false },
-    bankName: {
-      type: DataTypes.STRING(50),
-      allowNull: false,
-      set(value: string) {
-        this.setDataValue('bankName', value.toUpperCase());
-      },
-    },
-    bankCode: {
-      type: DataTypes.STRING(30),
-      allowNull: false,
-    },
-    accountNumber: {
-      type: DataTypes.STRING(20),
-      allowNull: false,
-    },
-    accountName: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
-      set(value: string) {
-        this.setDataValue('accountName', value.toUpperCase());
-      },
-    },
-    beneficiaryName: { type: DataTypes.STRING(100) },
-    beneficiaryRelationship: { type: DataTypes.STRING(50) },
-    beneficiaryPhone: { type: DataTypes.STRING(50) },
-    nokName: { type: DataTypes.STRING(100) },
-    nokRelationship: { type: DataTypes.STRING(50) },
-    nokPhone: { type: DataTypes.STRING(50) },
-    nokAddress: { type: DataTypes.STRING(100) },
-    leaveEntitlement: { type: DataTypes.INTEGER() },
-    nhfApplicable: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
-    },
-    annualRentAmount: { type: DataTypes.DECIMAL(17, 2), defaultValue: 0 },
+    ...EmployeeFields,
     createdAt: { type: DataTypes.DATE },
     updatedAt: { type: DataTypes.DATE },
-    deletedAt: { type: DataTypes.DATE, allowNull: true },
     createdBy: {
       type: DataTypes.INTEGER,
       references: { model: User, key: 'id' },
@@ -189,17 +87,33 @@ Employee.init(
       allowNull: true,
     },
     shouldCreateUser: { type: DataTypes.BOOLEAN, defaultValue: false },
-  },
+  } as unknown as ModelAttributes<Employee, InferAttributes<Employee>>,
   {
     sequelize: db,
     tableName: 'employees',
     modelName: 'employee',
     timestamps: true,
+    defaultScope: {
+      where: { status: ['ACTIVE', 'ON_LEAVE'] },
+    },
+    scopes: {
+      all: {},
+      pending: {
+        where: { status: 'PENDING_APPROVAL' },
+      },
+      inactive: {
+        where: { status: ['TERMINATED', 'SUSPENDED', 'CANCELLED'] },
+      },
+    },
     indexes: [
       { fields: ['staff_id'], unique: true },
       { fields: ['email'], unique: true },
+      { fields: ['first_name'] },
+      { fields: ['last_name'] },
       { fields: ['status'] },
-      { fields: ['department_name'] },
+      { fields: ['department_id'] },
+      { fields: ['job_role_id'] },
+      { fields: ['company_id'] },
       { fields: ['supervisor_id'] },
       { fields: ['hire_date'] },
     ],
@@ -217,14 +131,16 @@ Employee.hasMany(Employee, {
 });
 
 Employee.belongsTo(Department, {
-  foreignKey: { name: 'departmentName', allowNull: false },
-  targetKey: 'name',
+  foreignKey: { name: 'departmentId', allowNull: false },
+  as: 'department',
 });
 Department.hasMany(Employee, {
-  foreignKey: { name: 'departmentName', allowNull: false },
-  sourceKey: 'name',
+  foreignKey: { name: 'departmentId', allowNull: false },
   as: 'employees',
 });
 
-Employee.belongsTo(JobRole, { foreignKey: { name: 'jobRole', allowNull: false }, targetKey: 'title' });
-JobRole.hasMany(Employee, { foreignKey: { name: 'jobRole', allowNull: false }, sourceKey: 'title' });
+Employee.belongsTo(JobRole, { foreignKey: { name: 'jobRoleId', allowNull: false }, as: 'jobRole' });
+JobRole.hasMany(Employee, { foreignKey: { name: 'jobRoleId', allowNull: false } });
+
+Employee.belongsTo(Company, { foreignKey: { name: 'companyId', allowNull: false } });
+Company.hasMany(Employee, { foreignKey: { name: 'companyId', allowNull: false }, as: 'companyEmployees' });

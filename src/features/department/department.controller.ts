@@ -65,6 +65,15 @@ export class DepartmentController {
     res.json(ApiResponse({ data: responsePayload, message: '' }));
   };
 
+  static readonly getDepartmentJobRoles = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { rows, page } = req.pagination;
+
+    const departmentJobRoles = await DepartmentRepository.getJobRoles(id, { page, rows, filters: req.parsedQuery });
+
+    res.json(ApiResponse({ data: departmentJobRoles || [], message: '' }));
+  };
+
   static async create(req: Request, res: Response, next: NextFunction) {
     try {
       const { name, description, companyId } = req.body;

@@ -1,5 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { InferAttributes } from 'sequelize';
+import { AuditLog } from '../../audit-log/audit-log.model';
+import { db } from '../../db';
 import { ApiError } from '../../utils/api-error';
 import { ApiResponse } from '../../utils/api-response';
 import { logger } from '../../utils/logger';
@@ -38,33 +40,46 @@ export class AuthController {
       rid: refreshTokenId,
     });
 
-    await RefreshTokenRepository.save({
-      id: refreshTokenId,
-      userId: user.id,
-      contextHash: userContextHash,
-      expiresAt: new Date(Date.now() + REFRESH_TOKEN_EXPIRY * 1000),
+    await db.transaction(async (transaction) => {
+      await RefreshTokenRepository.save(
+        {
+          id: refreshTokenId,
+          userId: user.id,
+          contextHash: userContextHash,
+          expiresAt: new Date(Date.now() + REFRESH_TOKEN_EXPIRY * 1000),
+        },
+        { transaction },
+      );
+
+      res.cookie(TOKEN_FINGERPRINT_COOKIE_NAME, userContext, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'strict',
+        maxAge: REFRESH_TOKEN_EXPIRY * 1000,
+        path: '/',
+      });
+
+      res.cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'strict',
+        maxAge: REFRESH_TOKEN_EXPIRY * 1000,
+        path: '/',
+      });
+
+      if (updateLastLoginDate) {
+        await UserRepository.update(user.id, { lastLoginDate: new Date() }, { transaction });
+        await AuditLog.create(
+          {
+            action: 'LOGIN',
+            entity: 'user',
+            entityId: String(user.id),
+            description: 'Login was successful',
+          },
+          { transaction },
+        );
+      }
     });
-
-    if (updateLastLoginDate) {
-      await UserRepository.update(user.id, { lastLoginDate: new Date() });
-    }
-
-    res.cookie(TOKEN_FINGERPRINT_COOKIE_NAME, userContext, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'strict',
-      maxAge: REFRESH_TOKEN_EXPIRY * 1000,
-      path: '/',
-    });
-
-    res.cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'strict',
-      maxAge: REFRESH_TOKEN_EXPIRY * 1000,
-      path: '/',
-    });
-
     const decoded = TokenUtil.decodeToken(accessToken);
 
     return res.json(
@@ -108,8 +123,8 @@ export class AuthController {
         profileImage,
         role,
         status: 'ACTIVE',
-        jobRole: 'employee',
-        departmentName: 'employee',
+        jobRoleId: 0,
+        departmentId: 0,
         password: await AuthUtil.hashPassword(AuthUtil.generatePassword()),
       });
     }

@@ -8,11 +8,10 @@ const router = Router();
 
 router.use([validateAuthToken]);
 
-router.get('/', hasRequiredPermission('LIST_LOANS'), LoanController.get);
+router.get('/', hasRequiredPermission('LIST_LOANS', { allowAdmin: true }), LoanController.get);
 router.get('/dashboard', LoanController.getDashboard);
-router.get('/:id', hasRequiredPermission('MANAGE_LOANS'), LoanController.getById);
+router.get('/:id', hasRequiredPermission('LIST_LOANS'), LoanController.getById);
 router.put('/:id', hasRequiredPermission('MANAGE_LOANS'), validateLoan, LoanController.update);
-router.delete('/:id', hasRequiredPermission('MANAGE_LOANS'), LoanController.delete);
 router.patch('/:loanId/reviews', validateLoanReview, LoanController.reviewLoanRequest);
 router.patch(
   '/:loanId/approve',

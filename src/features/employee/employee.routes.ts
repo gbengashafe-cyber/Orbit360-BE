@@ -16,9 +16,9 @@ router.post('/loans', validateEmployeeLoanRequest, EmployeeController.createLoan
 router.patch('/loans/:loanId/cancellation', EmployeeController.cancelLoanRequest);
 
 // HR Interactions
-router.get('/', hasRequiredPermission('LIST_EMPLOYEES'), EmployeeController.getAll);
-router.get('/directory', hasRequiredPermission('LIST_EMPLOYEES'), EmployeeController.getDirectory);
-router.get('/:id', hasRequiredPermission('LIST_EMPLOYEES'), EmployeeController.getById);
+router.get('/', hasRequiredPermission('LIST_EMPLOYEES', { allowAdmin: true }), EmployeeController.getAll);
+router.get('/directory', hasRequiredPermission('LIST_EMPLOYEES', { allowAdmin: true }), EmployeeController.getDirectory);
+router.get('/:id', hasRequiredPermission('LIST_EMPLOYEES', { allowAdmin: true }), EmployeeController.getById);
 router.post('/', hasRequiredPermission('MANAGE_EMPLOYEES'), validateCreateEmployee, EmployeeController.createCreationRequest);
 router.patch(
   '/:id',

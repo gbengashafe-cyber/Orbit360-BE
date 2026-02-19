@@ -1,10 +1,10 @@
-import { NextFunction, Request, Response } from 'express';
+import { Request, Response } from 'express';
 import { ApiError } from '../../utils/api-error';
 import { ApiResponse } from '../../utils/api-response';
 import { CompanyRepository } from './company.repository';
 
 class CompanyController {
-  static readonly create = async (req: Request, res: Response, next: NextFunction) => {
+  static readonly create = async (req: Request, res: Response) => {
     if (!req.user?.id) {
       throw ApiError.badRequest('Authentication required');
     }
@@ -15,19 +15,13 @@ class CompanyController {
     res.send(ApiResponse({ message: 'Company created successfully', data: { id: result.id } }));
   };
 
-  static async get(req: Request, res: Response, next: NextFunction) {
+  static async get(req: Request, res: Response) {
     const { page, rows } = req.pagination;
-    const query = req.parsedQuery;
 
     const { count, rows: companies } = await CompanyRepository.read({
       page,
       rows,
-      query,
     });
-
-    if (!companies.length) {
-      throw ApiError.notFound('No company found');
-    }
 
     res.json(
       ApiResponse({
@@ -39,12 +33,11 @@ class CompanyController {
           rows,
           pages: Math.ceil(count / rows),
         },
-        query,
       }),
     );
   }
 
-  static async getById(req: Request, res: Response, next: NextFunction) {
+  static async getById(req: Request, res: Response) {
     const { id } = req.params;
     const company = await CompanyRepository.readById(id);
 
@@ -60,7 +53,24 @@ class CompanyController {
     );
   }
 
-  static async update(req: Request, res: Response, next: NextFunction) {
+  static async getDepartments(req: Request, res: Response) {
+    const companyId = req.params?.companyId as unknown as number;
+
+    const company = await CompanyRepository.readDepartments(companyId);
+
+    if (!company) {
+      throw ApiError.notFound('Company not found');
+    }
+
+    res.json(
+      ApiResponse({
+        data: company,
+        message: 'Company fetched successfully',
+      }),
+    );
+  }
+
+  static async update(req: Request, res: Response) {
     const { id } = req.params;
 
     await CompanyRepository.update(id, req.body.company);
@@ -73,7 +83,7 @@ class CompanyController {
     );
   }
 
-  static async delete(req: Request, res: Response, next: NextFunction) {
+  static async delete(req: Request, res: Response) {
     const { id } = req.params;
 
     const resultCount = await CompanyRepository.delete(id);

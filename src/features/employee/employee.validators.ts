@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
 import { ApiError } from '../../utils/api-error';
 import { moneySchema } from '../../utils/money.utils';
-import { employeeStatus } from './employee.model';
+import { employeeStatus } from './employee-schema';
 
 export const MONEY_PRECISION = {
   scale: 2,
@@ -18,8 +18,9 @@ const employeeSchema = z.object({
   staffId: z.string().min(1, 'Staff ID is required').max(10, 'Only 10 characters are allowed for staff ID'),
   phone: z.string().min(1, 'Phone number is required').max(20, 'Phone number cannot exceed 20 characters'),
   hireDate: z.iso.date('Invalid hire date format'),
-  departmentName: z.string().min(1, 'Employee department is required'),
-  jobRole: z.string().min(1, 'Job role is required'),
+  companyId: z.coerce.number('SBU (Company) is required'),
+  departmentId: z.coerce.number('Employee department is required'),
+  jobRoleId: z.coerce.number('Job role provided is not valid').positive('Job role provided is not valid'),
   supervisorId: z.preprocess(emptyToNull, z.coerce.number().int().positive().nullable().optional()),
   dob: z.iso.date('Invalid dob date provided'),
   gender: z.enum(['M', 'F']),

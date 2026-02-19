@@ -1,26 +1,29 @@
-import { InferCreationAttributes, Op } from 'sequelize';
+import { InferCreationAttributes } from 'sequelize';
 import { Company } from './company.model';
+import { Department } from '../department/department.model';
 
 class CompanyRepository {
-  static add = async (company: InferCreationAttributes<Company>) => {
+  static readonly add = async (company: InferCreationAttributes<Company>) => {
     return Company.create(company);
   };
 
-  static read = async ({ page, rows, query }) => {
-    const whereCondition = query ? { name: { [Op.substring]: query } } : {};
-
-    return Company.findAndCountAll({ where: whereCondition, limit: rows, offset: (page - 1) * rows });
+  static readonly read = ({ page, rows }) => {
+    return Company.findAndCountAll({ limit: rows, offset: (page - 1) * rows });
   };
 
-  static readById = async (id) => {
+  static readonly readById = async (id) => {
     return Company.findByPk(id);
   };
 
-  static update = async (id, company) => {
+  static readonly readDepartments = async (companyId: number) => {
+    return Company.findByPk(companyId, { include: [{ model: Department, as: 'departments' }] });
+  };
+
+  static readonly update = async (id, company) => {
     return Company.update(company, { where: { id } });
   };
 
-  static delete = async (id) => {
+  static readonly delete = async (id) => {
     return Company.destroy({ where: { id } });
   };
 }

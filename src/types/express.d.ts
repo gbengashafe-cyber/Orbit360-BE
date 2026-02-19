@@ -9,9 +9,9 @@ declare module 'express-serve-static-core' {
     user?: {
       id: number;
       email: string;
-      jobRole: string;
+      jobRoleId: number;
       role: string;
-      departmentName: string;
+      departmentId: number;
       permissions: string[];
       employeeRecord?: { id: number; supervisorId: number; [key: string]: any };
     };

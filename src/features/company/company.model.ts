@@ -5,7 +5,6 @@ export class Company extends Model<InferAttributes<Company>, InferCreationAttrib
   declare id: CreationOptional<number>;
   declare name: string;
   declare description: CreationOptional<string>;
-  declare createdBy: string;
 }
 
 Company.init(
@@ -24,16 +23,13 @@ Company.init(
       },
     },
     description: {
-      type: DataTypes.TEXT,
-      allowNull: true,
-    },
-    createdBy: {
       type: DataTypes.STRING(100),
-      allowNull: false,
+      allowNull: true,
     },
   },
   {
     sequelize: db,
     tableName: 'companies',
+    modelName: 'company',
   },
 );

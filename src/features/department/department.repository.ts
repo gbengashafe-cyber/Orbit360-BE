@@ -1,7 +1,8 @@
 import { Op } from 'sequelize';
 import { Employee } from '../employee/employee.model';
-import { Department } from './department.model';
 import { ReadAllProps } from '../employee/employee.repository';
+import { JobRole } from '../job-role/job-role.model';
+import { Department } from './department.model';
 
 export class DepartmentRepository {
   static readonly getEmployees = (
@@ -21,8 +22,6 @@ export class DepartmentRepository {
     }
 
     if (filters.status) where.status = filters.status;
-    if (filters.departmentName) where.departmentName = filters.departmentName;
-    if (filters.position) where.position = filters.position;
     if (filters.gender) where.gender = filters.gender;
     if (filters.supervisorId) where.supervisorId = filters.supervisorId;
 
@@ -35,6 +34,24 @@ export class DepartmentRepository {
 
     return Department.findByPk(id, {
       include: [{ model: Employee, as: 'employees', where }],
+      limit: rows,
+      offset,
+      order: [[orderBy, orderDirection]],
+    });
+  };
+
+  static readonly getJobRoles = (
+    id: number | string,
+    { rows, page, filters, orderBy = 'createdAt', orderDirection = 'DESC' }: ReadAllProps,
+  ) => {
+    const offset = (page - 1) * rows;
+
+    const where: any = {};
+
+    if (filters.title) where.title = filters.title;
+
+    return Department.findByPk(id, {
+      include: [{ model: JobRole, as: 'departmentJobRoles', where }],
       limit: rows,
       offset,
       order: [[orderBy, orderDirection]],

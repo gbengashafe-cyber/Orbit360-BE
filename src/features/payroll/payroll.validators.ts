@@ -1,6 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
-import { validateOrThrow } from '../../utils/zod-validation-utils';
 import { payrollStatus } from './payroll.model';
 
 const createPayrollSchema = z.object({
@@ -36,8 +35,6 @@ const validate =
   (req: Request, res: Response, next: NextFunction) => {
     const result = schema.safeParse(req[source]);
 
-    validateOrThrow(result, req.requestId);
-
     req.body.validated = { payroll: result.data };
     next();
   };
@@ -56,16 +53,12 @@ const updatePayrollStatusSchema = z.object({
 const validateGeneratePayroll = (req: Request, res: Response, next: NextFunction) => {
   const result = generatePayrollSchema.safeParse(req.body);
 
-  validateOrThrow(result, req.requestId);
-
   req.body.validated = { payroll: result.data };
   next();
 };
 
 const validatePayrollStatus = (req: Request, res: Response, next: NextFunction) => {
   const result = updatePayrollStatusSchema.safeParse(req.body);
-
-  validateOrThrow(result, req.requestId);
 
   req.body.validated = { payroll: result.data };
   next();

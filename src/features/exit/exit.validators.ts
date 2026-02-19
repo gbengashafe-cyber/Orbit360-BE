@@ -1,6 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
-import { validateOrThrow } from '../../utils/zod-validation-utils';
 
 const createExitSchema = z.object({
   employeeId: z.number().int('Employee ID must be an integer').min(1, 'Employee ID is required'),
@@ -30,8 +29,7 @@ const approveExitSchema = z.object({
 const validate =
   (schema: z.ZodObject<any>, source: 'body' | 'params' | 'query' = 'body') =>
   (req: Request, res: Response, next: NextFunction) => {
-    const result = schema.safeParse(req[source]);
-    validateOrThrow(result, req.requestId);
+    schema.safeParse(req[source]);
     next();
   };
 

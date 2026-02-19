@@ -12,7 +12,7 @@ async function seed() {
     await db.sync({ alter: true });
     logger.info('Database synced');
 
-    const companies = await Company.bulkCreate([{ name: 'MFB', description: 'Microfinance Bank', createdBy: '' }], {
+    const companies = await Company.bulkCreate([{ name: 'MFB', description: 'Microfinance Bank' }], {
       ignoreDuplicates: true,
     });
 
@@ -51,9 +51,10 @@ async function seed() {
         email: 'john.doe@example.com',
         phone: '+1234567890',
         hireDate: new Date('2023-01-15'),
-        departmentName: departments[0].name,
-        jobRole: jobRoles[0].title,
-        status: 'active',
+        companyId: companies[0].id,
+        departmentId: departments[0].id,
+        jobRoleId: jobRoles[0].id,
+        status: 'ACTIVE',
         dob: new Date('1990-05-15'),
         address: '123 Main St',
         nationality: '',
@@ -86,9 +87,10 @@ async function seed() {
         email: 'jane.smith@example.com',
         phone: '+1234567891',
         hireDate: new Date('2023-03-20'),
-        departmentName: departments[0].name,
-        jobRole: jobRoles[1].title,
-        status: 'active',
+        departmentId: departments[0].id,
+        jobRoleId: jobRoles[1].id,
+        companyId: companies[0].id,
+        status: 'ACTIVE',
         dob: new Date('1992-08-25'),
         address: '456 Elm St, Townsville',
         nationality: '',
@@ -121,9 +123,10 @@ async function seed() {
         email: 'bob.johnson@example.com',
         phone: '+1234567892',
         hireDate: new Date('2022-06-10'),
-        departmentName: departments[1].name,
-        jobRole: jobRoles[2].title,
-        status: 'active',
+        departmentId: departments[1].id,
+        jobRoleId: jobRoles[2].id,
+        companyId: companies[0].id,
+        status: 'ACTIVE',
         dob: new Date('1988-11-12'),
         address: '789 Oak St, Village Town',
         nationality: '',

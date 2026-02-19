@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { AuthController } from './auth.controller';
-import { isActive, validateAuthToken } from './auth.middleware';
+import { validateAuthToken } from './auth.middleware';
 
 const router = Router();
 
@@ -8,7 +8,7 @@ const router = Router();
 router.post('/google/callback', AuthController.googleCallback);
 
 // Get current user
-router.get('/me', validateAuthToken, isActive, AuthController.getCurrentUser);
+router.get('/me', validateAuthToken, AuthController.getCurrentUser);
 
 // Logout
 router.post('/logout', AuthController.logout);

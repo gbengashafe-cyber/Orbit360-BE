@@ -25,7 +25,7 @@ class UserRepository {
       offset: (page - 1) * rows,
     });
   };
-  static readonly readJobRoles = async ({ page, rows, filters }) => {
+  static readonly readJobRoles = async ({ page, rows }) => {
     return JobRole.findAndCountAll({
       include: [{ model: JobRolePermissions }],
       limit: rows,
@@ -34,14 +34,14 @@ class UserRepository {
   };
 
   static readonly readById = (id: string | number) => {
-    return User.findByPk(id, { raw: true, attributes: { exclude: ['password'] } });
+    return User.findByPk(id, { raw: true, attributes: { exclude: ['password'] }, include: [{ model: JobRole }] });
   };
   static readonly readByEmail = async (email: string) => {
     return User.findOne({ attributes: ['id', 'email', 'first_name', 'profile_image', 'role'], where: { email } });
   };
 
-  static readonly update = async (id, user: Partial<InferAttributes<User>>) => {
-    return User.update(user, { where: { id } });
+  static readonly update = async (id, user: Partial<InferAttributes<User>>, { transaction }) => {
+    return User.update(user, { where: { id }, transaction });
   };
 }
 

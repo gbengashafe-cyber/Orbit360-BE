@@ -70,6 +70,7 @@ function handleSequelizeError(err: BaseError): ApiError {
     case ForeignKeyConstraintError.name:
       message = 'Missing/invalid association field.';
       break;
+
     case ValidationError.name: {
       const validationError = err as ValidationError;
 
@@ -83,10 +84,11 @@ function handleSequelizeError(err: BaseError): ApiError {
       code = 422;
       break;
     }
-    case DatabaseError.name:
+    case DatabaseError.name: {
       message = 'Oops! Something went wrong.';
       code = 500;
       break;
+    }
     case EagerLoadingError.name:
       code = 500;
       message = 'Oops! Something went wrong. Please try again later';

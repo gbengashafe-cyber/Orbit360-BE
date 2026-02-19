@@ -12,7 +12,7 @@ async function seedUser() {
     // 1. Create company
     const company = await Company.findOrCreate({
       where: { name: 'Test Company' },
-      defaults: { name: 'Test Company', createdBy: 'system' },
+      defaults: { name: 'Test Company' },
     });
     console.log('Company created/found:', company[0].dataValues);
 
@@ -39,8 +39,7 @@ async function seedUser() {
         firstName: 'Zoe',
         lastName: 'Zebedee',
         role: 'admin',
-        jobRole: 'Admin',
-        departmentName: 'General',
+        departmentId: 1,
         status: 'ACTIVE',
       },
     });

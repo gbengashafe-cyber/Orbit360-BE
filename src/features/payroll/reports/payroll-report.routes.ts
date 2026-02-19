@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import { isInAllowedDepartment } from '../../../utils/check-permission';
 import { validateAuthToken } from '../../authentication/auth.middleware';
 import { PayrollReportController } from './payroll-report.controller';
 import { uploadReport } from './payroll-report.middleware';
@@ -12,14 +11,7 @@ const router = Router();
  * @desc    Upload a new payroll Excel report
  * @access  Private (HR/Finance)
  */
-router.post(
-  '/',
-  validateAuthToken,
-  isInAllowedDepartment(['HR']),
-  uploadReport.single('reportFile'),
-  validatePayrollReport,
-  PayrollReportController.create,
-);
+router.post('/', validateAuthToken, uploadReport.single('reportFile'), validatePayrollReport, PayrollReportController.create);
 
 /**
  * @route   GET /api/payroll-reports
@@ -33,6 +25,6 @@ router.get('/', validateAuthToken, PayrollReportController.getAll);
  * @desc    Delete a payroll report and its physical file
  * @access  Private (Admin/HR)
  */
-router.delete('/:id', validateAuthToken, isInAllowedDepartment(['HR']), PayrollReportController.delete);
+router.delete('/:id', validateAuthToken, PayrollReportController.delete);
 
 export { router as payrollReportRoutes };

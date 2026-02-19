@@ -2,8 +2,8 @@ import { CreationAttributes } from 'sequelize';
 import { RefreshToken } from './refresh-token.model';
 
 export class RefreshTokenRepository {
-  static readonly save = (token: CreationAttributes<RefreshToken>) => {
-    return RefreshToken.create(token);
+  static readonly save = (token: CreationAttributes<RefreshToken>, { transaction }) => {
+    return RefreshToken.create(token, { transaction });
   };
 
   static readonly readById = (id: string) => {

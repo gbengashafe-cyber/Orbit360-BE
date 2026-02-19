@@ -1,6 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
-import { validateOrThrow } from '../../utils/zod-validation-utils';
 
 const createDepartmentSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100, 'Name cannot exceed 100 characters'),
@@ -14,8 +13,9 @@ const updateDepartmentSchema = z.object({
 });
 
 const validate = (schema: z.ZodObject<any>) => (req: Request, res: Response, next: NextFunction) => {
-  const result = schema.safeParse(req.body);
-  validateOrThrow(result, req.requestId);
+  const result = schema.parse(req.body);
+
+  req.body.validated = { department: result };
   next();
 };
 

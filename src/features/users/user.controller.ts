@@ -1,10 +1,9 @@
 import { Request, Response } from 'express';
+import { db } from '../../db';
 import { ApiError } from '../../utils/api-error';
 import { ApiResponse } from '../../utils/api-response';
 import { AuthUtil } from '../authentication/auth.utils';
 import { UserRepository } from './user.repository';
-import { Transaction } from 'sequelize';
-import { db } from '../../db';
 
 class UserController {
   static readonly create = async (req: Request, res: Response) => {
@@ -74,7 +73,7 @@ class UserController {
 
   static readonly getJobRoles = async (req: Request, res: Response) => {
     const { page, rows } = req.pagination;
-    const user = await UserRepository.readJobRoles({ page, rows, filters: req.parsedQuery });
+    const user = await UserRepository.readJobRoles({ page, rows });
 
     if (!user) {
       throw ApiError.notFound('No job role found');
@@ -107,7 +106,9 @@ class UserController {
 
       user.password = await AuthUtil.hashPassword(user.password);
 
-      await UserRepository.update(id, req.body.user);
+      await db.transaction(async (transaction) => {
+        await UserRepository.update(id, req.body.user, { transaction });
+      });
       const updatedUser = await UserRepository.readById(id);
 
       res.json(

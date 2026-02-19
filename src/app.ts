@@ -131,7 +131,6 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/v1/complaints', complaintRoutes);
-app.use('/api/v1/departments', departmentRoutes);
 app.use('/api/v1/leaves', leaveRoutes);
 app.use('/api/v1/exits', exitRoutes);
 app.use('/api/v1/onboardings', onboardingRoutes);
@@ -139,14 +138,15 @@ app.use('/api/v1/recruitment', recruitmentRoutes);
 app.use('/api/v1/payrolls/uploads', payrollReportRoutes);
 app.use('/api/v1/payrolls', payrollRoutes);
 app.use('/api/v1/performance', performanceRoutes);
-app.use('/api/v1/job-roles', jobRoleRoutes);
 app.use('/api/v1/companies', companyRoutes);
+app.use('/api/v1/departments', departmentRoutes);
+app.use('/api/v1/job-roles', jobRoleRoutes);
+app.use('/api/v1/employees', employeeRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/loans/types', loanTypeRoutes);
 app.use('/api/v1/loans', loanRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/pending-authorization', authorizationRoutes);
-app.use('/api/v1/employees', employeeRoutes);
 
 // Swagger Documentation
 app.use(

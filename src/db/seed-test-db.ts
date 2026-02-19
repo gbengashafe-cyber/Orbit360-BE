@@ -50,27 +50,7 @@ async function seed() {
 
     await JobRolePermissions.truncate();
 
-    await JobRolePermissions.bulkCreate(
-      [
-        { permission: 'MANAGE_EMPLOYEES', jobRole: 'HR Operations' },
-        { permission: 'MANAGE_ONBOARDING', jobRole: 'HR Operations' },
-        { permission: 'MANAGE_USERS', jobRole: 'HR Operations' },
-        { permission: 'MANAGE_PAYROLLS', jobRole: 'HR Operations' },
-        { permission: 'MANAGE_LOANS', jobRole: 'HR Operations' },
-        { permission: 'LIST_LOANS', jobRole: 'HR Operations' },
-        { permission: 'LIST_LOANS', jobRole: 'HR Manager' },
-        { permission: 'LIST_EMPLOYEES', jobRole: 'HR Operations' },
-        { permission: 'LIST_EMPLOYEES', jobRole: 'HR Manager' },
-        { permission: 'APPROVE_LOANS', jobRole: 'HR Manager' },
-        { permission: 'APPROVE_PAYROLLS', jobRole: 'HR Manager' },
-        { permission: 'APPROVE_EMPLOYEES', jobRole: 'HR Manager' },
-        { permission: 'LIST_PAYROLLS', jobRole: 'HR Manager' },
-        { permission: 'LIST_PAYROLLS', jobRole: 'HR Operations' },
-        { permission: 'APPROVE_PAYROLL_OVERRIDE', jobRole: 'Managing Director' },
-      ],
-      { ignoreDuplicates: true },
-    );
-
+    const mdRole = jobRoles.find((_jobRole) => _jobRole.title.toUpperCase() == 'MANAGING DIRECTOR');
     const hrOperationsRole = jobRoles.find((_jobRole) => _jobRole.title.toUpperCase() == 'HR OPERATIONS');
     const hrManagerRole = jobRoles.find((_jobRole) => _jobRole.title.toUpperCase() == 'HR MANAGER');
     const employeeRole = jobRoles.find((_jobRole) => _jobRole.title.toUpperCase() == 'OPERATIONS OFFICER');
@@ -78,13 +58,33 @@ async function seed() {
     const hrDepartment = departments.find((_department) => _department.name.toUpperCase() == 'HUMAN RESOURCES');
     const operationsDepartment = departments.find((_department) => _department.name.toUpperCase() == 'OPERATIONS');
 
-    if (!hrOperationsRole || !hrManagerRole || !employeeRole || !employeeSupervisorRole) {
+    if (!hrOperationsRole || !hrManagerRole || !employeeRole || !employeeSupervisorRole || !mdRole) {
       throw ApiError.badRequest('Missing one or more job roles set up');
     }
 
     if (!hrDepartment || !operationsDepartment) {
       throw ApiError.badRequest('Missing one or more department set up');
     }
+    await JobRolePermissions.bulkCreate(
+      [
+        { permission: 'MANAGE_EMPLOYEES', jobRoleId: hrOperationsRole.id },
+        { permission: 'MANAGE_ONBOARDING', jobRoleId: hrOperationsRole.id },
+        { permission: 'MANAGE_USERS', jobRoleId: hrOperationsRole.id },
+        { permission: 'MANAGE_PAYROLLS', jobRoleId: hrOperationsRole.id },
+        { permission: 'MANAGE_LOANS', jobRoleId: hrOperationsRole.id },
+        { permission: 'LIST_LOANS', jobRoleId: hrOperationsRole.id },
+        { permission: 'LIST_LOANS', jobRoleId: hrManagerRole.id },
+        { permission: 'LIST_EMPLOYEES', jobRoleId: hrOperationsRole.id },
+        { permission: 'LIST_EMPLOYEES', jobRoleId: hrManagerRole.id },
+        { permission: 'APPROVE_LOANS', jobRoleId: hrManagerRole.id },
+        { permission: 'APPROVE_PAYROLLS', jobRoleId: hrManagerRole.id },
+        { permission: 'APPROVE_EMPLOYEES', jobRoleId: hrManagerRole.id },
+        { permission: 'LIST_PAYROLLS', jobRoleId: hrManagerRole.id },
+        { permission: 'LIST_PAYROLLS', jobRoleId: hrOperationsRole.id },
+        { permission: 'APPROVE_PAYROLL_OVERRIDE', jobRoleId: mdRole.id },
+      ],
+      { ignoreDuplicates: true },
+    );
 
     const employees: any = [
       {
@@ -231,6 +231,7 @@ async function seed() {
 
     await User.bulkCreate(employees, { ignoreDuplicates: true });
     await Employee.bulkCreate(employees, { ignoreDuplicates: true });
+    await User.create({ ...employees[0], role: 'admin', email: 'test-admin@gmail.com', lastName: 'Admin' });
 
     const employeeRecord = await Employee.findOne({ where: { email: 'test-employee@gmail.com' } });
     const supervisorEmployee = await Employee.findOne({ where: { email: 'test-supervisor@gmail.com' } });

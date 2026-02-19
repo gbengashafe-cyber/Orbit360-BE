@@ -1,6 +1,7 @@
 import config from 'config';
 import { addMonths, differenceInMonths, endOfMonth, getMonth, getYear } from 'date-fns';
 import { CreationAttributes } from 'sequelize';
+import { AuditLog } from '../../audit-log/audit-log.model';
 import { db } from '../../db';
 import { ApiError } from '../../utils/api-error';
 import { MailUtil } from '../../utils/mail.util';
@@ -15,7 +16,6 @@ import { EmployeeChangeRequest } from './employee-change-request.model';
 import { EmployeeDraft } from './employee-draft.model';
 import { Employee } from './employee.model';
 import { EmployeeRepository, ReadAllProps } from './employee.repository';
-import { AuditLog } from '../../audit-log/audit-log.model';
 
 export class EmployeeService {
   static readonly getDirectory = async ({ page, rows, filters }: ReadAllProps) => {
@@ -97,7 +97,7 @@ export class EmployeeService {
         payload = { ...payload, terminationDate: new Date() };
         // Revoke user access
         const employeeUserRecord = await UserRepository.readByEmail(employeeExistingData.email);
-        await UserRepository.update(employeeUserRecord?.id, { status: 'INACTIVE' });
+        await UserRepository.update(employeeUserRecord?.id, { status: 'INACTIVE' }, { transaction: t });
       }
 
       const request = await EmployeeChangeRequest.create(
@@ -160,10 +160,8 @@ export class EmployeeService {
 
       employeeEmail = draft.email;
 
-      const updatePayload = draft.get({ plain: true });
-
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { id, ...fieldsToUpdate } = updatePayload;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars, sonarjs/no-unused-vars
+      const { id: _dId, requestId: _rId, previousStatus: _ps, status: _st, ...fieldsToUpdate } = draft.get({ plain: true });
 
       if (request.actionType === 'CREATE') {
         (fieldsToUpdate as any).approvedBy = checkerId;
@@ -174,9 +172,19 @@ export class EmployeeService {
 
       const employeeUserRecord = await UserRepository.readByEmail(employee?.email as string);
       if (request.actionType === 'UPDATE' && employeeUserRecord) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { id, status, requestId, previousStatus, ...userFieldsToUpdate } = draft.get({ plain: true });
+
         await employeeUserRecord.update(
-          {},
-          { fields: ['email', 'firstName', 'lastName', 'jobRole', 'departmentName'], transaction: t },
+          {
+            ...employeeUserRecord,
+            firstName: userFieldsToUpdate.firstName,
+            email: userFieldsToUpdate.email,
+            lastName: userFieldsToUpdate.lastName,
+            jobRoleId: userFieldsToUpdate.jobRoleId,
+            departmentId: userFieldsToUpdate.departmentId,
+          },
+          { transaction: t },
         );
       }
 

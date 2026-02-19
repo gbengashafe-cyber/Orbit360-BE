@@ -1,6 +1,9 @@
 import { CreationAttributes, InferAttributes, InferCreationAttributes, Op, Transaction } from 'sequelize';
 import { changeRequestStatus, EmployeeChangeRequest } from './employee-change-request.model';
 import { Employee } from './employee.model';
+import { JobRole } from '../job-role/job-role.model';
+import { Department } from '../department/department.model';
+import { Company } from '../company/company.model';
 
 export type ReadAllProps = {
   rows: number;
@@ -10,6 +13,11 @@ export type ReadAllProps = {
   orderDirection?: 'ASC' | 'DESC';
 };
 export class EmployeeRepository {
+  private static readonly includes = [
+    { model: JobRole, as: 'jobRole', attributes: ['id', 'title', 'description'] },
+    { model: Department, as: 'department', attributes: ['id', 'name', 'description'] },
+    { model: Company, as: 'company', attributes: ['id', 'name', 'description'] },
+  ];
   static readonly create = (employee: InferCreationAttributes<Employee>, transaction: Transaction) => {
     return Employee.create(employee, { transaction });
   };
@@ -64,6 +72,7 @@ export class EmployeeRepository {
 
     return Employee.findAndCountAll({
       where,
+      include: this.includes,
       limit: rows,
       offset,
       order: [[orderBy, orderDirection]],
@@ -73,7 +82,7 @@ export class EmployeeRepository {
   static readonly readById = (id: string | number) => {
     return Employee.findByPk(id, {
       paranoid: false,
-      include: [{ association: 'loans' }],
+      include: [{ association: 'loans' }, ...this.includes],
     });
   };
 
@@ -112,6 +121,7 @@ export class EmployeeRepository {
 
     return Employee.findAndCountAll({
       where,
+      include: this.includes,
       limit: rows,
       offset: (page - 1) * rows,
       order: [[orderBy, orderDirection]],

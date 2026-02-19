@@ -21,7 +21,7 @@ department (Organizational):
 
 Values: hr, finance, operations, it, sales, etc.
 Purpose: Groups users by business unit
-Used for filtering data, routing approvals,recr and reporting
+Used for filtering data, routing approvals, and reporting
 
 In Practice:
 
@@ -42,8 +42,8 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
   // Defines what the user can do no the admin platform
   declare role: CreationOptional<(typeof userRoleOptions)[number]>;
   // Defines what the user does for the organization
-  declare jobRole: ForeignKey<JobRole['title']>;
-  declare departmentName: ForeignKey<Department['name']>;
+  declare jobRoleId: ForeignKey<JobRole['id']>;
+  declare departmentId: ForeignKey<Department['id']>;
   declare status: CreationOptional<(typeof userStatusOptions)[number]>;
   declare lastLoginDate: CreationOptional<Date>;
 }
@@ -87,14 +87,14 @@ User.init(
       allowNull: false,
       defaultValue: 'user',
     },
-    jobRole: {
+    jobRoleId: {
       type: DataTypes.STRING(100),
-      references: { model: JobRole, key: 'title' },
+      references: { model: JobRole, key: 'id' },
       allowNull: false,
     },
-    departmentName: {
+    departmentId: {
       type: DataTypes.STRING,
-      references: { model: Department, key: 'name' },
+      references: { model: Department, key: 'id' },
       allowNull: false,
     },
     status: {
@@ -114,8 +114,8 @@ User.init(
   },
 );
 
-User.belongsTo(JobRole, { foreignKey: { name: 'jobRole', allowNull: false }, targetKey: 'title', as: 'userJobRole' });
-JobRole.hasMany(User, { foreignKey: { name: 'jobRole', allowNull: false }, sourceKey: 'title', as: 'users' });
+User.belongsTo(JobRole, { foreignKey: { name: 'jobRoleId', allowNull: false } });
+JobRole.hasMany(User, { foreignKey: { name: 'jobRoleId', allowNull: false }, as: 'users' });
 
-User.belongsTo(Department, { foreignKey: { name: 'departmentName', allowNull: false }, targetKey: 'name', as: 'userDepartment' });
-Department.hasMany(User, { foreignKey: { name: 'departmentName', allowNull: false }, sourceKey: 'name', as: 'users' });
+User.belongsTo(Department, { foreignKey: { name: 'departmentId', allowNull: false } });
+Department.hasMany(User, { foreignKey: { name: 'departmentId', allowNull: false }, as: 'users' });
