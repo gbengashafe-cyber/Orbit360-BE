@@ -1,6 +1,6 @@
 {
   "allowedOrigins": ["http://localhost:5173", "http://localhost:3000"],
   "mail": {
-    "frontendURL": "http://localhost:5173"
+    "frontendURL": "https://orbit360.isaacbern.com.ng"
   }
 }
