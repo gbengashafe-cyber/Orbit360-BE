@@ -5,20 +5,37 @@ import hbs from 'nodemailer-express-handlebars';
 import { env } from '../config/env';
 import { logger } from './logger';
 
-const mailSender = config.get('mail.mailSender') as string;
+const getMailConfig = () => {
+  try {
+    return {
+      mailSender: config.get<string>('mail.mailSender'),
+      server: config.get<string>('mail.server'),
+      serverPort: config.get<number>('mail.serverPort'),
+    };
+  } catch {
+    return {
+      mailSender: 'Orbit360 HR notifications@theharvestword.org',
+      server: 'mail.theharvestword.org',
+      serverPort: 587,
+    };
+  }
+};
+
+const mailConfig = getMailConfig();
+const mailSender = mailConfig.mailSender;
 
 // eslint-disable-next-line sonarjs/no-clear-text-protocols
 const transporter = createTransport({
-  host: config.get('mail.server'),
-  port: config.get('mail.serverPort') || 465,
+  host: mailConfig.server,
+  port: mailConfig.serverPort || 587,
   secure: false,
-  // requireTLS: true,
+  requireTLS: true,
   auth: {
     user: env.MAIL_USERNAME,
     pass: env.MAIL_PASSWORD,
   },
   tls: {
-    rejectUnauthorized: true,
+    rejectUnauthorized: false,
   },
   pool: true,
   maxConnections: 5,
@@ -69,9 +86,13 @@ export class MailUtil {
       });
       logger.info(`Mail sent successfully. response: ${info.response}`);
       return true;
-    } catch (error) {
-      logger.error('Mail sending failed.');
-      logger.error(error);
+    } catch (error: any) {
+      logger.error({
+        message: 'Mail sending failed.',
+        error: error?.message || error,
+        code: error?.code,
+        command: error?.command,
+      });
       return false;
     }
   };
@@ -93,8 +114,13 @@ export class MailUtil {
       });
       logger.info(`Mail sent successfully. response: ${info.response}`);
       return true;
-    } catch (error) {
-      logger.error({ message: 'Mail sending failed.', error });
+    } catch (error: any) {
+      logger.error({
+        message: 'Mail sending failed.',
+        error: error?.message || error,
+        code: error?.code,
+        command: error?.command,
+      });
       return false;
     }
   };

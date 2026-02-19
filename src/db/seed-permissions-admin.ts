@@ -1,3 +1,4 @@
+import { JobRole } from '../features/job-role/job-role.model';
 import { JobRolePermissions } from '../features/permissions/permission.model';
 import { db } from './index';
 
@@ -26,15 +27,22 @@ async function seedAdminPermissions() {
       'view_all_data',
     ];
 
-    // Assign all permissions to Admin role
-    for (const perm of allPermissions) {
-      await JobRolePermissions.findOrCreate({
-        where: { jobRole: 'Admin', permission: perm },
-        defaults: { jobRole: 'Admin', permission: perm },
-      });
+    // Get all existing job roles from database
+    const existingRoles = await JobRole.findAll();
+    const existingRoleTitles = existingRoles.map((r) => r.title);
+
+    console.log('Existing job roles:', existingRoleTitles);
+
+    for (const roleName of existingRoleTitles) {
+      for (const perm of allPermissions) {
+        await JobRolePermissions.findOrCreate({
+          where: { jobRole: roleName, permission: perm },
+          defaults: { jobRole: roleName, permission: perm },
+        });
+      }
+      console.log(`✅ Permissions assigned to ${roleName}`);
     }
 
-    console.log('✅ Admin role permissions assigned');
     console.log('✅ Seeding completed successfully');
     process.exit(0);
   } catch (error) {

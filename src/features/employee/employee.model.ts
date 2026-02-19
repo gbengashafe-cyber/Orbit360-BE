@@ -90,13 +90,15 @@ Employee.init(
     },
     dob: {
       type: DataTypes.DATEONLY,
-      allowNull: false,
+      allowNull: true,
       validate: {
         isDate: true,
         isOldEnough(value: string) {
-          const age = new Date().getFullYear() - new Date(value).getFullYear();
-          if (age < 18) {
-            throw new Error('Employee must be at least 18 years old');
+          if (value) {
+            const age = new Date().getFullYear() - new Date(value).getFullYear();
+            if (age < 18) {
+              throw new Error('Employee must be at least 18 years old');
+            }
           }
         },
       },
@@ -217,11 +219,11 @@ Employee.hasMany(Employee, {
 });
 
 Employee.belongsTo(Department, {
-  foreignKey: { name: 'departmentName', allowNull: false },
+  foreignKey: { name: 'departmentName', allowNull: true },
   targetKey: 'name',
 });
 Department.hasMany(Employee, {
-  foreignKey: { name: 'departmentName', allowNull: false },
+  foreignKey: { name: 'departmentName', allowNull: true },
   sourceKey: 'name',
   as: 'employees',
 });

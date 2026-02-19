@@ -1,9 +1,9 @@
-import config from 'config';
 import multer from 'multer';
 import path from 'path';
+import { configUtil } from '../../../config/config-util';
 
-const MAX_REPORT_SIZE = config.get<number>('payrollReport.maxFileSizeInMB');
-const ABSOLUTE_STORAGE_PATH = path.join(process.cwd(), config.get<string>('payrollReport.storagePath'));
+const MAX_REPORT_SIZE = configUtil.payrollReportMaxFileSizeInMB();
+const ABSOLUTE_STORAGE_PATH = path.join(process.cwd(), configUtil.payrollReportStoragePath());
 
 const storage = multer.diskStorage({
   destination: ABSOLUTE_STORAGE_PATH,

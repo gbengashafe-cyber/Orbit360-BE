@@ -1,12 +1,10 @@
 import bcrypt from 'bcryptjs';
-import config from 'config';
 import crypto from 'crypto';
 import generator from 'generate-password';
 import { Client } from 'ldapts';
 import owasp from 'owasp-password-strength-test';
+import { configUtil } from '../../config/config-util';
 import { logger } from '../../utils/logger';
-
-const LDAPS_URL = config.get<string>('ldapsUrl');
 
 owasp.config({
   minLength: 12,
@@ -14,14 +12,14 @@ owasp.config({
   minOptionalTestsToPass: 4,
 });
 
-const ldapConfig = {
-  url: LDAPS_URL ?? '',
+const getLdapConfig = () => ({
+  url: configUtil.ldapsUrl() ?? '',
   timeout: 0,
   connectTimeout: 0,
   tlsOptions: {
     minVersion: 'TLSv1.2' as const,
   },
-};
+});
 
 export const TOKEN_FINGERPRINT_COOKIE_NAME = '__Orbit360-Secure-Fgp';
 export const REFRESH_TOKEN_COOKIE_NAME = '__Orbit360-Refresh-Token';
@@ -29,7 +27,7 @@ export const REFRESH_TOKEN_COOKIE_NAME = '__Orbit360-Refresh-Token';
 const DC = 'mfb';
 
 export const authenticateLDAPS = async (username: string, password: string) => {
-  const client = new Client(ldapConfig);
+  const client = new Client(getLdapConfig());
 
   try {
     const userDN = `uid=${username},dc=${DC},dc=com`;

@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
 
 const createLeaveSchema = z.object({
-  employeeId: z.number().int('Employee ID must be an integer').min(1, 'Employee ID is required'),
+  employeeId: z.number().int('Employee ID must be an integer').min(1, 'Employee ID is required').optional(),
   startDate: z
     .union([z.string().date('Invalid start date format'), z.string().datetime()])
     .transform((val) => new Date(val).toISOString().split('T')[0]),
