@@ -86,7 +86,7 @@ Employee.init(
     },
     dob: {
       type: DataTypes.DATEONLY,
-      allowNull: true,
+      allowNull: false,
       validate: {
         isDate: true,
         isOldEnough(value: string) {
@@ -205,11 +205,11 @@ Employee.hasMany(Employee, {
 });
 
 Employee.belongsTo(Department, {
-  foreignKey: { name: 'departmentName', allowNull: true },
+  foreignKey: { name: 'departmentName', allowNull: false },
   targetKey: 'name',
 });
 Department.hasMany(Employee, {
-  foreignKey: { name: 'departmentName', allowNull: true },
+  foreignKey: { name: 'departmentName', allowNull: false },
   sourceKey: 'name',
   as: 'employees',
 });
