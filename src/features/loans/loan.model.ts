@@ -5,7 +5,7 @@ import { Employee } from '../employee/employee.model';
 import { User } from '../users/user.model';
 import { LoanType } from './loan-types/loan-types.model';
 
-export const loanStatus = [
+export const LOAN_STATUS = [
   'PENDING_REVIEW',
   'PENDING_APPROVAL',
   'PENDING_DISBURSEMENT',
@@ -33,8 +33,8 @@ export class Loan extends Model<InferAttributes<Loan>, InferCreationAttributes<L
   declare employeeNote: string;
   declare approvedBy: ForeignKey<User['id']>;
   declare approvedDate: Date;
-  declare status: (typeof loanStatus)[number];
-  declare nextStep: Exclude<(typeof loanStatus)[number], 'PENDING_REVIEW'>;
+  declare status: (typeof LOAN_STATUS)[number];
+  declare nextStep: Exclude<(typeof LOAN_STATUS)[number], 'PENDING_REVIEW'>;
   declare createdAt: Date;
 }
 
@@ -93,7 +93,7 @@ Loan.init(
     },
     status: {
       type: DataTypes.ENUM,
-      values: loanStatus,
+      values: LOAN_STATUS,
       defaultValue: 'PENDING_REVIEW',
     },
     nextStep: {

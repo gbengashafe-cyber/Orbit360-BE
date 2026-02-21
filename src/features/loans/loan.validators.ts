@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import z from 'zod';
-import { loanStatus, reviewerDecisionOptions } from './loan.model';
+import { LOAN_STATUS, reviewerDecisionOptions } from './loan.model';
 
 const loanSchema = z.object({
   employeeId: z.coerce.number('EmployeeID is required').int(),
@@ -13,7 +13,7 @@ const loanSchema = z.object({
 });
 
 const updateLoanSchema = loanSchema.extend({
-  status: z.enum(loanStatus),
+  status: z.enum(LOAN_STATUS),
 });
 
 const validateLoan = (req: Request, res: Response, next: NextFunction) => {

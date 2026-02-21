@@ -68,8 +68,6 @@ export class LoanService {
         { transaction },
       );
     });
-
-    return loanRecord.update({ status: loanRecord.nextStep, nextStep, reviewedBy: reviewerId, ...payload });
   };
 
   private static readonly checkApproval = ({ loan, userEmployeeId, approverId }) => {

@@ -82,14 +82,14 @@ export class LoanController {
 
     const validatedPayload = req.body.validated?.validatedPayload;
 
-    const response = await LoanService.reviewLoanRequest({
+    await LoanService.reviewLoanRequest({
       employeeId: Number(employeeId),
       loanId: Number(loanId),
       payload: validatedPayload,
       reviewerId: Number(reviewerId),
     });
 
-    res.status(201).json(ApiResponse({ message: 'Request treated successfully', data: response }));
+    res.status(201).json(ApiResponse({ message: 'Request treated successfully', data: {} }));
   };
 
   static readonly approveReview = async (req: Request, res: Response) => {

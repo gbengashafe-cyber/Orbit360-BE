@@ -112,6 +112,10 @@ export class EmployeeController {
     const employeeId = req.user?.employeeRecord?.id;
     const { page, rows } = req.pagination;
 
+    if (!employeeId) {
+      throw ApiError.unauthenticated('There is no record found for the logged in email address');
+    }
+
     const { count, rows: loans } = await EmployeeService.getLoans({
       employeeId: employeeId,
       rows,

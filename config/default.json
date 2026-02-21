@@ -8,8 +8,8 @@
   "ldapsUrl": "ldaps:\\domain.com:639",
   "tokenExpiry": { "access": 1200, "refresh": 86400 },
   "mail": {
-    "mailSender": "Orbit360 HR notifications@theharvestword.org",
-    "server": "mail.theharvestword.org",
+    "mailSender": "Orbit360 HR notifications@isaacbern.com.ng",
+    "server": "mail.isaacbern.com.ng",
     "serverPort": 587,
     "frontendURL": "https://orbit360.isaacbern.com.ng"
   }
