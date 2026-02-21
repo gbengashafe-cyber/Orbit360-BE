@@ -33,8 +33,7 @@ async function seed() {
       ],
       { ignoreDuplicates: true },
     );
-
-    const jobRoles = await JobRole.bulkCreate(
+    await JobRole.bulkCreate(
       [
         { title: 'HR Operations', description: '' },
         { title: 'Senior Developer', description: '' },
@@ -50,7 +49,7 @@ async function seed() {
 
     await JobRolePermissions.truncate();
 
-    const mdRole = jobRoles.find((_jobRole) => _jobRole.title.toUpperCase() == 'MANAGING DIRECTOR');
+    const mdRole = await JobRole.findOne({ where: { title: 'MANAGING DIRECTOR' } });
     const hrOperationsRole = await JobRole.findOne({ where: { title: 'HR OPERATIONS' } });
     const hrManagerRole = await JobRole.findOne({ where: { title: 'HR MANAGER' } });
     const employeeRole = await JobRole.findOne({ where: { title: 'OPERATIONS OFFICER' } });
