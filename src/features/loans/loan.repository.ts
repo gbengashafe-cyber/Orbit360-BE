@@ -62,8 +62,8 @@ export class LoanRepository {
     return LoanPayment.bulkCreate(loanPayment, { transaction });
   };
 
-  static readonly update = (id: number, loan: Attributes<Loan>) => {
-    return Loan.update(loan, { where: { id } });
+  static readonly update = (id: number, loan: Attributes<Loan>, { transaction }) => {
+    return Loan.update(loan, { where: { id }, transaction });
   };
 
   static readonly delete = (id: number) => {

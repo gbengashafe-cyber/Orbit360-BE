@@ -1,6 +1,6 @@
 import config from 'config';
 import { addMonths, differenceInMonths, endOfMonth, getMonth, getYear } from 'date-fns';
-import { CreationAttributes } from 'sequelize';
+import { Attributes, CreationAttributes } from 'sequelize';
 import { AuditLog } from '../../audit-log/audit-log.model';
 import { db } from '../../db';
 import { ApiError } from '../../utils/api-error';
@@ -309,6 +309,67 @@ export class EmployeeService {
     });
   };
 
+  static readonly updateLoanRequest = async ({
+    employeeId,
+    loan,
+    userId,
+    loanId,
+  }: {
+    employeeId: number;
+    loan: Attributes<Loan>;
+    userId: number;
+    loanId: number;
+  }) => {
+    const employee = await EmployeeRepository.readById(employeeId);
+
+    if (!employee) {
+      throw ApiError.badRequest('Employee record not found');
+    }
+
+    const loanRecord = await LoanRepository.readById(loanId);
+
+    if (!loanRecord) {
+      throw ApiError.badRequest('Loan record not found');
+    }
+
+    if (!['PENDING_REVIEW'].includes(loanRecord.status.toUpperCase())) {
+      throw ApiError.badRequest('This loan request is not available for update.');
+    }
+
+    this.checkEmployeeEligibility({ employee });
+
+    const loanTypeConfiguration = await LoanType.findByPk(loan.loanTypeId);
+
+    if (!loanTypeConfiguration) {
+      throw ApiError.badRequest('Missing configuration for the loan type selected. Kindly contact the system administrator');
+    }
+
+    if (loan.tenureMonths > loanTypeConfiguration.maxTenureMonths) {
+      throw ApiError.badRequest(
+        `${loanTypeConfiguration.name} loan cannot be more than ${loanTypeConfiguration.maxTenureMonths} months`,
+      );
+    }
+
+    this.checkThriftRequest({ loanType: loanTypeConfiguration.name, loan });
+    await this.checkSalaryAdvanceRequest({ employee, loan, loanType: loanTypeConfiguration.name });
+
+    return await db.transaction(async (transaction) => {
+      const loanRecord = await LoanRepository.update(loanId, loan, { transaction });
+      await AuditLog.create(
+        {
+          action: 'UPDATE',
+          entity: 'LOAN',
+          entityId: String(loanId),
+          userId,
+          description: `LOAN REQUEST UPDATE: ${JSON.stringify(loan)}`,
+        },
+        { transaction },
+      );
+
+      return loanRecord;
+    });
+  };
+
   private static readonly checkEmployeeEligibility = ({ employee }) => {
     if (['PENDING_APPROVAL'].includes(employee.status)) {
       throw ApiError.badRequest(
@@ -370,7 +431,7 @@ export class EmployeeService {
     }
 
     if (!['PENDING_APPROVAL', 'PENDING_REVIEW'].includes(loanRecord.status.toUpperCase())) {
-      throw ApiError.forbidden('This loan cannot be cancelled.');
+      throw ApiError.badRequest('This loan cannot be cancelled.');
     }
 
     if (loanRecord.employeeId !== employeeId) {

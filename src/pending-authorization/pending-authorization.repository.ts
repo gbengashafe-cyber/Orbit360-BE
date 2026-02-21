@@ -180,7 +180,7 @@ export class AuthorizationRepository {
               include: [{ model: Employee, as: 'draftSupervisor', attributes: ['id', 'firstName', 'lastName'] }],
             },
             {
-              model: Employee,
+              model: Employee.scope('all'),
               attributes: ['id', 'staffId', 'firstName', 'lastName'],
             },
           ],

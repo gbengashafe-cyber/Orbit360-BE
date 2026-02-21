@@ -76,6 +76,7 @@ const employeeLoanRequest = z.object({
   startDate: z.iso.date('Kindly specify the date the loan is required').min(1, 'Please select the required date'),
   employeeNote: z.string().optional(),
 });
+
 const validateEmployeeLoanRequest = (req: Request, _res: Response, next: NextFunction) => {
   const result = employeeLoanRequest.parse(req.body);
 

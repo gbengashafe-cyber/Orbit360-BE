@@ -16,7 +16,9 @@ class CompanyRepository {
   };
 
   static readonly readDepartments = async (companyId: number) => {
-    return Company.findByPk(companyId, { include: [{ model: Department, as: 'departments' }] });
+    return Company.findByPk(companyId, {
+      include: [{ model: Department, as: 'departments', attributes: { exclude: ['createdAt', 'updatedAt'] } }],
+    });
   };
 
   static readonly update = async (id, company) => {

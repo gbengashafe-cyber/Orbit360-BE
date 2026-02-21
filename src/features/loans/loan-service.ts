@@ -29,7 +29,7 @@ export class LoanService {
       throw ApiError.badRequest(`Cannot modify loan in ${loan.status} state.`);
     }
 
-    await LoanRepository.update(Number(id), data);
+    await db.transaction(async (transaction) => await LoanRepository.update(Number(id), data, { transaction }));
 
     const updatedLoan = await LoanRepository.readById(id);
 
@@ -174,6 +174,8 @@ export class LoanService {
       updateData.nextStep = 'PAID_OFF';
     }
 
-    return LoanRepository.update(id, updateData);
+    return await db.transaction(async (transaction) => {
+      return LoanRepository.update(id, updateData, { transaction });
+    });
   };
 }
