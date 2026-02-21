@@ -138,7 +138,7 @@ async function seed() {
         leaveEntitlement: 20,
         nhfApplicable: false,
         annualRentAmount: 2000000,
-        createdBy: 9,
+        createdBy: 5,
       },
       {
         firstName: 'Test',
@@ -175,7 +175,7 @@ async function seed() {
         leaveEntitlement: 20,
         nhfApplicable: false,
         annualRentAmount: 2000000,
-        createdBy: 9,
+        createdBy: 5,
       },
       {
         firstName: 'Test',
@@ -212,7 +212,7 @@ async function seed() {
         leaveEntitlement: 20,
         nhfApplicable: false,
         annualRentAmount: 2000000,
-        createdBy: 9,
+        createdBy: 5,
       },
       {
         firstName: 'Test',
@@ -249,7 +249,7 @@ async function seed() {
         leaveEntitlement: 20,
         nhfApplicable: false,
         annualRentAmount: 2000000,
-        createdBy: 9,
+        createdBy: 5,
       },
     ];
 
