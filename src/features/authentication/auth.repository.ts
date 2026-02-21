@@ -10,24 +10,9 @@ export class AuthRepository {
       raw: true,
     });
 
-    console.log('User found:', { email, found: !!result, storedPassword: result?.password?.substring(0, 20) });
+    const passwordHash = result?.password ?? '$2b$10$invalidinvalidinvalidinvalidinvalidinvalid';
 
-    if (!result?.password) {
-      console.log('No password found in database');
-      return null;
-    }
-
-    // For testing - compare with plaintext
-    const storedPass = result.password?.trim();
-    const inputPass = password?.trim();
-    const passwordIsCorrect = inputPass === storedPass;
-    console.log('Password comparison:', {
-      passwordIsCorrect,
-      inputLength: inputPass?.length,
-      storedLength: storedPass?.length,
-      input: inputPass,
-      stored: storedPass,
-    });
+    const passwordIsCorrect = await bcrypt.compare(password, passwordHash);
 
     if (!passwordIsCorrect) {
       return null;
