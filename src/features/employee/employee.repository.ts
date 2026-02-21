@@ -72,7 +72,7 @@ export class EmployeeRepository {
 
     return Employee.findAndCountAll({
       where,
-      include: this.includes,
+      include: [...this.includes, { association: 'supervisor', attributes: ['id', 'firstName', 'lastName', 'email'] }],
       limit: rows,
       offset,
       order: [[orderBy, orderDirection]],
@@ -121,7 +121,7 @@ export class EmployeeRepository {
 
     return Employee.findAndCountAll({
       where,
-      include: this.includes,
+      include: [...this.includes, { association: 'supervisor', attributes: ['id', 'firstName', 'lastName', 'email'] }],
       limit: rows,
       offset: (page - 1) * rows,
       order: [[orderBy, orderDirection]],
