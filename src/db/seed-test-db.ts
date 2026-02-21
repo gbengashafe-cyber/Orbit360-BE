@@ -10,7 +10,9 @@ import { logger } from '../utils/logger';
 
 async function seed() {
   try {
+    await Company.bulkCreate([{ name: 'MFB' }], { ignoreDuplicates: true });
     const companies = await Company.findOne();
+    await Company.bulkCreate([{ name: 'ASSET MANAGEMENT' }], { ignoreDuplicates: true });
 
     await Department.bulkCreate(
       [
@@ -21,6 +23,7 @@ async function seed() {
         { name: 'Marketing', description: '', companyId: companies?.id },
         { name: 'Security', description: '', companyId: companies?.id },
         { name: 'Human Resources', description: '', companyId: companies?.id },
+        { name: "MD's Office", description: '', companyId: companies?.id },
       ],
       { ignoreDuplicates: true },
     );
@@ -33,34 +36,41 @@ async function seed() {
       ],
       { ignoreDuplicates: true },
     );
+
+    const hrDepartment = await Department.findOne({ where: { name: 'HUMAN RESOURCES' } });
+    const operationsDepartment = await Department.findOne({ where: { name: 'OPERATIONS' } });
+    const itDepartment = await Department.findOne({ where: { name: 'INFORMATION TECHNOLOGY' } });
+    const mdsDepartment = await Department.findOne({ where: { name: "MD's Office" } });
+
+    if (!hrDepartment || !operationsDepartment || !mdsDepartment || !itDepartment) {
+      throw ApiError.badRequest('Missing one or more department set up');
+    }
+
     await JobRole.bulkCreate(
       [
-        { title: 'HR Operations', description: '' },
-        { title: 'Senior Developer', description: '' },
-        { title: 'Junior Developer', description: '' },
-        { title: 'Sales Manager', description: '' },
-        { title: 'HR Manager', description: '' },
-        { title: 'Operations Officer', description: '' },
-        { title: 'Operations Supervisor', description: '' },
-        { title: 'Managing Director', description: '' },
+        { departmentId: itDepartment.id, title: 'Senior Developer', description: '' },
+        { departmentId: itDepartment.id, title: 'Junior Developer', description: '' },
+        { departmentId: hrDepartment.id, title: 'HR Operations', description: '' },
+        { departmentId: hrDepartment.id, title: 'HR Manager', description: '' },
+        { departmentId: operationsDepartment.id, title: 'Operations Officer', description: '' },
+        { departmentId: operationsDepartment.id, title: 'Operations Supervisor', description: '' },
+        { departmentId: mdsDepartment.id, title: 'Managing Director', description: '' },
       ],
       { ignoreDuplicates: true },
     );
-
-    await JobRolePermissions.truncate();
 
     const mdRole = await JobRole.findOne({ where: { title: 'MANAGING DIRECTOR' } });
     const hrOperationsRole = await JobRole.findOne({ where: { title: 'HR OPERATIONS' } });
     const hrManagerRole = await JobRole.findOne({ where: { title: 'HR MANAGER' } });
     const employeeRole = await JobRole.findOne({ where: { title: 'OPERATIONS OFFICER' } });
     const employeeSupervisorRole = await JobRole.findOne({ where: { title: 'OPERATIONS SUPERVISOR' } });
-    const hrDepartment = await Department.findOne({ where: { name: 'HUMAN RESOURCES' } });
-    const operationsDepartment = await Department.findOne({ where: { name: 'OPERATIONS' } });
 
+    console.log(!hrOperationsRole, !hrManagerRole, !employeeRole, !employeeSupervisorRole, !mdRole);
     if (!hrOperationsRole || !hrManagerRole || !employeeRole || !employeeSupervisorRole || !mdRole) {
       throw ApiError.badRequest('Missing one or more job roles set up');
     }
 
+    await JobRolePermissions.truncate();
     if (!hrDepartment || !operationsDepartment) {
       throw ApiError.badRequest('Missing one or more department set up');
     }
@@ -94,8 +104,8 @@ async function seed() {
         lastName: 'HR',
         email: 'test-hr@gmail.com',
         password: hashedPassword,
-        jobRole: hrOperationsRole.title,
-        departmentName: hrDepartment.name,
+        jobRoleId: hrOperationsRole.id,
+        departmentId: hrDepartment.id,
         status: 'ACTIVE',
         staffId: 'MFB001',
         phone: '08070707',
@@ -129,8 +139,8 @@ async function seed() {
         lastName: 'HR Manager',
         email: 'test-hr-manager@gmail.com',
         password: hashedPassword,
-        jobRole: hrManagerRole.title,
-        departmentName: hrDepartment.name,
+        jobRoleId: hrManagerRole.id,
+        departmentId: hrDepartment.id,
         status: 'ACTIVE',
         staffId: 'MFB002',
         phone: '08070707',
@@ -164,8 +174,8 @@ async function seed() {
         lastName: 'Employee',
         email: 'test-employee@gmail.com',
         password: hashedPassword,
-        jobRole: employeeRole.title,
-        departmentName: operationsDepartment.name,
+        jobRoleId: employeeRole.id,
+        departmentId: operationsDepartment.id,
         status: 'ACTIVE',
         staffId: 'MFB003',
         phone: '08070707',
@@ -199,8 +209,8 @@ async function seed() {
         lastName: 'Supervisor',
         email: 'test-supervisor@gmail.com',
         password: hashedPassword,
-        jobRole: employeeSupervisorRole.title,
-        departmentName: operationsDepartment.name,
+        jobRoleId: employeeSupervisorRole.id,
+        departmentId: operationsDepartment.id,
         status: 'ACTIVE',
         staffId: 'MFB004',
         phone: '08070707',
