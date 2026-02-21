@@ -53,8 +53,8 @@ async function seed() {
     const mdRole = jobRoles.find((_jobRole) => _jobRole.title.toUpperCase() == 'MANAGING DIRECTOR');
     const hrOperationsRole = await JobRole.findOne({ where: { title: 'HR OPERATIONS' } });
     const hrManagerRole = await JobRole.findOne({ where: { title: 'HR MANAGER' } });
-    const employeeRole = jobRoles.find((_jobRole) => _jobRole.title.toUpperCase() == 'OPERATIONS OFFICER');
-    const employeeSupervisorRole = jobRoles.find((_jobRole) => _jobRole.title.toUpperCase() == 'OPERATIONS SUPERVISOR');
+    const employeeRole = await JobRole.findOne({ where: { title: 'OPERATIONS OFFICER' } });
+    const employeeSupervisorRole = await JobRole.findOne({ where: { title: 'OPERATIONS SUPERVISOR' } });
     const hrDepartment = await Department.findOne({ where: { name: 'HUMAN RESOURCES' } });
     const operationsDepartment = await Department.findOne({ where: { name: 'OPERATIONS' } });
 
