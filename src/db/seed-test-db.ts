@@ -1,4 +1,3 @@
-import bcrypt from 'bcryptjs';
 import { Company } from '../features/company/company.model';
 import { Department } from '../features/department/department.model';
 import { Employee } from '../features/employee/employee.model';
@@ -88,7 +87,7 @@ async function seed() {
     );
 
     // Temporarily use plaintext for debugging
-    const hashedPassword = 'password';
+    const hashedPassword = '';
 
     const employees: any = [
       {

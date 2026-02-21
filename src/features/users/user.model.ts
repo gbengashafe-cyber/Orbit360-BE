@@ -93,7 +93,7 @@ User.init(
       allowNull: false,
     },
     departmentId: {
-      type: DataTypes.STRING,
+      type: DataTypes.INTEGER,
       references: { model: Department, key: 'id' },
       allowNull: false,
     },
