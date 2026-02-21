@@ -173,11 +173,14 @@ export class AuthController {
   static readonly passwordLogin = async (req: Request, res: Response) => {
     const { email, password } = req.body;
 
+    console.log('Login attempt:', { email, passwordLength: password?.length });
+
     if (!(password && email)) {
       throw ApiError.unauthenticated('Email and password is required');
     }
 
     const user = await AuthRepository.findLoginUser(email, password);
+    console.log('Auth result:', { found: !!user });
 
     if (!user) {
       throw ApiError.unauthenticated('Invalid email/password');

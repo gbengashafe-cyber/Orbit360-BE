@@ -130,6 +130,17 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 // API Routes
+app.use((req: Request, res: Response, next: NextFunction) => {
+  if (req.path.includes('/auth/login')) {
+    console.log('Auth login request received:', {
+      path: req.path,
+      method: req.method,
+      bodyKeys: Object.keys(req.body),
+    });
+  }
+  next();
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/v1/complaints', complaintRoutes);
 app.use('/api/v1/departments', departmentRoutes);

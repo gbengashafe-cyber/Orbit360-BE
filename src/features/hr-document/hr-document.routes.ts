@@ -4,6 +4,9 @@ import { HRDocumentController } from './hr-document.controller';
 
 const router = Router();
 
+// Initialize default folders
+router.post('/initialize', validateAuthToken, HRDocumentController.initializeDefaultFolders);
+
 // Documents
 router.post('/documents', validateAuthToken, HRDocumentController.createDocument);
 router.get('/documents', validateAuthToken, HRDocumentController.getDocuments);

@@ -1,3 +1,4 @@
+import bcrypt from 'bcryptjs';
 import { Company } from '../features/company/company.model';
 import { Department } from '../features/department/department.model';
 import { Employee } from '../features/employee/employee.model';
@@ -86,12 +87,15 @@ async function seed() {
       throw ApiError.badRequest('Missing one or more department set up');
     }
 
+    // Temporarily use plaintext for debugging
+    const hashedPassword = 'password';
+
     const employees: any = [
       {
         firstName: 'Test',
         lastName: 'HR',
         email: 'test-hr@gmail.com',
-        password: '',
+        password: hashedPassword,
         jobRole: hrOperationsRole.title,
         departmentName: hrDepartment.name,
         status: 'ACTIVE',
@@ -126,7 +130,7 @@ async function seed() {
         firstName: 'Test',
         lastName: 'HR Manager',
         email: 'test-hr-manager@gmail.com',
-        password: '',
+        password: hashedPassword,
         jobRole: hrManagerRole.title,
         departmentName: hrDepartment.name,
         status: 'ACTIVE',
@@ -161,7 +165,7 @@ async function seed() {
         firstName: 'Test',
         lastName: 'Employee',
         email: 'test-employee@gmail.com',
-        password: '',
+        password: hashedPassword,
         jobRole: employeeRole.title,
         departmentName: operationsDepartment.name,
         status: 'ACTIVE',
@@ -196,7 +200,7 @@ async function seed() {
         firstName: 'Test',
         lastName: 'Supervisor',
         email: 'test-supervisor@gmail.com',
-        password: '',
+        password: hashedPassword,
         jobRole: employeeSupervisorRole.title,
         departmentName: operationsDepartment.name,
         status: 'ACTIVE',

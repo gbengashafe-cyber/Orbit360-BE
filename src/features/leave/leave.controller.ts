@@ -11,7 +11,21 @@ import { calculateWorkingDays, validateLeaveDates } from './leave.utils';
 export class LeaveController {
   static async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const { employeeId, startDate, endDate, type, reason } = req.body;
+      const { startDate, endDate, type, reason } = req.body;
+      const user = req.user;
+
+      if (!user) {
+        throw ApiError.unauthenticated('User not authenticated');
+      }
+
+      // Get employee record for current user
+      const employee = await Employee.findOne({
+        where: { email: user.email },
+      });
+
+      if (!employee) {
+        throw ApiError.badRequest('Employee record not found for this user');
+      }
 
       // Validate leave dates
       const dateError = validateLeaveDates(startDate, endDate);
@@ -23,7 +37,7 @@ export class LeaveController {
       const workingDays = calculateWorkingDays(startDate, endDate);
 
       const leave = await Leave.create({
-        employeeId,
+        employeeId: employee.id,
         startDate,
         endDate,
         type,
@@ -43,7 +57,7 @@ export class LeaveController {
 
       // Get leave balance for this employee and leave type
       const leaveBalance = await LeaveBalance.findOne({
-        where: { employeeId, leaveType: type, year: new Date().getFullYear() },
+        where: { employeeId: employee.id, leaveType: type, year: new Date().getFullYear() },
       });
 
       res.status(201).json({

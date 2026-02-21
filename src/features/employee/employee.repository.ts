@@ -67,6 +67,7 @@ export class EmployeeRepository {
       limit: rows,
       offset,
       order: [[orderBy, orderDirection]],
+      include: [{ association: 'supervisor', attributes: ['id', 'firstName', 'lastName', 'email'] }],
     });
   };
 
@@ -116,6 +117,7 @@ export class EmployeeRepository {
       offset: (page - 1) * rows,
       order: [[orderBy, orderDirection]],
       nest: true,
+      include: [{ association: 'supervisor', attributes: ['id', 'firstName', 'lastName', 'email'] }],
     });
   };
 }
