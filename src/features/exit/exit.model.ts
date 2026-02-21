@@ -4,7 +4,7 @@ import { Employee } from '../employee/employee.model';
 
 export interface ExitAttributes {
   id?: string;
-  employeeId: string;
+  employeeId: number;
   employeeName?: string;
   employeeEmail?: string;
   employeeDepartment?: string;
@@ -46,7 +46,7 @@ export interface ExitAttributes {
 
 export class Exit extends Model<ExitAttributes> implements ExitAttributes {
   public id!: string;
-  public employeeId!: string;
+  public employeeId!: number;
   public employeeName!: string;
   public employeeEmail!: string;
   public employeeDepartment!: string;
@@ -94,7 +94,7 @@ Exit.init(
       primaryKey: true,
     },
     employeeId: {
-      type: DataTypes.STRING,
+      type: DataTypes.INTEGER,
       allowNull: false,
     },
     employeeName: {

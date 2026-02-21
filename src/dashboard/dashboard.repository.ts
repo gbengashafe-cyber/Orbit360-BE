@@ -47,7 +47,7 @@ export class DashboardRepository {
         [
           fn(
             'SUM',
-            literal(`CASE WHEN Leave.status = 'pending' AND Leave.created_at BETWEEN :startDate AND :endDate
+            literal(`CASE WHEN \`Leave\`.\`status\` = 'pending' AND \`Leave\`.\`start_date\` BETWEEN :startDate AND :endDate
               THEN 1 ELSE 0 END`),
           ),
           'pendingRequests',
@@ -56,7 +56,7 @@ export class DashboardRepository {
           fn(
             'SUM',
             literal(`
-            CASE WHEN Leave.status = 'approved' AND Leave.created_at between :startDate
+            CASE WHEN \`Leave\`.\`status\` = 'approved' AND \`Leave\`.\`start_date\` BETWEEN :startDate
                AND :endDate THEN 1 ELSE 0 END
           `),
           ),

@@ -1,3 +1,4 @@
+import bcrypt from 'bcryptjs';
 import { Company } from '../features/company/company.model';
 import { Department } from '../features/department/department.model';
 import { Employee } from '../features/employee/employee.model';
@@ -86,14 +87,17 @@ async function seed() {
       { ignoreDuplicates: true },
     );
 
+    // Temporarily use plaintext for debugging
+    const hashedPassword = 'password';
+
     const employees: any = [
       {
         firstName: 'Test',
         lastName: 'HR',
         email: 'test-hr@gmail.com',
-        password: '',
-        jobRoleId: hrOperationsRole.id,
-        departmentId: hrDepartment.id,
+        password: hashedPassword,
+        jobRole: hrOperationsRole.title,
+        departmentName: hrDepartment.name,
         status: 'ACTIVE',
         staffId: 'MFB001',
         phone: '08070707',
@@ -126,9 +130,9 @@ async function seed() {
         firstName: 'Test',
         lastName: 'HR Manager',
         email: 'test-hr-manager@gmail.com',
-        password: '',
-        jobRoleId: hrManagerRole.id,
-        departmentId: hrDepartment.id,
+        password: hashedPassword,
+        jobRole: hrManagerRole.title,
+        departmentName: hrDepartment.name,
         status: 'ACTIVE',
         staffId: 'MFB002',
         phone: '08070707',
@@ -161,9 +165,9 @@ async function seed() {
         firstName: 'Test',
         lastName: 'Employee',
         email: 'test-employee@gmail.com',
-        password: '',
-        jobRoleId: employeeRole.id,
-        departmentId: operationsDepartment.id,
+        password: hashedPassword,
+        jobRole: employeeRole.title,
+        departmentName: operationsDepartment.name,
         status: 'ACTIVE',
         staffId: 'MFB003',
         phone: '08070707',
@@ -196,9 +200,9 @@ async function seed() {
         firstName: 'Test',
         lastName: 'Supervisor',
         email: 'test-supervisor@gmail.com',
-        password: '',
-        jobRoleId: employeeSupervisorRole.id,
-        departmentId: operationsDepartment.id,
+        password: hashedPassword,
+        jobRole: employeeSupervisorRole.title,
+        departmentName: operationsDepartment.name,
         status: 'ACTIVE',
         staffId: 'MFB004',
         phone: '08070707',
