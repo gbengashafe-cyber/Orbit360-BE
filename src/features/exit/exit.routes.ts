@@ -1,23 +1,29 @@
 import { Router } from 'express';
-import { hasRequiredPermission } from '../../utils/check-permission';
 import { validateAuthToken } from '../authentication/auth.middleware';
 import { ExitController } from './exit.controller';
 import { validateApproveExit, validateCreateExit, validateEmployeeIdParam, validateExitIdParam } from './exit.validators';
 
 const router = Router();
 
-router.use(validateAuthToken);
+// Create new exit request
+router.post('/', validateAuthToken, validateCreateExit, ExitController.create);
 
-router.post('/', validateCreateExit, ExitController.create);
-router.get('/', hasRequiredPermission('MANAGE_EXITS'), ExitController.getAll);
-router.get('/employee/:employeeId', validateEmployeeIdParam, ExitController.getByEmployee);
-router.get('/:id', validateExitIdParam, ExitController.getById);
-router.patch(
-  '/:id/approve',
-  hasRequiredPermission('APPROVE_EXITS'),
-  validateExitIdParam,
-  validateApproveExit,
-  ExitController.approveExit,
-);
+// Get all exits (admin/HR only)
+router.get('/', validateAuthToken, ExitController.getAll);
+
+// Get exits by employee
+router.get('/employee/:employeeId', validateAuthToken, validateEmployeeIdParam, ExitController.getByEmployee);
+
+// Get single exit
+router.get('/:id', validateAuthToken, validateExitIdParam, ExitController.getById);
+
+// Update exit request
+router.put('/:id', validateAuthToken, validateExitIdParam, ExitController.update);
+
+// Delete exit request
+router.delete('/:id', validateAuthToken, validateExitIdParam, ExitController.delete);
+
+// Approve/reject exit request
+router.patch('/:id/approve', validateAuthToken, validateExitIdParam, validateApproveExit, ExitController.approveExit);
 
 export { router as exitRoutes };

@@ -11,8 +11,6 @@ const envSchema = z.object({
   DB_NAME: z.string(),
   DB_USER: z.string(),
   DB_PASSWORD: z.string(),
-  MAIL_USERNAME: z.string(),
-  MAIL_PASSWORD: z.string(),
   DB_HOST_NAME: z.string(),
   DB_PORT: z.coerce.number(),
   DB_TYPE: z.string(),
@@ -20,6 +18,8 @@ const envSchema = z.object({
   JWT_SECRET: z.string(),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
+  MAIL_USERNAME: z.string().optional(),
+  MAIL_PASSWORD: z.string().optional(),
 });
 
 const result = envSchema.safeParse(process.env);

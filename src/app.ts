@@ -1,5 +1,4 @@
 import compression from 'compression';
-import config from 'config';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express, { NextFunction, Request, Response } from 'express';
@@ -8,6 +7,7 @@ import morgan from 'morgan';
 import { randomUUID } from 'node:crypto';
 import path from 'path';
 import swaggerUi from 'swagger-ui-express';
+import config from 'config';
 import { swaggerSpec } from './config/swagger';
 import { dashboardRoutes } from './dashboard/dashboard.routes';
 import { authRoutes } from './features/authentication/auth.routes';
@@ -16,6 +16,7 @@ import { complaintRoutes } from './features/complaints/complaint.routes';
 import departmentRoutes from './features/department/department.routes';
 import { employeeRoutes } from './features/employee/employee.routes';
 import { exitRoutes } from './features/exit/exit.routes';
+import { hrDocumentRoutes } from './features/hr-document/hr-document.routes';
 import { jobRoleRoutes } from './features/job-role/job-role.routes';
 import { leaveRoutes } from './features/leave/leave.routes';
 import { loanTypeRoutes } from './features/loans/loan-types/loan-types.routes';
@@ -32,7 +33,7 @@ import { globalErrorHandler } from './utils/global-error-handler';
 import { logger } from './utils/logger';
 import { parsePageAndLimitNumber, parseQueryParams } from './utils/request-query-parser';
 
-const allowedOrigins = config.get<string[]>('allowedOrigins');
+const allowedOrigins = config.get<string | string[]>('allowedOrigins');
 
 const app = express();
 
@@ -133,6 +134,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/v1/complaints', complaintRoutes);
 app.use('/api/v1/leaves', leaveRoutes);
 app.use('/api/v1/exits', exitRoutes);
+app.use('/api/v1/hr-documents', hrDocumentRoutes);
 app.use('/api/v1/onboardings', onboardingRoutes);
 app.use('/api/v1/recruitment', recruitmentRoutes);
 app.use('/api/v1/payrolls/uploads', payrollReportRoutes);

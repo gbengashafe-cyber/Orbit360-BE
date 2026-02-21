@@ -1,9 +1,9 @@
 {
-  "allowedOrigins": "*",
+  "allowedOrigins": "https://orbit360.isaacbern.com.ng",
   "payrollReport": {
     "storagePath": "payroll-reports",
     "maxFileSizeInMB": 5,
-    "storageServer": "https://localhost:3000/"
+    "storageServer": "https://orbit360.isaacbern.com.ng/"
   },
   "ldapsUrl": "ldaps:\\domain.com:639",
   "tokenExpiry": { "access": 1200, "refresh": 86400 },

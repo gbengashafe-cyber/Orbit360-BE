@@ -2,24 +2,42 @@ import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
 
 const createExitSchema = z.object({
-  employeeId: z.number().int('Employee ID must be an integer').min(1, 'Employee ID is required'),
-  exitType: z.enum(['resignation', 'termination', 'retirement', 'contract_end'], { message: 'Invalid exit type' }),
-  exitDate: z.iso.date('Invalid exit date format'),
-  reason: z.string().optional().nullable(),
+  employeeId: z.union([z.string(), z.number()]).transform(String),
+  employeeName: z.string().optional(),
+  employeeEmail: z.string().email().optional(),
+  employeeDepartment: z.string().optional(),
+  position: z.string().optional(),
+  resignationDate: z.string().refine((val) => !isNaN(Date.parse(val)), { message: 'Invalid resignation date format' }),
+  lastWorkingDate: z.string().refine((val) => !isNaN(Date.parse(val)), { message: 'Invalid last working date format' }),
+  noticePeriod: z.number().int().optional(),
+  status: z.enum(['submitted', 'under_review', 'clearance_pending', 'approved', 'completed', 'rejected', 'withdrawn']).optional(),
+  employeeSignatureDate: z
+    .string()
+    .refine((val) => !isNaN(Date.parse(val)), { message: 'Invalid employee signature date format' })
+    .optional(),
+  handoverStatus: z.enum(['in_progress', 'yes', 'no']).optional(),
+  handoverDetails: z.string().optional(),
+  handoverRecipientName: z.string().optional(),
+  handoverRecipientContact: z.string().optional(),
+  outstandingTasks: z.string().optional(),
+  outstandingApprovals: z.string().optional(),
+  assetsToReturn: z.string().optional(),
+  salaryBalanceNotes: z.string().optional(),
+  loanDeductionNotes: z.string().optional(),
+  leaveEncashmentRequest: z.boolean().optional(),
+  pensionProcessingNotes: z.string().optional(),
+  overallExperienceRating: z.number().int().min(1).max(5).optional(),
+  positiveExperience: z.string().optional(),
+  areasForImprovementOrg: z.string().optional(),
+  wouldRecommendOrg: z.boolean().optional(),
 });
 
 const exitIdParamSchema = z.object({
-  id: z
-    .string()
-    .refine((val) => !isNaN(Number(val)), { message: 'Exit ID must be a number' })
-    .transform(Number),
+  id: z.string().uuid({ message: 'Exit ID must be a valid UUID' }),
 });
 
 const employeeIdParamSchema = z.object({
-  employeeId: z
-    .string()
-    .refine((val) => !isNaN(Number(val)), { message: 'Employee ID must be a number' })
-    .transform(Number),
+  employeeId: z.string().min(1, 'Employee ID is required'),
 });
 
 const approveExitSchema = z.object({

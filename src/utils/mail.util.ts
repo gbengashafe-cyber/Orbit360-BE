@@ -5,20 +5,20 @@ import hbs from 'nodemailer-express-handlebars';
 import { env } from '../config/env';
 import { logger } from './logger';
 
-const mailSender = config.get('mail.mailSender') as string;
+const mailSender = config.get<string>('mail.mailSender');
 
 // eslint-disable-next-line sonarjs/no-clear-text-protocols
 const transporter = createTransport({
-  host: config.get('mail.server'),
-  port: config.get('mail.serverPort') || 465,
+  host: config.get<string>('mail.server'),
+  port: config.get<number>('mail.serverPort'),
   secure: false,
-  // requireTLS: true,
+  requireTLS: true,
   auth: {
     user: env.MAIL_USERNAME,
     pass: env.MAIL_PASSWORD,
   },
   tls: {
-    rejectUnauthorized: true,
+    rejectUnauthorized: false,
   },
   pool: true,
   maxConnections: 5,
@@ -69,9 +69,13 @@ export class MailUtil {
       });
       logger.info(`Mail sent successfully. response: ${info.response}`);
       return true;
-    } catch (error) {
-      logger.error('Mail sending failed.');
-      logger.error(error);
+    } catch (error: any) {
+      logger.error({
+        message: 'Mail sending failed.',
+        error: error?.message || error,
+        code: error?.code,
+        command: error?.command,
+      });
       return false;
     }
   };
@@ -93,8 +97,13 @@ export class MailUtil {
       });
       logger.info(`Mail sent successfully. response: ${info.response}`);
       return true;
-    } catch (error) {
-      logger.error({ message: 'Mail sending failed.', error });
+    } catch (error: any) {
+      logger.error({
+        message: 'Mail sending failed.',
+        error: error?.message || error,
+        code: error?.code,
+        command: error?.command,
+      });
       return false;
     }
   };

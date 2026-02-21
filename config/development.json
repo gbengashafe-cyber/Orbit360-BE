@@ -1,0 +1,6 @@
+{
+  "allowedOrigins": "*",
+  "mail": {
+    "frontendURL": "http://localhost:5173"
+  }
+}

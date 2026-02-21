@@ -6,6 +6,7 @@ import { db } from '../../db';
 import { ApiError } from '../../utils/api-error';
 import { MailUtil } from '../../utils/mail.util';
 import { AuthUtil } from '../authentication/auth.utils';
+import { LeaveBalanceService } from '../leave/leave-balance.service';
 import { LoanType } from '../loans/loan-types/loan-types.model';
 import { Loan } from '../loans/loan.model';
 import { LoanRepository } from '../loans/loan.repository';
@@ -36,6 +37,9 @@ export class EmployeeService {
     return await db.transaction(async (t) => {
       // Create employee in master table
       const employee = await EmployeeRepository.create({ ...payload, createdBy: makerId }, t);
+
+      // Initialize leave balances for the new employee
+      await LeaveBalanceService.initializeLeaveBalances(employee.id, new Date().getFullYear(), t);
 
       // Create change/creation request record
       const request = await EmployeeChangeRequest.create(

@@ -15,8 +15,8 @@ export type RefreshTokenPayload = TokenPayload & {
   rid: string;
 };
 
-export const JWT_EXPIRY = config.get('tokenExpiry.access') as number;
-export const REFRESH_TOKEN_EXPIRY = config.get('tokenExpiry.refresh') as number;
+export const JWT_EXPIRY = config.get<number>('tokenExpiry.access');
+export const REFRESH_TOKEN_EXPIRY = config.get<number>('tokenExpiry.refresh');
 
 export class TokenUtil {
   private static readonly handleTokenVerificationError = (error) => {
