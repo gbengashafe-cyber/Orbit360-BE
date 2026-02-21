@@ -88,7 +88,7 @@ User.init(
       defaultValue: 'user',
     },
     jobRoleId: {
-      type: DataTypes.STRING(100),
+      type: DataTypes.INTEGER,
       references: { model: JobRole, key: 'id' },
       allowNull: false,
     },
