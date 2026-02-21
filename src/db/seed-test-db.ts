@@ -11,19 +11,23 @@ import { logger } from '../utils/logger';
 async function seed() {
   try {
     await Company.bulkCreate([{ name: 'MFB' }], { ignoreDuplicates: true });
-    const companies = await Company.findOne();
+    const company = await Company.findOne();
     await Company.bulkCreate([{ name: 'ASSET MANAGEMENT' }], { ignoreDuplicates: true });
+
+    if (!company) {
+      throw ApiError.badRequest('Missing default company set up');
+    }
 
     await Department.bulkCreate(
       [
-        { name: 'Information Technology', description: '', companyId: companies?.id },
-        { name: 'Operations', description: '', companyId: companies?.id },
-        { name: 'Internal Control', description: '', companyId: companies?.id },
-        { name: 'Audit', description: '', companyId: companies?.id },
-        { name: 'Marketing', description: '', companyId: companies?.id },
-        { name: 'Security', description: '', companyId: companies?.id },
-        { name: 'Human Resources', description: '', companyId: companies?.id },
-        { name: "MD's Office", description: '', companyId: companies?.id },
+        { name: 'Information Technology', description: '', companyId: company?.id },
+        { name: 'Operations', description: '', companyId: company?.id },
+        { name: 'Internal Control', description: '', companyId: company?.id },
+        { name: 'Audit', description: '', companyId: company?.id },
+        { name: 'Marketing', description: '', companyId: company?.id },
+        { name: 'Security', description: '', companyId: company?.id },
+        { name: 'Human Resources', description: '', companyId: company?.id },
+        { name: "MD's Office", description: '', companyId: company?.id },
       ],
       { ignoreDuplicates: true },
     );
@@ -104,6 +108,7 @@ async function seed() {
         lastName: 'HR',
         email: 'test-hr@gmail.com',
         password: hashedPassword,
+        companyId: company.id,
         jobRoleId: hrOperationsRole.id,
         departmentId: hrDepartment.id,
         status: 'ACTIVE',
@@ -133,14 +138,16 @@ async function seed() {
         leaveEntitlement: 20,
         nhfApplicable: false,
         annualRentAmount: 2000000,
+        createdBy: 9,
       },
       {
         firstName: 'Test',
         lastName: 'HR Manager',
         email: 'test-hr-manager@gmail.com',
         password: hashedPassword,
-        jobRoleId: hrManagerRole.id,
+        companyId: company.id,
         departmentId: hrDepartment.id,
+        jobRoleId: hrManagerRole.id,
         status: 'ACTIVE',
         staffId: 'MFB002',
         phone: '08070707',
@@ -168,14 +175,16 @@ async function seed() {
         leaveEntitlement: 20,
         nhfApplicable: false,
         annualRentAmount: 2000000,
+        createdBy: 9,
       },
       {
         firstName: 'Test',
         lastName: 'Employee',
         email: 'test-employee@gmail.com',
         password: hashedPassword,
-        jobRoleId: employeeRole.id,
+        companyId: company.id,
         departmentId: operationsDepartment.id,
+        jobRoleId: employeeRole.id,
         status: 'ACTIVE',
         staffId: 'MFB003',
         phone: '08070707',
@@ -203,14 +212,16 @@ async function seed() {
         leaveEntitlement: 20,
         nhfApplicable: false,
         annualRentAmount: 2000000,
+        createdBy: 9,
       },
       {
         firstName: 'Test',
         lastName: 'Supervisor',
         email: 'test-supervisor@gmail.com',
         password: hashedPassword,
-        jobRoleId: employeeSupervisorRole.id,
+        companyId: company.id,
         departmentId: operationsDepartment.id,
+        jobRoleId: employeeSupervisorRole.id,
         status: 'ACTIVE',
         staffId: 'MFB004',
         phone: '08070707',
@@ -238,6 +249,7 @@ async function seed() {
         leaveEntitlement: 20,
         nhfApplicable: false,
         annualRentAmount: 2000000,
+        createdBy: 9,
       },
     ];
 
