@@ -49,7 +49,7 @@ export class HRFolderService {
   static async getRootFolders() {
     try {
       const folders = await HRFolder.findAll({
-        where: { parent_folder_id: undefined },
+        where: { parent_folder_id: null } as any,
         order: [['created_at', 'ASC']],
       });
       return folders;
