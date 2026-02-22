@@ -12,4 +12,4 @@ router.post('/', validateCreateDepartment, DepartmentController.create);
 router.put('/:id', validateUpdateDepartment, DepartmentController.update);
 router.delete('/:id', DepartmentController.delete);
 
-export default router;
+export { router as departmentRoutes };
