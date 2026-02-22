@@ -6,7 +6,7 @@ export interface HRDocumentAttributes {
   name: string;
   file_url: string;
   document_type?: 'contract' | 'policy' | 'memo' | 'performance_review' | 'other';
-  folder_id?: string;
+  folder_id?: string | null;
   access_level?: 'private' | 'public';
   created_by?: string;
   created_at?: Date;
@@ -18,7 +18,7 @@ export class HRDocument extends Model<HRDocumentAttributes> implements HRDocumen
   public name!: string;
   public file_url!: string;
   public document_type!: 'contract' | 'policy' | 'memo' | 'performance_review' | 'other';
-  public folder_id!: string;
+  public folder_id!: string | null;
   public access_level!: 'private' | 'public';
   public created_by!: string;
   public readonly created_at!: Date;
