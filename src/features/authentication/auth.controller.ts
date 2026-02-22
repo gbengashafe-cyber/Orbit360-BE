@@ -150,7 +150,8 @@ export class AuthController {
         throw ApiError.unauthenticated('User is inactive');
       }
 
-      res.json(ApiResponse(ApiResponse({ data: user, message: 'Fetched current user successfully' })));
+      const userData = { ...(user.toJSON?.() || user), permissions: req.user?.permissions || [] };
+      res.json(ApiResponse(ApiResponse({ data: userData, message: 'Fetched current user successfully' })));
     } catch (error) {
       logger.error(`Error fetching user: ${error}`);
       next(error);

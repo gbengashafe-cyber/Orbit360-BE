@@ -4,6 +4,7 @@ import { Employee } from '../features/employee/employee.model';
 import { JobRole } from '../features/job-role/job-role.model';
 import { LoanType } from '../features/loans/loan-types/loan-types.model';
 import { JobRolePermissions } from '../features/permissions/permission.model';
+import { LeaveBalance } from '../features/leave/leave-balance.model';
 import { User } from '../features/users/user.model';
 import { ApiError } from '../utils/api-error';
 import { logger } from '../utils/logger';
@@ -95,6 +96,8 @@ async function seed() {
         { permission: 'LIST_PAYROLLS', jobRoleId: hrManagerRole.id },
         { permission: 'LIST_PAYROLLS', jobRoleId: hrOperationsRole.id },
         { permission: 'APPROVE_PAYROLL_OVERRIDE', jobRoleId: mdRole.id },
+        { permission: 'MANAGE_DOCUMENTS', jobRoleId: hrOperationsRole.id },
+        { permission: 'MANAGE_DOCUMENTS', jobRoleId: hrManagerRole.id },
       ],
       { ignoreDuplicates: true },
     );
@@ -267,6 +270,38 @@ async function seed() {
 
     await employeeRecord?.update({ supervisorId: supervisorEmployee?.id });
     await hrEmployeeRecord?.update({ supervisorId: hrSupervisorEmployee?.id });
+
+    // Seed leave balances for employees
+    // Clear old leave balances first
+    await LeaveBalance.truncate();
+
+    const currentYear = new Date().getFullYear();
+
+    const leaveTypesDef = [
+      { type: 'annual', totalDays: 15, usedDays: 0 },
+      { type: 'sick', totalDays: 5, usedDays: 0 },
+      { type: 'maternity', totalDays: 90, usedDays: 0 },
+      { type: 'paternity', totalDays: 5, usedDays: 0 },
+      { type: 'compassionate', totalDays: 5, usedDays: 0 },
+      { type: 'casual', totalDays: 5, usedDays: 0 },
+    ];
+
+    const employees_to_update = [employeeRecord, supervisorEmployee, hrSupervisorEmployee, hrEmployeeRecord];
+
+    for (const emp of employees_to_update) {
+      if (emp) {
+        const leaveBalances = leaveTypesDef.map(({ type, totalDays, usedDays }) => ({
+          employeeId: emp.id,
+          leaveType: type,
+          totalDays,
+          usedDays,
+          remainingDays: totalDays - usedDays,
+          year: currentYear,
+        }));
+
+        await LeaveBalance.bulkCreate(leaveBalances);
+      }
+    }
 
     logger.info('Database seeding completed successfully');
     process.exit(0);

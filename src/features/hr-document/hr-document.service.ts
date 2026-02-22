@@ -20,7 +20,7 @@ export class HRDocumentService {
         name,
         file_url,
         document_type: (document_type as 'contract' | 'policy' | 'memo' | 'performance_review' | 'other') || 'other',
-        folder_id: folder_id || undefined,
+        folder_id: folder_id && folder_id.trim() ? folder_id : null,
         access_level: (access_level as 'private' | 'public') || 'private',
         created_by,
       });
