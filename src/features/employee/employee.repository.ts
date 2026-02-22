@@ -1,9 +1,9 @@
 import { CreationAttributes, InferAttributes, InferCreationAttributes, Op, Transaction } from 'sequelize';
+import { Company } from '../company/company.model';
+import { Department } from '../department/department.model';
+import { JobRole } from '../job-role/job-role.model';
 import { changeRequestStatus, EmployeeChangeRequest } from './employee-change-request.model';
 import { Employee } from './employee.model';
-import { JobRole } from '../job-role/job-role.model';
-import { Department } from '../department/department.model';
-import { Company } from '../company/company.model';
 
 export type ReadAllProps = {
   rows: number;
@@ -17,7 +17,7 @@ export class EmployeeRepository {
     { model: JobRole, as: 'jobRole', attributes: ['id', 'title', 'description'] },
     { model: Department, as: 'department', attributes: ['id', 'name', 'description'] },
     { model: Company, as: 'company', attributes: ['id', 'name', 'description'] },
-    { model: Employee, as: 'supervisor', attributes: ['id', 'firstName', 'lastName', 'staffId'] },
+    { model: Employee, as: 'supervisor', attributes: ['id', 'firstName', 'lastName', 'staffId'], required: false },
   ];
   static readonly create = (employee: InferCreationAttributes<Employee>, transaction: Transaction) => {
     return Employee.create(employee, { transaction });
@@ -58,12 +58,6 @@ export class EmployeeRepository {
       ];
     }
 
-    if (filters.status) where.status = filters.status;
-    if (filters.departmentName) where.departmentName = filters.departmentName;
-    if (filters.position) where.position = filters.position;
-    if (filters.gender) where.gender = filters.gender;
-    if (filters.supervisorId) where.supervisorId = filters.supervisorId;
-
     if (filters.hireDateFrom || filters.hireDateTo) {
       where.hireDate = {
         ...(filters.hireDateFrom && { [Op.gte]: filters.hireDateFrom }),
@@ -73,7 +67,7 @@ export class EmployeeRepository {
 
     return Employee.findAndCountAll({
       where,
-      include: [...this.includes, { association: 'supervisor', attributes: ['id', 'firstName', 'lastName', 'email'] }],
+      include: this.includes,
       limit: rows,
       offset,
       order: [[orderBy, orderDirection]],
