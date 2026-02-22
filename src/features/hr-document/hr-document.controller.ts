@@ -93,6 +93,8 @@ export class HRDocumentController {
       logger.info(`[getDocuments] Request received. User: ${req.user?.id}, Role: ${req.user?.role}`);
 
       const { folder_id, search, document_type } = req.query;
+      const userPermissions = req.user?.permissions || [];
+      const hasManageDocsPermission = userPermissions.includes('MANAGE_DOCUMENTS');
 
       // Get HR documents
       let hrDocuments: any;
@@ -106,6 +108,23 @@ export class HRDocumentController {
       } else {
         hrDocuments = await HRDocumentService.getDocuments();
       }
+
+      // Filter documents based on user permissions
+      // HR (MANAGE_DOCUMENTS) can see all documents
+      // Employees can only see public documents
+      if (!hasManageDocsPermission) {
+        hrDocuments = (hrDocuments || []).filter((doc: any) => doc.access_level === 'public');
+      }
+
+      // Get Onboarding Documents folder
+      const onboardingFolder = await HRFolder.findOne({
+        where: { name: 'Onboarding Documents' } as any,
+      });
+      // Only use it if it has no parent (is a root folder)
+      const onboardingFolderId =
+        onboardingFolder?.parent_folder_id === null || onboardingFolder?.parent_folder_id === undefined
+          ? onboardingFolder?.id
+          : null;
 
       // Get onboarding documents (which are "public" company documents)
       const onboardingDocuments = await Onboarding.findAll({
@@ -121,6 +140,7 @@ export class HRDocumentController {
         name: doc.documentName,
         document_type: doc.documentType.toLowerCase().replace(/\s+/g, '_'),
         file_url: doc.documentUrl,
+        folder_id: onboardingFolderId || null,
         access_level: 'public',
         created_at: doc.submittedAt,
         source: 'onboarding',
@@ -130,7 +150,7 @@ export class HRDocumentController {
       const allDocuments = [...(hrDocuments || []), ...transformedOnboardingDocs];
 
       logger.info(
-        `[getDocuments] Returning ${allDocuments?.length || 0} documents (${hrDocuments?.length || 0} HR + ${transformedOnboardingDocs?.length || 0} onboarding)`,
+        `[getDocuments] Returning ${allDocuments?.length || 0} documents (${hrDocuments?.length || 0} HR + ${transformedOnboardingDocs?.length || 0} onboarding). User has MANAGE_DOCUMENTS permission: ${hasManageDocsPermission}`,
       );
 
       res.json(
@@ -149,6 +169,13 @@ export class HRDocumentController {
     try {
       const { id } = req.params;
       const document = await HRDocumentService.getDocumentById(id);
+      const userPermissions = req.user?.permissions || [];
+      const hasManageDocsPermission = userPermissions.includes('MANAGE_DOCUMENTS');
+
+      // Check access: HR can see all, employees can only see public
+      if (!hasManageDocsPermission && document && document.access_level !== 'public') {
+        throw ApiError.forbidden('You do not have permission to access this document');
+      }
 
       res.json(ApiResponse({ data: document, message: 'Document fetched successfully' }));
     } catch (error) {
@@ -220,7 +247,9 @@ export class HRDocumentController {
   static async getFolders(req: Request, res: Response, next: NextFunction) {
     try {
       const userJobRole = req.user?.jobRoleId;
-      logger.info(`[getFolders] User jobRoleId: ${userJobRole}`);
+      const userPermissions = req.user?.permissions || [];
+      const hasManageDocsPermission = userPermissions.includes('MANAGE_DOCUMENTS');
+      logger.info(`[getFolders] User jobRoleId: ${userJobRole}, hasManageDocsPermission: ${hasManageDocsPermission}`);
 
       const { hierarchy, parent_id } = req.query;
 
@@ -244,6 +273,20 @@ export class HRDocumentController {
           }
           folders = await HRFolderService.getRootFolders();
         }
+      }
+
+      // Filter folders for non-HR users: only show folders with public documents
+      if (!hasManageDocsPermission && folders) {
+        const allDocuments = await HRDocumentService.getDocuments();
+        const publicDocumentFolderIds = new Set(
+          (allDocuments || [])
+            .filter((doc: any) => doc.access_level === 'public')
+            .map((doc: any) => doc.folder_id)
+            .filter(Boolean),
+        );
+
+        // Keep folders that have public documents or are empty (to show folder structure)
+        folders = folders.filter((folder: any) => publicDocumentFolderIds.has(folder.id) || !folder.parent_folder_id);
       }
 
       logger.info(`[getFolders] Returning ${folders?.length || 0} folders`);
