@@ -17,6 +17,7 @@ export class EmployeeRepository {
     { model: JobRole, as: 'jobRole', attributes: ['id', 'title', 'description'] },
     { model: Department, as: 'department', attributes: ['id', 'name', 'description'] },
     { model: Company, as: 'company', attributes: ['id', 'name', 'description'] },
+    { model: Employee, as: 'supervisor', attributes: ['id', 'firstName', 'lastName', 'staffId'] },
   ];
   static readonly create = (employee: InferCreationAttributes<Employee>, transaction: Transaction) => {
     return Employee.create(employee, { transaction });

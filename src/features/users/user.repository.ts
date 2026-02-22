@@ -36,6 +36,7 @@ class UserRepository {
   static readonly readById = (id: string | number) => {
     return User.findByPk(id, { raw: true, attributes: { exclude: ['password'] }, include: [{ model: JobRole }] });
   };
+
   static readonly readByEmail = async (email: string) => {
     return User.findOne({ attributes: ['id', 'email', 'first_name', 'profile_image', 'role'], where: { email } });
   };

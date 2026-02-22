@@ -33,7 +33,7 @@ export class DepartmentRepository {
     }
 
     return Department.findByPk(id, {
-      include: [{ model: Employee, as: 'employees', where }],
+      include: [{ model: Employee, as: 'employees', where, attributes: ['id', 'firstName', 'lastName', 'staffId'] }],
       limit: rows,
       offset,
       order: [[orderBy, orderDirection]],
