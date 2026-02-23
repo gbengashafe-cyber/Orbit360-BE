@@ -14,6 +14,12 @@ const createLeaveSchema = z.object({
     message: 'Invalid leave type',
   }),
   reason: z.string().optional().nullable(),
+  leave_period: z.string().optional().nullable(),
+  selected_supervisor_id: z.number().int().positive().optional().nullable(),
+  covering_employee_id: z.number().int().positive().optional().nullable(),
+  handover_notes: z.string().optional().nullable(),
+  emergency_contact: z.string().optional().nullable(),
+  alternative_email: z.string().email().optional().nullable(),
 });
 
 const leaveIdParamSchema = z.object({

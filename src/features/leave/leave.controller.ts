@@ -11,8 +11,23 @@ import { calculateWorkingDays, validateLeaveDates } from './leave.utils';
 export class LeaveController {
   static async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const { startDate, endDate, type, reason } = req.body;
+      const {
+        startDate,
+        endDate,
+        type,
+        reason,
+        leave_period,
+        selected_supervisor_id,
+        covering_employee_id,
+        handover_notes,
+        emergency_contact,
+        alternative_email,
+      } = req.body;
       const user = req.user;
+
+      logger.info(
+        `[LeaveCreate] Received fields: leave_period=${leave_period}, selected_supervisor_id=${selected_supervisor_id}, covering_employee_id=${covering_employee_id}, handover_notes=${handover_notes}, emergency_contact=${emergency_contact}, alternative_email=${alternative_email}`,
+      );
 
       if (!user) {
         throw ApiError.unauthenticated('User not authenticated');
@@ -42,6 +57,12 @@ export class LeaveController {
         endDate,
         type,
         reason,
+        leave_period,
+        selected_supervisor_id,
+        covering_employee_id,
+        handover_notes,
+        emergency_contact,
+        alternative_email,
         status: 'pending',
       });
 
@@ -117,6 +138,24 @@ export class LeaveController {
       const offset = (page - 1) * rows;
 
       const { count, rows: leaves } = await Leave.findAndCountAll({
+        attributes: [
+          'id',
+          'employeeId',
+          'startDate',
+          'endDate',
+          'type',
+          'status',
+          'reason',
+          'leave_period',
+          'selected_supervisor_id',
+          'covering_employee_id',
+          'handover_notes',
+          'emergency_contact',
+          'alternative_email',
+          'rejection_reason',
+          'createdAt',
+          'updatedAt',
+        ],
         limit: rows,
         offset,
         include: [
@@ -152,6 +191,24 @@ export class LeaveController {
 
       const { count, rows: leaves } = await Leave.findAndCountAll({
         where: { employeeId },
+        attributes: [
+          'id',
+          'employeeId',
+          'startDate',
+          'endDate',
+          'type',
+          'status',
+          'reason',
+          'leave_period',
+          'selected_supervisor_id',
+          'covering_employee_id',
+          'handover_notes',
+          'emergency_contact',
+          'alternative_email',
+          'rejection_reason',
+          'createdAt',
+          'updatedAt',
+        ],
         limit: rows,
         offset,
         order: [['createdAt', 'DESC']],
@@ -176,6 +233,24 @@ export class LeaveController {
     try {
       const { id } = req.params;
       const leave = await Leave.findByPk(id, {
+        attributes: [
+          'id',
+          'employeeId',
+          'startDate',
+          'endDate',
+          'type',
+          'status',
+          'reason',
+          'leave_period',
+          'selected_supervisor_id',
+          'covering_employee_id',
+          'handover_notes',
+          'emergency_contact',
+          'alternative_email',
+          'rejection_reason',
+          'createdAt',
+          'updatedAt',
+        ],
         include: [
           {
             model: Employee,
@@ -230,7 +305,7 @@ export class LeaveController {
   static async approveOrDecline(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const { action } = req.body;
+      const { action, rejection_reason } = req.body;
 
       if (!['approved', 'rejected'].includes(action.toLowerCase())) {
         throw ApiError.badRequest('Invalid action. Must be "approved" or "rejected"');
@@ -245,7 +320,12 @@ export class LeaveController {
         throw ApiError.badRequest('Leave request has already been processed');
       }
 
-      await leave.update({ status: action });
+      const updateData: any = { status: action };
+      if (action.toLowerCase() === 'rejected' && rejection_reason) {
+        updateData.rejection_reason = rejection_reason;
+      }
+
+      await leave.update(updateData);
 
       const updatedLeave = await Leave.findByPk(id, {
         include: [

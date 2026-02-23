@@ -67,6 +67,14 @@ export class HRDocumentController {
         throw ApiError.badRequest('Document name and file_url are required');
       }
 
+      // Validate that folder exists if folder_id is provided
+      if (folder_id) {
+        const folder = await HRFolderService.getFolderById(folder_id);
+        if (!folder) {
+          throw ApiError.badRequest('Specified folder does not exist');
+        }
+      }
+
       const document = await HRDocumentService.createDocument(
         name,
         file_url,
