@@ -22,9 +22,26 @@ export class LeaveController {
         handover_notes,
         emergency_contact,
         alternative_email,
-        supporting_documents,
-        handover_documents,
       } = req.body;
+
+      // Extract files from multipart upload
+      const files = (req as any).files || [];
+      const supportingDocs = files
+        .filter((f: any) => f.fieldname === 'supporting_documents')
+        .map((f: any) => ({
+          name: f.originalname,
+          size: f.size,
+          type: f.mimetype,
+          uploaded_at: new Date().toISOString(),
+        }));
+      const handoverDocs = files
+        .filter((f: any) => f.fieldname === 'handover_documents')
+        .map((f: any) => ({
+          name: f.originalname,
+          size: f.size,
+          type: f.mimetype,
+          uploaded_at: new Date().toISOString(),
+        }));
       const user = req.user;
 
       logger.info(
@@ -65,8 +82,8 @@ export class LeaveController {
         handover_notes,
         emergency_contact,
         alternative_email,
-        supporting_documents: supporting_documents ? JSON.stringify(supporting_documents) : null,
-        handover_documents: handover_documents ? JSON.stringify(handover_documents) : null,
+        supporting_documents: supportingDocs.length > 0 ? JSON.stringify(supportingDocs) : null,
+        handover_documents: handoverDocs.length > 0 ? JSON.stringify(handoverDocs) : null,
         status: 'pending',
       });
 
