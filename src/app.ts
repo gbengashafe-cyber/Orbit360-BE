@@ -4,6 +4,7 @@ import cors from 'cors';
 import express, { NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import multer from 'multer';
 import { randomUUID } from 'node:crypto';
 import path from 'path';
 import swaggerUi from 'swagger-ui-express';
@@ -103,6 +104,19 @@ app.use(
 );
 
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+
+// Configure multer for file  uploads
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 50 * 1024 * 1024, // This 50MB per file
+    files: 10, //this a max 10 files
+  },
+});
+
+// make mid-ware available globally
+app.use(upload.any());
 
 app.use(
   cors({
