@@ -22,6 +22,8 @@ export class LeaveController {
         handover_notes,
         emergency_contact,
         alternative_email,
+        supporting_documents,
+        handover_documents,
       } = req.body;
       const user = req.user;
 
@@ -63,6 +65,8 @@ export class LeaveController {
         handover_notes,
         emergency_contact,
         alternative_email,
+        supporting_documents: supporting_documents ? JSON.stringify(supporting_documents) : null,
+        handover_documents: handover_documents ? JSON.stringify(handover_documents) : null,
         status: 'pending',
       });
 
@@ -153,6 +157,8 @@ export class LeaveController {
           'emergency_contact',
           'alternative_email',
           'rejection_reason',
+          'supporting_documents',
+          'handover_documents',
           'createdAt',
           'updatedAt',
         ],

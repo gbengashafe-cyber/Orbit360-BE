@@ -29,6 +29,8 @@ export class Leave extends Model<InferAttributes<Leave>, InferCreationAttributes
   declare emergency_contact: CreationOptional<string | null>;
   declare alternative_email: CreationOptional<string | null>;
   declare rejection_reason: CreationOptional<string | null>;
+  declare supporting_documents: CreationOptional<string | null>;
+  declare handover_documents: CreationOptional<string | null>;
   declare createdAt: CreationOptional<Date>;
   declare updatedAt: CreationOptional<Date>;
 }
@@ -93,6 +95,16 @@ Leave.init(
     rejection_reason: {
       type: DataTypes.TEXT,
       allowNull: true,
+    },
+    supporting_documents: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      comment: 'JSON array of document objects {name, url}',
+    },
+    handover_documents: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      comment: 'JSON array of document objects {name, url}',
     },
     createdAt: DataTypes.DATE,
     updatedAt: DataTypes.DATE,

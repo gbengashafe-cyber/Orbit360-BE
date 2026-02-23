@@ -93,6 +93,7 @@ app.use(`/${PAYROLL_REPORT_FOLDER}`, express.static(path.join(process.cwd(), PAY
 app.use(
   express.json({
     strict: false,
+    limit: '50mb',
     verify: (req: Request, res, buf) => {
       if (buf.toString().trim() === 'null' || buf.toString().trim() === 'undefined') {
         req.body = {};
@@ -101,7 +102,7 @@ app.use(
   }),
 );
 
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 app.use(
   cors({
