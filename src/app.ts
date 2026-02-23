@@ -103,7 +103,7 @@ app.use(
   }),
 );
 
-app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+app.use(express.urlencoded({ extended: true }));
 
 // Configure multer for file  uploads
 const storage = multer.memoryStorage();
