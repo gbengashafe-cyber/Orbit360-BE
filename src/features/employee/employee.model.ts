@@ -93,18 +93,6 @@ Employee.init(
     tableName: 'employees',
     modelName: 'employee',
     timestamps: true,
-    defaultScope: {
-      where: { status: ['ACTIVE', 'ON_LEAVE'] },
-    },
-    scopes: {
-      all: {},
-      pending: {
-        where: { status: 'PENDING_APPROVAL' },
-      },
-      inactive: {
-        where: { status: ['TERMINATED', 'SUSPENDED', 'CANCELLED'] },
-      },
-    },
     indexes: [
       { fields: ['staff_id'], unique: true },
       { fields: ['email'], unique: true },

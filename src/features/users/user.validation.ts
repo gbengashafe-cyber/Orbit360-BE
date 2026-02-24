@@ -17,8 +17,14 @@ export const userSchema = z.object({
   profileImage: z.string().nullable().optional(),
   googleId: z.string().nullable().optional(),
   role: z.enum(userRoleOptions),
-  jobRole: z.string('User job role is required').min(1, 'User job role is required'),
-  departmentName: z.string().min(1, 'User department is required'),
+  jobRoleId: z.coerce
+    .number('Invalid format specified for user job role')
+    .int('Invalid format specified for user job role')
+    .positive('Invalid format specified for user job role'),
+  departmentId: z.coerce
+    .number('Invalid format specified for department')
+    .int('Invalid format specified for department')
+    .positive('Invalid format specified for department'),
 });
 
 const UpdateUserSchema = userSchema.extend({ status: z.enum(userStatusOptions).optional() }).optional();

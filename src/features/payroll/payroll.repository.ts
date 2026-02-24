@@ -41,7 +41,7 @@ export class PayrollRepository {
         {
           model: Employee,
           as: 'employee',
-          attributes: ['id', 'staffId', 'firstName', 'lastName', 'email', 'departmentName', 'jobRole'],
+          attributes: ['id', 'staffId', 'firstName', 'lastName', 'email', 'departmentId', 'jobRoleId'],
         },
       ],
       where,
@@ -115,7 +115,7 @@ export class PayrollRepository {
     });
   };
 
-  static readonly cancelBatch = async (id: number, transaction) => {
+  static readonly cancelBatch = async (id: number, transaction: Transaction) => {
     return PayrollBatch.update({ status: 'CANCELLED' }, { where: { id }, transaction });
   };
 }

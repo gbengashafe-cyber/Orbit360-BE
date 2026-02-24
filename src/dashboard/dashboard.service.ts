@@ -1,13 +1,13 @@
 import { DashboardRepository, DashboardStatsParams } from './dashboard.repository';
 
 export class DashboardService {
-  static readonly getDashboard = async ({ startDate, endDate, department }: DashboardStatsParams) => {
+  static readonly getDashboard = async ({ startDate, endDate, departmentId }: DashboardStatsParams) => {
     const [metrics, leaves, pendingLoanRequests, attritionTrend, genderResult] = await Promise.all([
-      DashboardRepository.getGeneralMetrics(department),
-      DashboardRepository.getLeaveCounts({ department, startDate, endDate }),
+      DashboardRepository.getGeneralMetrics(departmentId),
+      DashboardRepository.getLeaveCounts({ departmentId, startDate, endDate }),
       DashboardRepository.getPendingLoanRequests(),
-      DashboardRepository.getAttritionTrend({ department, startDate, endDate }),
-      DashboardRepository.getGenderDistribution(department),
+      DashboardRepository.getAttritionTrend({ departmentId, startDate, endDate }),
+      DashboardRepository.getGenderDistribution(departmentId),
     ]);
 
     const genderLabels: Record<string, string> = {

@@ -3,6 +3,7 @@ import { Company } from '../company/company.model';
 import { Department } from '../department/department.model';
 import { JobRole } from '../job-role/job-role.model';
 import { changeRequestStatus, EmployeeChangeRequest } from './employee-change-request.model';
+import { employeeStatus } from './employee-schema';
 import { Employee } from './employee.model';
 
 export type ReadAllProps = {
@@ -58,6 +59,10 @@ export class EmployeeRepository {
       ];
     }
 
+    if (filters.status && employeeStatus.includes(filters.status?.toUpperCase())) {
+      where.status = filters.status;
+    }
+
     if (filters.hireDateFrom || filters.hireDateTo) {
       where.hireDate = {
         ...(filters.hireDateFrom && { [Op.gte]: filters.hireDateFrom }),
@@ -102,7 +107,6 @@ export class EmployeeRepository {
       ];
     }
 
-    if (filters.departmentName) where.departmentName = filters.departmentName;
     if (filters.position) where.position = filters.position;
     if (filters.gender) where.gender = filters.gender;
     if (filters.supervisorId) where.supervisorId = filters.supervisorId;

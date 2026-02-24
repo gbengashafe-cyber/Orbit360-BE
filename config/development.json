@@ -1,5 +1,5 @@
 {
-  "allowedOrigins": "*",
+  "allowedOrigins": ["http://localhost:5173"],
   "mail": {
     "mailSender": "Orbit360 HR <test@example.com>",
     "server": "smtp.gmail.com",

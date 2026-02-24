@@ -33,8 +33,6 @@ import { globalErrorHandler } from './utils/global-error-handler';
 import { logger } from './utils/logger';
 import { parsePageAndLimitNumber, parseQueryParams } from './utils/request-query-parser';
 
-const allowedOrigins = config.get<string | string[]>('allowedOrigins');
-
 const app = express();
 
 app.use(helmet());
@@ -103,19 +101,12 @@ app.use(
 
 app.use(express.urlencoded({ extended: true }));
 
+const allowedOrigins = config.get<string | string[]>('allowedOrigins');
 app.use(
   cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
+    origin: allowedOrigins,
     optionsSuccessStatus: 200,
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
   }),
 );
 
@@ -126,18 +117,6 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   req.pagination = parsePageAndLimitNumber(page, rows);
   req.parsedQuery = parseQueryParams(req.query);
 
-  next();
-});
-
-// API Routes
-app.use((req: Request, res: Response, next: NextFunction) => {
-  if (req.path.includes('/auth/login')) {
-    console.log('Auth login request received:', {
-      path: req.path,
-      method: req.method,
-      bodyKeys: Object.keys(req.body),
-    });
-  }
   next();
 });
 
