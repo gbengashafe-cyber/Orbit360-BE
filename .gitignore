@@ -146,3 +146,6 @@ check-departments.ts
 check-leave-balance.ts
 create-admin-employee.ts
 create-departments.ts
+
+# Uploaded documents
+public/documents/

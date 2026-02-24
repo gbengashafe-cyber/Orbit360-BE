@@ -88,6 +88,8 @@ app.use(cookieParser());
 const PAYROLL_REPORT_FOLDER = config.get<string>('payrollReport.storagePath');
 app.use(`/${PAYROLL_REPORT_FOLDER}`, express.static(path.join(process.cwd(), PAYROLL_REPORT_FOLDER)));
 
+app.use('/documents', express.static(path.join(process.cwd(), 'public/documents')));
+
 app.use(
   express.json({
     strict: false,
