@@ -1,3 +1,4 @@
+import { db } from '.';
 import { env } from '../config/env';
 import { AuthUtil } from '../features/authentication/auth.utils';
 import { Company } from '../features/company/company.model';
@@ -123,34 +124,19 @@ async function seed() {
   ];
 
   try {
-    SBUs.forEach(async (_sbu) => {
-      await Company.create({ name: _sbu.name }, { ignoreDuplicates: true });
-      const company = await Company.findOne({ where: { name: _sbu.name } });
+    for (const _sbu of SBUs) {
+      const [company] = await Company.findOrCreate({ where: { name: _sbu.name }, defaults: { name: _sbu.name } });
 
-      if (!company) {
-        throw ApiError.internalServerError(`Unable to create SBU: ${_sbu.name}`);
-      }
+      for (const _department of _sbu.departments) {
+        const payload = { name: _department.name, companyId: company.id };
+        const [department] = await Department.findOrCreate({ where: payload, defaults: payload });
 
-      _sbu.departments.forEach(async (_department) => {
-        await Department.create({ name: _department.name, companyId: company.id }, { ignoreDuplicates: true });
-
-        const department = await Department.findOne({ where: { name: _department.name } });
-
-        if (!department) {
-          throw ApiError.internalServerError(`Unable to create department: ${_department.name}`);
+        for (const _jobRole of _department.jobRoles) {
+          const payload = { title: _jobRole, departmentId: department.id };
+          await JobRole.findOrCreate({ where: payload, defaults: payload });
         }
-
-        _department.jobRoles.forEach(async (_jobRole) => {
-          await JobRole.create({ title: _jobRole, departmentId: department.id }, { ignoreDuplicates: true });
-
-          const jobRole = await JobRole.findOne({ where: { title: _jobRole } });
-
-          if (!jobRole) {
-            throw ApiError.internalServerError(`Unable to create jobRole: ${_department.name} in ${_department.name} department`);
-          }
-        });
-      });
-    });
+      }
+    }
 
     const company = await Company.findOne();
 
@@ -369,12 +355,17 @@ async function seed() {
       },
     ];
 
-    await User.bulkCreate(employees, { ignoreDuplicates: true });
-    await Employee.bulkCreate(employees, { ignoreDuplicates: true });
-    await User.create(
-      { ...employees[0], role: 'admin', email: 'test-admin@gmail.com', lastName: 'Admin' },
-      { ignoreDuplicates: true },
-    );
+    await db.query('SET FOREIGN_KEY_CHECKS = 0');
+    const [adminUser] = await User.findOrCreate({
+      where: { email: 'test-admin@gmail.com' },
+      defaults: { ...employees[0], role: 'admin', email: 'test-admin@gmail.com', lastName: 'Admin', createdBy: 0 },
+    });
+    await db.query('SET FOREIGN_KEY_CHECKS = 1');
+
+    const enrichedEmployees = employees.map((_employee) => ({ ..._employee, createdBy: adminUser.id }));
+
+    await User.bulkCreate(enrichedEmployees, { ignoreDuplicates: true });
+    await Employee.bulkCreate(enrichedEmployees, { ignoreDuplicates: true });
 
     const employeeRecord = await Employee.findOne({ where: { email: 'test-employee@gmail.com' } });
     const supervisorEmployee = await Employee.findOne({ where: { email: 'test-supervisor@gmail.com' } });
