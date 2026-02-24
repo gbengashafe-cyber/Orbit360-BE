@@ -22,6 +22,15 @@ export class Leave extends Model<InferAttributes<Leave>, InferCreationAttributes
   declare type: (typeof LEAVE_TYPES)[number];
   declare status: CreationOptional<'pending' | 'approved' | 'rejected'>;
   declare reason: CreationOptional<string | null>;
+  declare leave_period: CreationOptional<string | null>;
+  declare selected_supervisor_id: CreationOptional<number | null>;
+  declare covering_employee_id: CreationOptional<number | null>;
+  declare handover_notes: CreationOptional<string | null>;
+  declare emergency_contact: CreationOptional<string | null>;
+  declare alternative_email: CreationOptional<string | null>;
+  declare rejection_reason: CreationOptional<string | null>;
+  declare supporting_documents: CreationOptional<string | null>;
+  declare handover_documents: CreationOptional<string | null>;
   declare createdAt: CreationOptional<Date>;
   declare updatedAt: CreationOptional<Date>;
 }
@@ -57,6 +66,45 @@ Leave.init(
     reason: {
       type: DataTypes.TEXT,
       allowNull: true,
+    },
+    leave_period: {
+      type: DataTypes.STRING(50),
+      allowNull: true,
+      defaultValue: 'full_day',
+    },
+    selected_supervisor_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    covering_employee_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    handover_notes: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    emergency_contact: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
+    },
+    alternative_email: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
+    rejection_reason: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    supporting_documents: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      comment: 'JSON array of document objects {name, url}',
+    },
+    handover_documents: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      comment: 'JSON array of document objects {name, url}',
     },
     createdAt: DataTypes.DATE,
     updatedAt: DataTypes.DATE,

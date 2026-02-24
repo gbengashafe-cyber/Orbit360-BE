@@ -1,5 +1,6 @@
 import { HRFolder } from './hr-folder.model';
 import { HRDocument } from './hr-document.model';
+import { HRDocumentDeletionRequestRepository } from './hr-document-deletion-request.repository';
 import { ApiError } from '../../utils/api-error';
 import { logger } from '../../utils/logger';
 
@@ -136,7 +137,39 @@ export class HRFolderService {
   }
 
   /**
-   * Delete folder (cascade deletes documents)
+   * Request folder deletion (creates pending authorization)
+   */
+  static async requestFolderDeletion(id: string, requestedBy: number, requesterComment?: string) {
+    try {
+      const folder = await HRFolder.findByPk(id);
+      if (!folder) {
+        throw ApiError.notFound('Folder not found');
+      }
+
+      // Check if there's already a pending deletion request
+      const existingRequest = await HRDocumentDeletionRequestRepository.findPendingByItemId(id);
+      if (existingRequest) {
+        throw ApiError.conflict('A deletion request for this folder is already pending approval');
+      }
+
+      const deletionRequest = await HRDocumentDeletionRequestRepository.create({
+        documentOrFolderId: id,
+        deletionType: 'FOLDER',
+        itemName: folder.name,
+        requestedBy,
+        requesterComment,
+      });
+
+      logger.info(`[requestFolderDeletion] Folder deletion requested: ${id} by user ${requestedBy}`);
+      return deletionRequest;
+    } catch (error) {
+      logger.error(`Error requesting folder deletion: ${error}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete folder (only after approval)
    */
   static async deleteFolder(id: string) {
     try {
