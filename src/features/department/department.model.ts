@@ -19,9 +19,6 @@ Department.init(
     name: {
       type: DataTypes.STRING(100),
       allowNull: false,
-      set(value: string) {
-        this.setDataValue('name', value.toUpperCase());
-      },
     },
     description: {
       type: DataTypes.STRING(100),

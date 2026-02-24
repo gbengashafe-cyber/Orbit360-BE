@@ -1,76 +1,187 @@
+import { env } from '../config/env';
+import { AuthUtil } from '../features/authentication/auth.utils';
 import { Company } from '../features/company/company.model';
 import { Department } from '../features/department/department.model';
 import { Employee } from '../features/employee/employee.model';
 import { JobRole } from '../features/job-role/job-role.model';
+import { LeaveBalance } from '../features/leave/leave-balance.model';
 import { LoanType } from '../features/loans/loan-types/loan-types.model';
 import { JobRolePermissions } from '../features/permissions/permission.model';
-import { LeaveBalance } from '../features/leave/leave-balance.model';
 import { User } from '../features/users/user.model';
 import { ApiError } from '../utils/api-error';
 import { logger } from '../utils/logger';
 
+type SBU = { name: string; departments: { name: string; jobRoles: string[] }[] };
+
 async function seed() {
+  const SBUs: SBU[] = [
+    {
+      name: 'MFB',
+      departments: [
+        { name: "MD's Office - MFB", jobRoles: ['MD - MFB'] },
+        { name: 'Operations', jobRoles: ['Core Banking Operations', 'Cash/Teller', 'Head - Customer Care', 'CCO'] },
+        {
+          name: 'Finance',
+          jobRoles: ['Treasury and Cash Management', 'Management Accounting', 'Financial Accounting', 'Fincon/Budgeting'],
+        },
+        {
+          name: 'Sales',
+          jobRoles: [
+            'Head - Thrift and Credit',
+            'Thrift',
+            'MSME Lending',
+            'Other Risk Assets',
+            'Head - Deposit Mobilization and Credit',
+            'Deposit Mobilization',
+            'SME Lending',
+            'Private Sector Lending',
+          ],
+        },
+        { name: 'Legal', jobRoles: ['Legal Officer'] },
+        { name: 'HR and Admin', jobRoles: ['HR/Admin', 'Admin Assistance', 'Office Assistance 1', 'Office Assistance 2'] },
+        { name: 'Risk and Compliance', jobRoles: ['Credit Control', 'Branch/Field Underwriting', 'Recovery', 'Remedial Assets'] },
+        { name: 'Internal Control', jobRoles: ['Head - Internal Control'] },
+      ],
+    },
+    {
+      name: 'Capital',
+      departments: [
+        { name: "MD's office - Capital", jobRoles: ['MD - Capital'] },
+        { name: 'Legal', jobRoles: ['Legal Officer'] },
+        { name: 'Audit and Compliance', jobRoles: ['Chief Compliance Officer'] },
+        {
+          name: 'Finance',
+          jobRoles: ['Chief Financial Officer', 'Treasury and Funding Manager', 'Financial Controller', 'Fund Accountant'],
+        },
+        {
+          name: 'Operations',
+          jobRoles: [
+            'Chief Operations Officer',
+            'Technology and Systems Lead',
+            'IT and System Support',
+            'CRM and Data Analytics Manager',
+            'Cybersecurity and Infra Manager',
+            'Fund Operations Manager',
+            'Performance and Data Analytics',
+            'Risk Manager',
+            'Operations Support Assistance/Clerk',
+            'Portfolio Operations Manager',
+            'HR and Admin Support Manager',
+          ],
+        },
+        {
+          name: 'Marketing',
+          jobRoles: [
+            'Chief Marketing Officer',
+            'institutional Sales Manager',
+            'Business Development Manager',
+            'Digital and Retail Distribution',
+            'Specialist Media Manager',
+          ],
+        },
+        {
+          name: 'Information Technology',
+          jobRoles: [
+            'Chief Information Officer',
+            'Portfolio Manager - Fixed Income and Alternatives',
+            'Portfolio Manager - Equity',
+            'Quantitative/Risk Analyst',
+            'Investment Analyst',
+            'Compliance Liaison - Investment',
+            'Research and Strategy Manager',
+          ],
+        },
+      ],
+    },
+    {
+      name: 'Human Resources',
+      departments: [
+        {
+          name: 'Human Resources',
+          jobRoles: [
+            'Chief Human Resource Manager',
+            'Talent Acquisition and Workforce Planning Officer',
+            'HR Information Systems Officer',
+            'Learning and Development Officer',
+            'Employee Matters Officer',
+            'Compensation and Benefits Officer',
+            'Performance Management Officer',
+            'Group Admin Manager',
+            'Corporate Governance and Policies Officer',
+            'HRBP - MFB',
+            'HRBP - Capital',
+            'HRBP - Real Business',
+            'HRBP - Microsystem (Technology)',
+            'Admin Officer - MFB',
+            'Admin Officer - Real Business',
+            'Admin Officer - Technology',
+            'Admin Officer - Capital',
+          ],
+        },
+      ],
+    },
+  ];
+
   try {
-    await Company.bulkCreate([{ name: 'MFB' }], { ignoreDuplicates: true });
+    SBUs.forEach(async (_sbu) => {
+      await Company.create({ name: _sbu.name }, { ignoreDuplicates: true });
+      const company = await Company.findOne({ where: { name: _sbu.name } });
+
+      if (!company) {
+        throw ApiError.internalServerError(`Unable to create SBU: ${_sbu.name}`);
+      }
+
+      _sbu.departments.forEach(async (_department) => {
+        await Department.create({ name: _department.name, companyId: company.id }, { ignoreDuplicates: true });
+
+        const department = await Department.findOne({ where: { name: _department.name } });
+
+        if (!department) {
+          throw ApiError.internalServerError(`Unable to create department: ${_department.name}`);
+        }
+
+        _department.jobRoles.forEach(async (_jobRole) => {
+          await JobRole.create({ title: _jobRole, departmentId: department.id }, { ignoreDuplicates: true });
+
+          const jobRole = await JobRole.findOne({ where: { title: _jobRole } });
+
+          if (!jobRole) {
+            throw ApiError.internalServerError(`Unable to create jobRole: ${_department.name} in ${_department.name} department`);
+          }
+        });
+      });
+    });
+
     const company = await Company.findOne();
-    await Company.bulkCreate([{ name: 'ASSET MANAGEMENT' }], { ignoreDuplicates: true });
 
     if (!company) {
-      throw ApiError.badRequest('Missing default company set up');
+      throw ApiError.internalServerError(`Unable to initiate employee creation. Company not found`);
     }
-
-    await Department.bulkCreate(
-      [
-        { name: 'Information Technology', description: '', companyId: company?.id },
-        { name: 'Operations', description: '', companyId: company?.id },
-        { name: 'Internal Control', description: '', companyId: company?.id },
-        { name: 'Audit', description: '', companyId: company?.id },
-        { name: 'Marketing', description: '', companyId: company?.id },
-        { name: 'Security', description: '', companyId: company?.id },
-        { name: 'Human Resources', description: '', companyId: company?.id },
-        { name: "MD's Office", description: '', companyId: company?.id },
-      ],
-      { ignoreDuplicates: true },
-    );
 
     await LoanType.bulkCreate(
       [
         { name: 'Thrift', interestRate: 0, maxTenureMonths: 6 },
-        { name: 'Salary Advance', interestRate: 15.3, maxTenureMonths: 50 },
+        { name: 'Salary Advance', interestRate: 15.3, maxTenureMonths: 1 },
         { name: 'Personal', interestRate: 3, maxTenureMonths: 6 },
       ],
       { ignoreDuplicates: true },
     );
 
-    const hrDepartment = await Department.findOne({ where: { name: 'HUMAN RESOURCES' } });
-    const operationsDepartment = await Department.findOne({ where: { name: 'OPERATIONS' } });
-    const itDepartment = await Department.findOne({ where: { name: 'INFORMATION TECHNOLOGY' } });
-    const mdsDepartment = await Department.findOne({ where: { name: "MD's Office" } });
+    const hrDepartment = await Department.findOne({ where: { name: 'Human Resources' } });
+    const operationsDepartment = await Department.findOne({ where: { name: 'Operations' } });
+    const itDepartment = await Department.findOne({ where: { name: 'Information Technology' } });
+    const mdsDepartment = await Department.findOne({ where: { name: "MD's Office - MFB" } });
 
     if (!hrDepartment || !operationsDepartment || !mdsDepartment || !itDepartment) {
       throw ApiError.badRequest('Missing one or more department set up');
     }
 
-    await JobRole.bulkCreate(
-      [
-        { departmentId: itDepartment.id, title: 'Senior Developer', description: '' },
-        { departmentId: itDepartment.id, title: 'Junior Developer', description: '' },
-        { departmentId: hrDepartment.id, title: 'HR Operations', description: '' },
-        { departmentId: hrDepartment.id, title: 'HR Manager', description: '' },
-        { departmentId: operationsDepartment.id, title: 'Operations Officer', description: '' },
-        { departmentId: operationsDepartment.id, title: 'Operations Supervisor', description: '' },
-        { departmentId: mdsDepartment.id, title: 'Managing Director', description: '' },
-      ],
-      { ignoreDuplicates: true },
-    );
+    const mdRole = await JobRole.findOne({ where: { title: 'MD - MFB' } });
+    const hrManagerRole = await JobRole.findOne({ where: { title: 'Chief Human Resource Manager' } });
+    const hrOperationsRole = await JobRole.findOne({ where: { title: 'Compensation and Benefits Officer' } });
+    const employeeRole = await JobRole.findOne({ where: { title: 'Cash/Teller' } });
+    const employeeSupervisorRole = await JobRole.findOne({ where: { title: 'Head - Customer Care' } });
 
-    const mdRole = await JobRole.findOne({ where: { title: 'MANAGING DIRECTOR' } });
-    const hrOperationsRole = await JobRole.findOne({ where: { title: 'HR OPERATIONS' } });
-    const hrManagerRole = await JobRole.findOne({ where: { title: 'HR MANAGER' } });
-    const employeeRole = await JobRole.findOne({ where: { title: 'OPERATIONS OFFICER' } });
-    const employeeSupervisorRole = await JobRole.findOne({ where: { title: 'OPERATIONS SUPERVISOR' } });
-
-    console.log(!hrOperationsRole, !hrManagerRole, !employeeRole, !employeeSupervisorRole, !mdRole);
     if (!hrOperationsRole || !hrManagerRole || !employeeRole || !employeeSupervisorRole || !mdRole) {
       throw ApiError.badRequest('Missing one or more job roles set up');
     }
@@ -102,8 +213,10 @@ async function seed() {
       { ignoreDuplicates: true },
     );
 
-    // Temporarily use plaintext for debugging
-    const hashedPassword = '';
+    let hashedPassword = '';
+    if (env.NODE_ENV !== 'production' && env.TEST_PASSWORD) {
+      hashedPassword = await AuthUtil.hashPassword(env.TEST_PASSWORD);
+    }
 
     const employees: any = [
       {

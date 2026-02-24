@@ -19,9 +19,6 @@ JobRole.init(
     title: {
       type: DataTypes.STRING(100),
       allowNull: false,
-      set(value: string) {
-        this.setDataValue('title', value.toUpperCase());
-      },
     },
     description: {
       type: DataTypes.STRING(100),
