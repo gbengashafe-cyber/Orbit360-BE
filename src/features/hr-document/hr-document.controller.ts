@@ -4,6 +4,7 @@ import { ApiResponse } from '../../utils/api-response';
 import { logger } from '../../utils/logger';
 import { HRDocumentService } from './hr-document.service';
 import { HRFolderService } from './hr-folder.service';
+import { HRDocumentDeletionRequestRepository } from './hr-document-deletion-request.repository';
 import { HRFolder } from './hr-folder.model';
 import { Onboarding } from '../onboarding/onboarding.model';
 
@@ -61,10 +62,38 @@ export class HRDocumentController {
 
   static async createDocument(req: Request, res: Response, next: NextFunction) {
     try {
-      const { name, file_url, document_type, folder_id, access_level } = req.body;
+      const { name, document_type, folder_id, access_level } = req.body;
+      const files = (req as any).files || [];
 
-      if (!name || !file_url) {
-        throw ApiError.badRequest('Document name and file_url are required');
+      // Check if file was uploaded or file_url provided
+      let file_url = req.body.file_url;
+
+      if (!name) {
+        throw ApiError.badRequest('Document name is required');
+      }
+
+      // If file is uploaded, save to disk
+      if (files.length > 0) {
+        const file = files[0];
+        // Generate unique filename
+        const timestamp = Date.now();
+        const fileName = `doc_${timestamp}_${file.originalname}`;
+        const uploadDir = 'public/documents';
+
+        // Ensure directory exists
+        const fs = await import('fs');
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true });
+        }
+
+        // Write file to disk
+        const filePath = `${uploadDir}/${fileName}`;
+        fs.writeFileSync(filePath, file.buffer);
+
+        // Store relative URL
+        file_url = `/documents/${fileName}`;
+      } else if (!file_url) {
+        throw ApiError.badRequest('Either file upload or file_url is required');
       }
 
       // Validate that folder exists if folder_id is provided
@@ -214,16 +243,24 @@ export class HRDocumentController {
   static async deleteDocument(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const result = await HRDocumentService.deleteDocument(id);
+      const { requesterComment } = req.body;
+      const userId = req.user?.id;
+
+      if (!userId) {
+        throw ApiError.unauthenticated('User ID is required');
+      }
+
+      // Create pending deletion request
+      const deletionRequest = await HRDocumentService.requestDocumentDeletion(id, userId, requesterComment);
 
       res.json(
         ApiResponse({
-          data: result,
-          message: 'Document deleted successfully',
+          data: deletionRequest,
+          message: 'Document deletion request submitted for HR manager approval',
         }),
       );
     } catch (error) {
-      logger.error(`Error deleting document: ${error}`);
+      logger.error(`Error requesting document deletion: ${error}`);
       next(error);
     }
   }
@@ -345,16 +382,118 @@ export class HRDocumentController {
   static async deleteFolder(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const result = await HRFolderService.deleteFolder(id);
+      const { requesterComment } = req.body;
+      const userId = req.user?.id;
+
+      if (!userId) {
+        throw ApiError.unauthenticated('User ID is required');
+      }
+
+      // Create pending deletion request
+      const deletionRequest = await HRFolderService.requestFolderDeletion(id, userId, requesterComment);
 
       res.json(
         ApiResponse({
-          data: result,
-          message: 'Folder deleted successfully',
+          data: deletionRequest,
+          message: 'Folder deletion request submitted for HR manager approval',
         }),
       );
     } catch (error) {
-      logger.error(`Error deleting folder: ${error}`);
+      logger.error(`Error requesting folder deletion: ${error}`);
+      next(error);
+    }
+  }
+
+  // ============ DELETION REQUESTS ============
+
+  static async getPendingDeletions(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { page = 1, rows = 25 } = req.query;
+      const { deletions, count } = await HRDocumentDeletionRequestRepository.getPendingDeletions(Number(page), Number(rows));
+
+      res.json(
+        ApiResponse({
+          data: deletions,
+          pagination: {
+            total: count,
+            page: Number(page),
+            rows: Number(rows),
+            pages: Math.ceil(count / Number(rows)),
+          },
+          message: 'Pending deletion requests fetched successfully',
+        }),
+      );
+    } catch (error) {
+      logger.error(`Error fetching pending deletions: ${error}`);
+      next(error);
+    }
+  }
+
+  static async approveDeletion(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const { reviewerComment } = req.body;
+      const userId = req.user?.id;
+
+      if (!userId) {
+        throw ApiError.unauthenticated('User ID is required');
+      }
+
+      // Approve the deletion request
+      const approved = await HRDocumentDeletionRequestRepository.approve(Number(id), userId, reviewerComment);
+
+      if (!approved) {
+        throw ApiError.notFound('Deletion request not found');
+      }
+
+      // Now delete the actual document or folder
+      if (approved.deletionType === 'DOCUMENT') {
+        await HRDocumentService.deleteDocument(approved.documentOrFolderId);
+      } else if (approved.deletionType === 'FOLDER') {
+        await HRFolderService.deleteFolder(approved.documentOrFolderId);
+      }
+
+      logger.info(`[approveDeletion] ${approved.deletionType} deletion approved by user ${userId}`);
+
+      res.json(
+        ApiResponse({
+          data: approved,
+          message: `${approved.deletionType.toLowerCase()} deletion approved and deleted successfully`,
+        }),
+      );
+    } catch (error) {
+      logger.error(`Error approving deletion: ${error}`);
+      next(error);
+    }
+  }
+
+  static async rejectDeletion(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const { reviewerComment } = req.body;
+      const userId = req.user?.id;
+
+      if (!userId) {
+        throw ApiError.unauthenticated('User ID is required');
+      }
+
+      // Reject the deletion request
+      const rejected = await HRDocumentDeletionRequestRepository.reject(Number(id), userId, reviewerComment);
+
+      if (!rejected) {
+        throw ApiError.notFound('Deletion request not found');
+      }
+
+      logger.info(`[rejectDeletion] ${rejected.deletionType} deletion rejected by user ${userId}`);
+
+      res.json(
+        ApiResponse({
+          data: rejected,
+          message: `${rejected.deletionType.toLowerCase()} deletion request rejected`,
+        }),
+      );
+    } catch (error) {
+      logger.error(`Error rejecting deletion: ${error}`);
       next(error);
     }
   }

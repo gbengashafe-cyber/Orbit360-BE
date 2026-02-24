@@ -1,5 +1,7 @@
 import { HRDocument } from './hr-document.model';
 import { HRFolder } from './hr-folder.model';
+import { HRDocumentDeletionRequest } from './hr-document-deletion-request.model';
+import { HRDocumentDeletionRequestRepository } from './hr-document-deletion-request.repository';
 import { ApiError } from '../../utils/api-error';
 import { logger } from '../../utils/logger';
 
@@ -113,7 +115,39 @@ export class HRDocumentService {
   }
 
   /**
-   * Delete document
+   * Request document deletion (creates pending authorization)
+   */
+  static async requestDocumentDeletion(id: string, requestedBy: number, requesterComment?: string) {
+    try {
+      const document = await HRDocument.findByPk(id);
+      if (!document) {
+        throw ApiError.notFound('Document not found');
+      }
+
+      // Check if there's already a pending deletion request
+      const existingRequest = await HRDocumentDeletionRequestRepository.findPendingByItemId(id);
+      if (existingRequest) {
+        throw ApiError.conflict('A deletion request for this document is already pending approval');
+      }
+
+      const deletionRequest = await HRDocumentDeletionRequestRepository.create({
+        documentOrFolderId: id,
+        deletionType: 'DOCUMENT',
+        itemName: document.name,
+        requestedBy,
+        requesterComment,
+      });
+
+      logger.info(`[requestDocumentDeletion] Document deletion requested: ${id} by user ${requestedBy}`);
+      return deletionRequest;
+    } catch (error) {
+      logger.error(`Error requesting document deletion: ${error}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete document (only after approval)
    */
   static async deleteDocument(id: string) {
     try {

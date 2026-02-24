@@ -90,13 +90,11 @@ app.use(cookieParser());
 const PAYROLL_REPORT_FOLDER = config.get<string>('payrollReport.storagePath');
 app.use(`/${PAYROLL_REPORT_FOLDER}`, express.static(path.join(process.cwd(), PAYROLL_REPORT_FOLDER)));
 
-// Serve uploaded documents
 app.use('/documents', express.static(path.join(process.cwd(), 'public/documents')));
 
 app.use(
   express.json({
     strict: false,
-    limit: '1mb',
     verify: (req: Request, res, buf) => {
       if (buf.toString().trim() === 'null' || buf.toString().trim() === 'undefined') {
         req.body = {};

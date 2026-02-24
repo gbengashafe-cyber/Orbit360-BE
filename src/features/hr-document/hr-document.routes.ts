@@ -49,4 +49,24 @@ router.get('/folders/:id', validateAuthToken, HRDocumentController.getFolderById
 router.put('/folders/:id', validateAuthToken, hasRequiredPermission('MANAGE_DOCUMENTS'), HRDocumentController.updateFolder);
 router.delete('/folders/:id', validateAuthToken, hasRequiredPermission('MANAGE_DOCUMENTS'), HRDocumentController.deleteFolder);
 
+// Deletion Requests - HR managers only
+router.get(
+  '/deletion-requests/pending',
+  validateAuthToken,
+  hasRequiredPermission('APPROVE_DOCUMENT_DELETION'),
+  HRDocumentController.getPendingDeletions,
+);
+router.post(
+  '/deletion-requests/:id/approve',
+  validateAuthToken,
+  hasRequiredPermission('APPROVE_DOCUMENT_DELETION'),
+  HRDocumentController.approveDeletion,
+);
+router.post(
+  '/deletion-requests/:id/reject',
+  validateAuthToken,
+  hasRequiredPermission('APPROVE_DOCUMENT_DELETION'),
+  HRDocumentController.rejectDeletion,
+);
+
 export { router as hrDocumentRoutes };
