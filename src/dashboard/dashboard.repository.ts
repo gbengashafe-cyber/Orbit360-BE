@@ -19,12 +19,12 @@ type AggregatedLeave = {
 export type DashboardStatsParams = {
   startDate: Date;
   endDate: Date;
-  department?: string;
+  departmentId?: number;
 };
 
 export class DashboardRepository {
-  static readonly getGeneralMetrics = async (department?: string) => {
-    const where: WhereOptions = department ? { departmentName: department } : {};
+  static readonly getGeneralMetrics = async (departmentId?: number) => {
+    const where: WhereOptions = departmentId ? { departmentId } : {};
 
     return Employee.findOne({
       attributes: [
@@ -39,8 +39,8 @@ export class DashboardRepository {
     }) as unknown as Promise<AggregatedMetrics | null>;
   };
 
-  static readonly getLeaveCounts = async ({ startDate, endDate, department }: DashboardStatsParams) => {
-    const employeeWhere = department ? { departmentName: department } : {};
+  static readonly getLeaveCounts = async ({ startDate, endDate, departmentId }: DashboardStatsParams) => {
+    const employeeWhere = departmentId ? { departmentId } : {};
 
     return Leave.findOne({
       attributes: [
@@ -76,7 +76,7 @@ export class DashboardRepository {
     }) as unknown as Promise<AggregatedLeave | null>;
   };
 
-  static readonly getAttritionTrend = async ({ startDate, endDate, department }: DashboardStatsParams) => {
+  static readonly getAttritionTrend = async ({ startDate, endDate, departmentId }: DashboardStatsParams) => {
     const where: any = {
       status: 'terminated',
       terminationDate: {
@@ -85,7 +85,7 @@ export class DashboardRepository {
       },
     };
 
-    if (department) where.departmentName = department;
+    if (departmentId) where.departmentId = departmentId;
 
     return Employee.findAll({
       attributes: [
@@ -99,9 +99,9 @@ export class DashboardRepository {
     }) as unknown as Promise<{ month: string; count: number }[]>;
   };
 
-  static readonly getGenderDistribution = async (department?: string) => {
+  static readonly getGenderDistribution = async (departmentId?: number) => {
     const where: any = { status: { [Op.ne]: 'terminated' } };
-    if (department) where.departmentName = department;
+    if (departmentId) where.departmentId = departmentId;
 
     return Employee.findAll({
       attributes: [

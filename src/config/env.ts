@@ -20,7 +20,12 @@ const envSchema = z.object({
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   MAIL_USERNAME: z.string().optional(),
   MAIL_PASSWORD: z.string().optional(),
+  TEST_PASSWORD: z.string(),
 });
+
+if (process.env.NODE_ENV === 'production') {
+  envSchema.omit({ TEST_PASSWORD: true });
+}
 
 const result = envSchema.safeParse(process.env);
 

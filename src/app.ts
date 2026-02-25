@@ -1,4 +1,5 @@
 import compression from 'compression';
+import config from 'config';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express, { NextFunction, Request, Response } from 'express';
@@ -7,13 +8,12 @@ import morgan from 'morgan';
 import { randomUUID } from 'node:crypto';
 import path from 'path';
 import swaggerUi from 'swagger-ui-express';
-import config from 'config';
 import { swaggerSpec } from './config/swagger';
 import { dashboardRoutes } from './dashboard/dashboard.routes';
 import { authRoutes } from './features/authentication/auth.routes';
 import { companyRoutes } from './features/company/company.routes';
 import { complaintRoutes } from './features/complaints/complaint.routes';
-import departmentRoutes from './features/department/department.routes';
+import { departmentRoutes } from './features/department/department.routes';
 import { employeeRoutes } from './features/employee/employee.routes';
 import { exitRoutes } from './features/exit/exit.routes';
 import { hrDocumentRoutes } from './features/hr-document/hr-document.routes';
@@ -22,7 +22,7 @@ import { leaveRoutes } from './features/leave/leave.routes';
 import { loanTypeRoutes } from './features/loans/loan-types/loan-types.routes';
 import { loanRoutes } from './features/loans/loan.routes';
 import { onboardingRoutes } from './features/onboarding/onboarding.routes';
-import payrollRoutes from './features/payroll/payroll.routes';
+import { payrollRoutes } from './features/payroll/payroll.routes';
 import { payrollReportRoutes } from './features/payroll/reports/payroll-report.routes';
 import { performanceRoutes } from './features/performance/performance.routes';
 import { recruitmentRoutes } from './features/recruitment/recruitment.routes';
@@ -32,8 +32,6 @@ import { ApiError } from './utils/api-error';
 import { globalErrorHandler } from './utils/global-error-handler';
 import { logger } from './utils/logger';
 import { parsePageAndLimitNumber, parseQueryParams } from './utils/request-query-parser';
-
-const allowedOrigins = config.get<string | string[]>('allowedOrigins');
 
 const app = express();
 
@@ -90,6 +88,8 @@ app.use(cookieParser());
 const PAYROLL_REPORT_FOLDER = config.get<string>('payrollReport.storagePath');
 app.use(`/${PAYROLL_REPORT_FOLDER}`, express.static(path.join(process.cwd(), PAYROLL_REPORT_FOLDER)));
 
+app.use('/documents', express.static(path.join(process.cwd(), 'public/documents')));
+
 app.use(
   express.json({
     strict: false,
@@ -103,19 +103,12 @@ app.use(
 
 app.use(express.urlencoded({ extended: true }));
 
+const allowedOrigins = config.get<string | string[]>('allowedOrigins');
 app.use(
   cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
+    origin: allowedOrigins,
     optionsSuccessStatus: 200,
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
   }),
 );
 
@@ -126,18 +119,6 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   req.pagination = parsePageAndLimitNumber(page, rows);
   req.parsedQuery = parseQueryParams(req.query);
 
-  next();
-});
-
-// API Routes
-app.use((req: Request, res: Response, next: NextFunction) => {
-  if (req.path.includes('/auth/login')) {
-    console.log('Auth login request received:', {
-      path: req.path,
-      method: req.method,
-      bodyKeys: Object.keys(req.body),
-    });
-  }
   next();
 });
 

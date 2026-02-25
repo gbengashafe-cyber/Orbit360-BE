@@ -1,9 +1,20 @@
 import { Router } from 'express';
+import multer from 'multer';
 import { validateAuthToken } from '../authentication/auth.middleware';
 import { hasRequiredPermission } from '../../utils/check-permission';
 import { HRDocumentController } from './hr-document.controller';
 
 const router = Router();
+
+// Configure multer for HR document file uploads
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 50MB per file
+    files: 10, // max 10 files
+  },
+});
 
 // Initialize default folders - HR only
 router.post(
@@ -14,7 +25,13 @@ router.post(
 );
 
 // Documents - Create/Update/Delete require MANAGE_DOCUMENTS permission, but GET is open for all authenticated users
-router.post('/documents', validateAuthToken, hasRequiredPermission('MANAGE_DOCUMENTS'), HRDocumentController.createDocument);
+router.post(
+  '/documents',
+  validateAuthToken,
+  hasRequiredPermission('MANAGE_DOCUMENTS'),
+  upload.any(),
+  HRDocumentController.createDocument,
+);
 router.get('/documents', validateAuthToken, HRDocumentController.getDocuments); // All users can view (filtered by access_level)
 router.get('/documents/:id', validateAuthToken, HRDocumentController.getDocumentById); // All users can view (filtered by access_level)
 router.put('/documents/:id', validateAuthToken, hasRequiredPermission('MANAGE_DOCUMENTS'), HRDocumentController.updateDocument);
@@ -31,5 +48,25 @@ router.get('/folders', validateAuthToken, HRDocumentController.getFolders); // A
 router.get('/folders/:id', validateAuthToken, HRDocumentController.getFolderById); // All users can view
 router.put('/folders/:id', validateAuthToken, hasRequiredPermission('MANAGE_DOCUMENTS'), HRDocumentController.updateFolder);
 router.delete('/folders/:id', validateAuthToken, hasRequiredPermission('MANAGE_DOCUMENTS'), HRDocumentController.deleteFolder);
+
+// Deletion Requests - HR managers only
+router.get(
+  '/deletion-requests/pending',
+  validateAuthToken,
+  hasRequiredPermission('APPROVE_DOCUMENT_DELETION'),
+  HRDocumentController.getPendingDeletions,
+);
+router.post(
+  '/deletion-requests/:id/approve',
+  validateAuthToken,
+  hasRequiredPermission('APPROVE_DOCUMENT_DELETION'),
+  HRDocumentController.approveDeletion,
+);
+router.post(
+  '/deletion-requests/:id/reject',
+  validateAuthToken,
+  hasRequiredPermission('APPROVE_DOCUMENT_DELETION'),
+  HRDocumentController.rejectDeletion,
+);
 
 export { router as hrDocumentRoutes };

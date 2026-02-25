@@ -7,12 +7,12 @@ import { DashboardService } from './dashboard.service';
 export class DashboardController {
   static readonly getStats = async (req: Request, res: Response) => {
     const dashboardQuerySchema = z.object({
-      department: z.string().trim().optional(),
+      departmentId: z.coerce.number().optional(),
       startDate: z.coerce.date().optional(),
       endDate: z.coerce.date().optional(),
     });
 
-    let { department, startDate, endDate } = dashboardQuerySchema.parse(req.query || {});
+    let { departmentId, startDate, endDate } = dashboardQuerySchema.parse(req.query || {});
 
     if (!startDate) {
       startDate = startOfMonth(subMonths(new Date(), 1));
@@ -22,11 +22,11 @@ export class DashboardController {
       endDate = new Date();
     }
 
-    if (department === 'all') {
-      department = '';
+    if (departmentId === 0) {
+      departmentId = undefined;
     }
 
-    const data = await DashboardService.getDashboard({ department, startDate, endDate });
+    const data = await DashboardService.getDashboard({ departmentId, startDate, endDate });
 
     return res.json(ApiResponse({ data }));
   };

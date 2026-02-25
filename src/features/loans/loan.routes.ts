@@ -12,7 +12,7 @@ router.get('/', hasRequiredPermission('LIST_LOANS', { allowAdmin: true }), LoanC
 router.get('/dashboard', LoanController.getDashboard);
 router.get('/:id', hasRequiredPermission('LIST_LOANS'), LoanController.getById);
 router.put('/:id', hasRequiredPermission('MANAGE_LOANS'), validateLoan, LoanController.update);
-router.patch('/:loanId/reviews', validateLoanReview, LoanController.reviewLoanRequest);
+router.patch('/:loanId/reviews', hasRequiredPermission('MANAGE_LOANS'), validateLoanReview, LoanController.reviewLoanRequest);
 router.patch(
   '/:loanId/approve',
   hasRequiredPermission('APPROVE_LOANS'),

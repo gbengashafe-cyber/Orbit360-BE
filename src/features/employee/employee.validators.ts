@@ -18,7 +18,7 @@ const employeeSchema = z.object({
   staffId: z.string().min(1, 'Staff ID is required').max(10, 'Only 10 characters are allowed for staff ID'),
   phone: z.string().min(1, 'Phone number is required').max(20, 'Phone number cannot exceed 20 characters'),
   hireDate: z.iso.date('Invalid hire date format'),
-  companyId: z.coerce.number('SBU (Company) is required'),
+  companyId: z.coerce.number('SBU (Company) is required').int('SBU (Company) is required'),
   departmentId: z.coerce.number('Employee department is required'),
   jobRoleId: z.coerce.number('Job role provided is not valid').positive('Job role provided is not valid'),
   supervisorId: z.preprocess(emptyToNull, z.coerce.number().int().positive().nullable().optional()),

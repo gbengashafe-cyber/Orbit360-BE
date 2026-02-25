@@ -29,4 +29,4 @@ router.patch('/:batchId/rejection', validatePayrollIdParam, PayrollController.ma
 router.patch('/:batchId/override-request', hasRequiredPermission('MANAGE_PAYROLLS'), PayrollController.queueForOverride);
 router.patch('/:batchId/override-approval', hasRequiredPermission('APPROVE_PAYROLL_OVERRIDE'), PayrollController.approveOverride);
 
-export default router;
+export { router as payrollRoutes };

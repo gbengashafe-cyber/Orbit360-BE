@@ -147,6 +147,12 @@ export class EmployeeService {
       shouldCreateUser = false;
 
     await db.transaction(async (t) => {
+      const draft = await EmployeeDraft.findOne({ where: { requestId }, transaction: t });
+
+      if (!draft) {
+        throw ApiError.internalServerError('Unable to process the request. Kindly contact the system administrator');
+      }
+
       await request.update(
         {
           status: 'APPROVED',
@@ -156,16 +162,10 @@ export class EmployeeService {
         { transaction: t },
       );
 
-      const draft = await EmployeeDraft.findOne({ where: { requestId }, transaction: t });
-
-      if (!draft) {
-        throw ApiError.internalServerError('Unable to process the request. Kindly contact the system administrator');
-      }
-
       employeeEmail = draft.email;
 
       // eslint-disable-next-line @typescript-eslint/no-unused-vars, sonarjs/no-unused-vars
-      const { id: _dId, requestId: _rId, previousStatus: _ps, status: _st, ...fieldsToUpdate } = draft.get({ plain: true });
+      const { id: _dId, requestId: _rId, previousStatus: _ps, ...fieldsToUpdate } = draft.get({ plain: true });
 
       if (request.actionType === 'CREATE') {
         (fieldsToUpdate as any).approvedBy = checkerId;

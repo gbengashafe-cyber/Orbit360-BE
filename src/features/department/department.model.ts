@@ -19,10 +19,8 @@ Department.init(
     name: {
       type: DataTypes.STRING(100),
       allowNull: false,
-      set(value: string) {
-        this.setDataValue('name', value.toUpperCase());
-      },
     },
+    companyId: { type: DataTypes.INTEGER, references: { model: Company, key: 'id' } },
     description: {
       type: DataTypes.STRING(100),
       allowNull: true,
@@ -32,7 +30,7 @@ Department.init(
     sequelize: db,
     tableName: 'departments',
     modelName: 'department',
-    indexes: [{ unique: true, fields: ['name'] }],
+    indexes: [{ unique: true, fields: ['name', 'company_id'] }],
   },
 );
 
