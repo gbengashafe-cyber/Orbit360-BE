@@ -20,6 +20,7 @@ export interface ExitAttributes {
   outstandingTasks?: string;
   outstandingApprovals?: string;
   assetsToReturn?: string;
+  assetReturnStatus?: 'not_applicable' | 'pending_return' | 'returned' | 'not_returned';
   salaryBalanceNotes?: string;
   loanDeductionNotes?: string;
   leaveEncashmentRequest?: boolean;
@@ -62,6 +63,7 @@ export class Exit extends Model<ExitAttributes> implements ExitAttributes {
   public outstandingTasks!: string;
   public outstandingApprovals!: string;
   public assetsToReturn!: string;
+  public assetReturnStatus!: 'not_applicable' | 'pending_return' | 'returned' | 'not_returned';
   public salaryBalanceNotes!: string;
   public loanDeductionNotes!: string;
   public leaveEncashmentRequest!: boolean;
@@ -156,6 +158,11 @@ Exit.init(
     assetsToReturn: {
       type: DataTypes.TEXT,
       allowNull: true,
+    },
+    assetReturnStatus: {
+      type: DataTypes.ENUM('not_applicable', 'pending_return', 'returned', 'not_returned'),
+      allowNull: true,
+      defaultValue: 'pending_return',
     },
     salaryBalanceNotes: {
       type: DataTypes.TEXT,
