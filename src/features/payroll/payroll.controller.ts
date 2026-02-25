@@ -11,6 +11,8 @@ import { Payroll } from './payroll.model';
 import { PayrollRepository } from './payroll.repository';
 import { PayrollService } from './payroll.service';
 
+const approverNoteSchema = z.object({ approverNote: z.string('Approver note should be a string of texts') });
+
 export class PayrollController {
   currentPeriod = new Date(new Date().setDate(1));
 
@@ -186,7 +188,7 @@ export class PayrollController {
     const { batchId } = req.params;
     const checkerId = req.user?.id;
 
-    const validationResult = approverNoteSchema.optional().parse(req.body);
+    const validationResult = approverNoteSchema.nullable().optional().parse(req.body);
     const approverNote = validationResult?.approverNote || '';
 
     if (!checkerId) {
@@ -255,5 +257,3 @@ export class PayrollController {
     res.json(ApiResponse({ data: {}, message: 'Payroll override approved' }));
   };
 }
-
-const approverNoteSchema = z.object({ approverNote: z.string('Approver note should be a string of texts') });
