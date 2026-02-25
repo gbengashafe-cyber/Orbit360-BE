@@ -14,7 +14,7 @@ import { logger } from '../utils/logger';
 
 type SBU = { name: string; departments: { name: string; jobRoles: string[] }[] };
 
-async function seed() {
+const seedOrganizationalStructure = async () => {
   const SBUs: SBU[] = [
     {
       name: 'MFB',
@@ -137,240 +137,203 @@ async function seed() {
         }
       }
     }
+  } catch (error) {
+    logger.error('Unable to create organization structure');
+    logger.error(error);
+  }
+};
 
+const setupSystemConfiguration = async () => {
+  await LoanType.bulkCreate(
+    [
+      { name: 'Thrift', interestRate: 0, maxTenureMonths: 6 },
+      { name: 'Salary Advance', interestRate: 15.3, maxTenureMonths: 1 },
+      { name: 'Personal', interestRate: 3, maxTenureMonths: 6 },
+    ],
+    { ignoreDuplicates: true },
+  );
+
+  const roles = {
+    md: await JobRole.findOne({ where: { title: 'MD - MFB' } }),
+    hrManager: await JobRole.findOne({ where: { title: 'Chief Human Resource Manager' } }),
+    hrOperations: await JobRole.findOne({ where: { title: 'Compensation and Benefits Officer' } }),
+    employee: await JobRole.findOne({ where: { title: 'Cash/Teller' } }),
+    employeeSupervisor: await JobRole.findOne({ where: { title: 'Head - Customer Care' } }),
+  };
+
+  if (!roles.hrOperations || !roles.hrManager || !roles.employee || !roles.employeeSupervisor || !roles.md) {
+    throw ApiError.badRequest('Missing one or more job roles set up');
+  }
+
+  await JobRolePermissions.truncate();
+  await JobRolePermissions.bulkCreate(
+    [
+      { permission: 'MANAGE_EMPLOYEES', jobRoleId: roles.hrOperations.id },
+      { permission: 'MANAGE_ONBOARDING', jobRoleId: roles.hrOperations.id },
+      { permission: 'MANAGE_USERS', jobRoleId: roles.hrOperations.id },
+      { permission: 'MANAGE_PAYROLLS', jobRoleId: roles.hrOperations.id },
+      { permission: 'MANAGE_LOANS', jobRoleId: roles.hrOperations.id },
+      { permission: 'LIST_LOANS', jobRoleId: roles.hrOperations.id },
+      { permission: 'LIST_LOANS', jobRoleId: roles.hrManager.id },
+      { permission: 'LIST_EMPLOYEES', jobRoleId: roles.hrOperations.id },
+      { permission: 'LIST_EMPLOYEES', jobRoleId: roles.hrManager.id },
+      { permission: 'APPROVE_LOANS', jobRoleId: roles.hrManager.id },
+      { permission: 'APPROVE_PAYROLLS', jobRoleId: roles.hrManager.id },
+      { permission: 'APPROVE_EMPLOYEES', jobRoleId: roles.hrManager.id },
+      { permission: 'LIST_PAYROLLS', jobRoleId: roles.hrManager.id },
+      { permission: 'LIST_PAYROLLS', jobRoleId: roles.hrOperations.id },
+      { permission: 'APPROVE_PAYROLL_OVERRIDE', jobRoleId: roles.md.id },
+      { permission: 'MANAGE_DOCUMENTS', jobRoleId: roles.hrOperations.id },
+      { permission: 'MANAGE_DOCUMENTS', jobRoleId: roles.hrManager.id },
+    ],
+    { ignoreDuplicates: true },
+  );
+
+  return roles;
+};
+
+async function seed() {
+  await seedOrganizationalStructure();
+
+  try {
     const company = await Company.findOne();
 
     if (!company) {
       throw ApiError.internalServerError(`Unable to initiate employee creation. Company not found`);
     }
 
-    await LoanType.bulkCreate(
-      [
-        { name: 'Thrift', interestRate: 0, maxTenureMonths: 6 },
-        { name: 'Salary Advance', interestRate: 15.3, maxTenureMonths: 1 },
-        { name: 'Personal', interestRate: 3, maxTenureMonths: 6 },
-      ],
-      { ignoreDuplicates: true },
-    );
-
-    const hrDepartment = await Department.findOne({ where: { name: 'Human Resources' } });
-    const operationsDepartment = await Department.findOne({ where: { name: 'Operations' } });
-    const itDepartment = await Department.findOne({ where: { name: 'Information Technology' } });
-    const mdsDepartment = await Department.findOne({ where: { name: "MD's Office - MFB" } });
+    const [hrDepartment, operationsDepartment, itDepartment, mdsDepartment] = await Promise.all([
+      Department.findOne({ where: { name: 'Human Resources' } }),
+      Department.findOne({ where: { name: 'Operations' } }),
+      Department.findOne({ where: { name: 'Information Technology' } }),
+      Department.findOne({ where: { name: "MD's Office - MFB" } }),
+    ]);
 
     if (!hrDepartment || !operationsDepartment || !mdsDepartment || !itDepartment) {
       throw ApiError.badRequest('Missing one or more department set up');
     }
 
-    const mdRole = await JobRole.findOne({ where: { title: 'MD - MFB' } });
-    const hrManagerRole = await JobRole.findOne({ where: { title: 'Chief Human Resource Manager' } });
-    const hrOperationsRole = await JobRole.findOne({ where: { title: 'Compensation and Benefits Officer' } });
-    const employeeRole = await JobRole.findOne({ where: { title: 'Cash/Teller' } });
-    const employeeSupervisorRole = await JobRole.findOne({ where: { title: 'Head - Customer Care' } });
-
-    if (!hrOperationsRole || !hrManagerRole || !employeeRole || !employeeSupervisorRole || !mdRole) {
-      throw ApiError.badRequest('Missing one or more job roles set up');
-    }
-
-    await JobRolePermissions.truncate();
     if (!hrDepartment || !operationsDepartment) {
       throw ApiError.badRequest('Missing one or more department set up');
     }
-    await JobRolePermissions.bulkCreate(
-      [
-        { permission: 'MANAGE_EMPLOYEES', jobRoleId: hrOperationsRole.id },
-        { permission: 'MANAGE_ONBOARDING', jobRoleId: hrOperationsRole.id },
-        { permission: 'MANAGE_USERS', jobRoleId: hrOperationsRole.id },
-        { permission: 'MANAGE_PAYROLLS', jobRoleId: hrOperationsRole.id },
-        { permission: 'MANAGE_LOANS', jobRoleId: hrOperationsRole.id },
-        { permission: 'LIST_LOANS', jobRoleId: hrOperationsRole.id },
-        { permission: 'LIST_LOANS', jobRoleId: hrManagerRole.id },
-        { permission: 'LIST_EMPLOYEES', jobRoleId: hrOperationsRole.id },
-        { permission: 'LIST_EMPLOYEES', jobRoleId: hrManagerRole.id },
-        { permission: 'APPROVE_LOANS', jobRoleId: hrManagerRole.id },
-        { permission: 'APPROVE_PAYROLLS', jobRoleId: hrManagerRole.id },
-        { permission: 'APPROVE_EMPLOYEES', jobRoleId: hrManagerRole.id },
-        { permission: 'LIST_PAYROLLS', jobRoleId: hrManagerRole.id },
-        { permission: 'LIST_PAYROLLS', jobRoleId: hrOperationsRole.id },
-        { permission: 'APPROVE_PAYROLL_OVERRIDE', jobRoleId: mdRole.id },
-        { permission: 'MANAGE_DOCUMENTS', jobRoleId: hrOperationsRole.id },
-        { permission: 'MANAGE_DOCUMENTS', jobRoleId: hrManagerRole.id },
-      ],
-      { ignoreDuplicates: true },
-    );
 
-    let hashedPassword = '';
-    if (env.NODE_ENV !== 'production' && env.TEST_PASSWORD) {
-      hashedPassword = await AuthUtil.hashPassword(env.TEST_PASSWORD);
+    const roles = await setupSystemConfiguration();
+    if (!roles.hrOperations || !roles.hrManager || !roles.employee || !roles.employeeSupervisor) {
+      throw ApiError.badRequest('Missing one or more job roles set up');
     }
 
     const employees: any = [
       {
-        firstName: 'Test',
         lastName: 'HR',
         email: 'test-hr@gmail.com',
-        password: hashedPassword,
         companyId: company.id,
-        jobRoleId: hrOperationsRole.id,
+        jobRoleId: roles.hrOperations.id,
         departmentId: hrDepartment.id,
-        status: 'ACTIVE',
         staffId: 'MFB001',
-        phone: '08070707',
-        dob: new Date('2000-01-01'),
         gender: 'F',
-        nationality: 'Nigerian',
-        address: '',
-        hireDate: new Date('2018-01-01'),
-        annualBasicSalary: 200000,
-        annualHousingAllowance: 200000,
-        annualTransportAllowance: 200000,
-        annualLeaveAllowance: 200000,
-        annualOtherAllowances: 200000,
-        bankName: '',
-        bankCode: '',
-        accountNumber: '',
-        accountName: '',
-        beneficiaryName: '',
-        beneficiaryRelationship: '',
-        beneficiaryPhone: '',
-        nokName: '',
-        nokRelationship: '',
-        nokPhone: '',
-        nokAddress: '',
-        leaveEntitlement: 20,
         nhfApplicable: false,
         annualRentAmount: 2000000,
-        createdBy: 5,
       },
       {
-        firstName: 'Test',
         lastName: 'HR Manager',
         email: 'test-hr-manager@gmail.com',
-        password: hashedPassword,
         companyId: company.id,
         departmentId: hrDepartment.id,
-        jobRoleId: hrManagerRole.id,
-        status: 'ACTIVE',
+        jobRoleId: roles.hrManager.id,
         staffId: 'MFB002',
-        phone: '08070707',
-        dob: new Date('2000-01-01'),
         gender: 'M',
-        nationality: 'Nigerian',
-        address: '',
-        hireDate: new Date('2018-01-01'),
-        annualBasicSalary: 200000,
-        annualHousingAllowance: 200000,
-        annualTransportAllowance: 200000,
-        annualLeaveAllowance: 200000,
-        annualOtherAllowances: 200000,
-        bankName: '',
-        bankCode: '',
-        accountNumber: '',
-        accountName: '',
-        beneficiaryName: '',
-        beneficiaryRelationship: '',
-        beneficiaryPhone: '',
-        nokName: '',
-        nokRelationship: '',
-        nokPhone: '',
-        nokAddress: '',
-        leaveEntitlement: 20,
-        nhfApplicable: false,
+        nhfApplicable: true,
         annualRentAmount: 2000000,
-        createdBy: 5,
       },
       {
-        firstName: 'Test',
         lastName: 'Employee',
         email: 'test-employee@gmail.com',
-        password: hashedPassword,
         companyId: company.id,
         departmentId: operationsDepartment.id,
-        jobRoleId: employeeRole.id,
-        status: 'ACTIVE',
+        jobRoleId: roles.employee.id,
         staffId: 'MFB003',
-        phone: '08070707',
-        dob: new Date('2000-01-01'),
         gender: 'F',
-        nationality: 'Nigerian',
-        address: '',
-        hireDate: new Date('2018-01-01'),
-        annualBasicSalary: 200000,
-        annualHousingAllowance: 200000,
-        annualTransportAllowance: 200000,
-        annualLeaveAllowance: 200000,
-        annualOtherAllowances: 200000,
-        bankName: '',
-        bankCode: '',
-        accountNumber: '',
-        accountName: '',
-        beneficiaryName: '',
-        beneficiaryRelationship: '',
-        beneficiaryPhone: '',
-        nokName: '',
-        nokRelationship: '',
-        nokPhone: '',
-        nokAddress: '',
-        leaveEntitlement: 20,
         nhfApplicable: false,
-        annualRentAmount: 2000000,
-        createdBy: 5,
       },
       {
-        firstName: 'Test',
         lastName: 'Supervisor',
         email: 'test-supervisor@gmail.com',
-        password: hashedPassword,
         companyId: company.id,
         departmentId: operationsDepartment.id,
-        jobRoleId: employeeSupervisorRole.id,
-        status: 'ACTIVE',
+        jobRoleId: roles.employeeSupervisor.id,
         staffId: 'MFB004',
-        phone: '08070707',
-        dob: new Date('2000-01-01'),
         gender: 'M',
-        nationality: 'Nigerian',
-        address: '',
-        hireDate: new Date('2018-01-01'),
-        annualBasicSalary: 200000,
-        annualHousingAllowance: 200000,
-        annualTransportAllowance: 200000,
-        annualLeaveAllowance: 200000,
-        annualOtherAllowances: 200000,
-        bankName: '',
-        bankCode: '',
-        accountNumber: '',
-        accountName: '',
-        beneficiaryName: '',
-        beneficiaryRelationship: '',
-        beneficiaryPhone: '',
-        nokName: '',
-        nokRelationship: '',
-        nokPhone: '',
-        nokAddress: '',
-        leaveEntitlement: 20,
         nhfApplicable: false,
         annualRentAmount: 2000000,
-        createdBy: 5,
       },
     ];
 
-    await db.query('SET FOREIGN_KEY_CHECKS = 0');
-    const [adminUser] = await User.findOrCreate({
-      where: { email: 'test-admin@gmail.com' },
-      defaults: { ...employees[0], role: 'admin', email: 'test-admin@gmail.com', lastName: 'Admin', createdBy: 0 },
-    });
-    await db.query('SET FOREIGN_KEY_CHECKS = 1');
+    try {
+      let hashedPassword = '';
+      if (env.NODE_ENV !== 'production' && env.TEST_PASSWORD) {
+        hashedPassword = await AuthUtil.hashPassword(env.TEST_PASSWORD);
+      }
 
-    const enrichedEmployees = employees.map((_employee) => ({ ..._employee, createdBy: adminUser.id }));
+      await db.query('SET FOREIGN_KEY_CHECKS = 0');
+      const [adminUser] = await User.findOrCreate({
+        where: { email: 'test-admin@gmail.com' },
+        defaults: {
+          ...employees[0],
+          role: 'admin',
+          firstName: 'Test',
+          password: hashedPassword,
+          status: 'ACTIVE',
+          email: 'test-admin@gmail.com',
+          lastName: 'Admin',
+          createdBy: 0,
+        },
+      });
 
-    await User.bulkCreate(enrichedEmployees, { ignoreDuplicates: true });
-    await Employee.bulkCreate(enrichedEmployees, { ignoreDuplicates: true });
+      const enrichedEmployees = employees.map((_employee) => ({
+        ..._employee,
+        firstName: 'Test',
+        password: hashedPassword,
+        status: 'ACTIVE',
+        phone: '08070707',
+        nationality: 'Nigerian',
+        address: '',
+        createdBy: adminUser.id,
+        annualBasicSalary: 200000,
+        annualHousingAllowance: 200000,
+        annualTransportAllowance: 200000,
+        annualLeaveAllowance: 200000,
+        annualOtherAllowances: 200000,
+        bankName: '',
+        bankCode: '',
+        accountNumber: '',
+        accountName: '',
+        beneficiaryName: '',
+        beneficiaryRelationship: '',
+        beneficiaryPhone: '',
+        nokName: '',
+        nokRelationship: '',
+        nokPhone: '',
+        nokAddress: '',
+        leaveEntitlement: 15,
+        hireDate: new Date('2018-01-01'),
+        dob: new Date('2000-01-01'),
+      }));
 
-    const employeeRecord = await Employee.findOne({ where: { email: 'test-employee@gmail.com' } });
-    const supervisorEmployee = await Employee.findOne({ where: { email: 'test-supervisor@gmail.com' } });
-    const hrSupervisorEmployee = await Employee.findOne({ where: { email: 'test-hr-manager@gmail.com' } });
-    const hrEmployeeRecord = await Employee.findOne({ where: { email: 'test-hr@gmail.com' } });
+      await User.bulkCreate(enrichedEmployees, { ignoreDuplicates: true });
+      await Employee.bulkCreate(enrichedEmployees, { ignoreDuplicates: true });
+    } catch (error) {
+      logger.error('Error setting up users and employees');
+      throw error;
+    } finally {
+      await db.query('SET FOREIGN_KEY_CHECKS = 1');
+    }
+
+    const [employeeRecord, supervisorEmployee, hrSupervisorEmployee, hrEmployeeRecord] = await Promise.all([
+      Employee.findOne({ where: { email: 'test-employee@gmail.com' } }),
+      Employee.findOne({ where: { email: 'test-supervisor@gmail.com' } }),
+      Employee.findOne({ where: { email: 'test-hr-manager@gmail.com' } }),
+      Employee.findOne({ where: { email: 'test-hr@gmail.com' } }),
+    ]);
 
     await employeeRecord?.update({ supervisorId: supervisorEmployee?.id });
     await hrEmployeeRecord?.update({ supervisorId: hrSupervisorEmployee?.id });

@@ -132,3 +132,15 @@ JobRole.hasMany(Employee, { foreignKey: { name: 'jobRoleId', allowNull: false } 
 
 Employee.belongsTo(Company, { foreignKey: { name: 'companyId', allowNull: false } });
 Company.hasMany(Employee, { foreignKey: { name: 'companyId', allowNull: false }, as: 'companyEmployees' });
+
+Employee.belongsTo(User, {
+  foreignKey: 'email',
+  targetKey: 'email',
+  as: 'userAccount',
+});
+
+User.hasOne(Employee, {
+  foreignKey: 'email',
+  sourceKey: 'email',
+  as: 'employeeProfile',
+});
