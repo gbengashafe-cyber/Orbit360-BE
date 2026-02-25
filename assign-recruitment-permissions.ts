@@ -8,24 +8,31 @@ async function assignRecruitmentPermissions() {
     await db.authenticate();
     console.log('✓ Database connected');
 
-    // Find HR Manager role
-    const hrManagerRole = await JobRole.findOne({ where: { title: 'HR MANAGER' } });
-    if (!hrManagerRole) {
-      console.error('HR MANAGER role not found');
+    // Find HR, HR Manager, and HR Operations roles
+    const roles = await JobRole.findAll({ 
+      where: { 
+        title: ['HR', 'HR MANAGER', 'HR OPERATIONS'] 
+      } 
+    });
+
+    if (roles.length === 0) {
+      console.error('No HR roles found');
       process.exit(1);
     }
 
-    console.log(`Found HR Manager role: ${hrManagerRole.id}`);
+    console.log(`Found ${roles.length} role(s): ${roles.map(r => r.title).join(', ')}`);
 
     // Permissions to assign
     const permissions = ['MANAGE_RECRUITMENT', 'APPROVE_RECRUITMENT', 'APPROVE_EXITS'];
 
-    for (const permission of permissions) {
-      await JobRolePermissions.findOrCreate({
-        where: { jobRoleId: hrManagerRole.id, permission },
-        defaults: { jobRoleId: hrManagerRole.id, permission },
-      });
-      console.log(`✓ Assigned ${permission} to HR MANAGER`);
+    for (const role of roles) {
+      for (const permission of permissions) {
+        await JobRolePermissions.findOrCreate({
+          where: { jobRoleId: role.id, permission },
+          defaults: { jobRoleId: role.id, permission },
+        });
+        console.log(`✓ Assigned ${permission} to ${role.title}`);
+      }
     }
 
     console.log('✓ All permissions assigned successfully');

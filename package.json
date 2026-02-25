@@ -15,7 +15,9 @@
     "seed:leave-balances": "ts-node src/db/seed-leave-balances.ts",
     "sync": "ts-node src/db/sync.ts",
     "clear-db": "ts-node src/db/purge.ts",
-    "migrate:asset": "ts-node run-asset-migration.ts"
+    "migrate:asset": "ts-node run-asset-migration.ts",
+    "assign-permissions": "ts-node assign-recruitment-permissions.ts",
+    "check-hr-perms": "ts-node check-hr-permissions.ts"
   },
   "keywords": [],
   "author": "",
