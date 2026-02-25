@@ -24,6 +24,8 @@ async function seedAdminPermissions() {
       'view_reports',
       'approve_leave',
       'approve_loans',
+      'approve_recruitment',
+      'approve_exits',
       'view_all_data',
     ];
 

@@ -151,7 +151,7 @@ export class AuthController {
       }
 
       const userData = { ...(user.toJSON?.() || user), permissions: req.user?.permissions || [] };
-      res.json(ApiResponse(ApiResponse({ data: userData, message: 'Fetched current user successfully' })));
+      res.json(ApiResponse({ data: userData, message: 'Fetched current user successfully' }));
     } catch (error) {
       logger.error(`Error fetching user: ${error}`);
       next(error);

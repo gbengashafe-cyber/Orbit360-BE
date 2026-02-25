@@ -28,6 +28,12 @@ export class HRDocumentDeletionRequestRepository {
     const offset = (page - 1) * rows;
     const { rows: deletions, count } = await HRDocumentDeletionRequest.findAndCountAll({
       where: { status: 'PENDING_APPROVAL' },
+      include: [
+        {
+          association: 'requester',
+          attributes: ['id', 'firstName', 'lastName', 'email'],
+        },
+      ],
       order: [['createdAt', 'DESC']],
       limit: rows,
       offset,
