@@ -3,7 +3,10 @@ import { z } from 'zod';
 import { LEAVE_TYPES } from './leave.model';
 
 const createLeaveSchema = z.object({
-  employeeId: z.number().int('Employee ID must be an integer').min(1, 'Employee ID is required').optional(),
+  employeeId: z.preprocess(
+    (val) => (typeof val === 'string' ? parseInt(val, 10) : val),
+    z.number().int('Employee ID must be an integer').min(1, 'Employee ID is required'),
+  ),
   startDate: z
     .union([z.string().date('Invalid start date format'), z.string().datetime()])
     .transform((val) => new Date(val).toISOString().split('T')[0]),
@@ -15,8 +18,14 @@ const createLeaveSchema = z.object({
   }),
   reason: z.string().optional().nullable(),
   leave_period: z.string().optional().nullable(),
-  selected_supervisor_id: z.number().int().positive().optional().nullable(),
-  covering_employee_id: z.number().int().positive().optional().nullable(),
+  selected_supervisor_id: z.preprocess(
+    (val) => (typeof val === 'string' && val ? parseInt(val, 10) : val),
+    z.number().int().positive().optional().nullable(),
+  ),
+  covering_employee_id: z.preprocess(
+    (val) => (typeof val === 'string' && val ? parseInt(val, 10) : val),
+    z.number().int().positive().optional().nullable(),
+  ),
   handover_notes: z.string().optional().nullable(),
   emergency_contact: z.string().optional().nullable(),
   alternative_email: z.string().email().optional().nullable(),

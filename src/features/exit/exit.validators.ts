@@ -22,6 +22,7 @@ const createExitSchema = z.object({
   outstandingTasks: z.string().optional(),
   outstandingApprovals: z.string().optional(),
   assetsToReturn: z.string().optional(),
+  assetReturnStatus: z.enum(['not_applicable', 'pending_return', 'returned', 'not_returned']).optional(),
   salaryBalanceNotes: z.string().optional(),
   loanDeductionNotes: z.string().optional(),
   leaveEncashmentRequest: z.boolean().optional(),
