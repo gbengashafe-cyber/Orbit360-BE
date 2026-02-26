@@ -168,23 +168,38 @@ const setupSystemConfiguration = async () => {
   await JobRolePermissions.truncate();
   await JobRolePermissions.bulkCreate(
     [
+      // HR Operations permissions
       { permission: 'MANAGE_EMPLOYEES', jobRoleId: roles.hrOperations.id },
       { permission: 'MANAGE_ONBOARDING', jobRoleId: roles.hrOperations.id },
       { permission: 'MANAGE_USERS', jobRoleId: roles.hrOperations.id },
       { permission: 'MANAGE_PAYROLLS', jobRoleId: roles.hrOperations.id },
       { permission: 'MANAGE_LOANS', jobRoleId: roles.hrOperations.id },
       { permission: 'LIST_LOANS', jobRoleId: roles.hrOperations.id },
-      { permission: 'LIST_LOANS', jobRoleId: roles.hrManager.id },
       { permission: 'LIST_EMPLOYEES', jobRoleId: roles.hrOperations.id },
+      { permission: 'MANAGE_DOCUMENTS', jobRoleId: roles.hrOperations.id },
+      { permission: 'APPROVE_DOCUMENT_DELETION', jobRoleId: roles.hrOperations.id },
+      { permission: 'MANAGE_RECRUITMENT', jobRoleId: roles.hrOperations.id },
+      { permission: 'APPROVE_RECRUITMENT', jobRoleId: roles.hrOperations.id },
+      { permission: 'LIST_PAYROLLS', jobRoleId: roles.hrOperations.id },
+
+      // HR Manager permissions
+      { permission: 'LIST_LOANS', jobRoleId: roles.hrManager.id },
       { permission: 'LIST_EMPLOYEES', jobRoleId: roles.hrManager.id },
       { permission: 'APPROVE_LOANS', jobRoleId: roles.hrManager.id },
       { permission: 'APPROVE_PAYROLLS', jobRoleId: roles.hrManager.id },
       { permission: 'APPROVE_EMPLOYEES', jobRoleId: roles.hrManager.id },
       { permission: 'LIST_PAYROLLS', jobRoleId: roles.hrManager.id },
-      { permission: 'LIST_PAYROLLS', jobRoleId: roles.hrOperations.id },
-      { permission: 'APPROVE_PAYROLL_OVERRIDE', jobRoleId: roles.md.id },
-      { permission: 'MANAGE_DOCUMENTS', jobRoleId: roles.hrOperations.id },
       { permission: 'MANAGE_DOCUMENTS', jobRoleId: roles.hrManager.id },
+      { permission: 'APPROVE_DOCUMENT_DELETION', jobRoleId: roles.hrManager.id },
+      { permission: 'APPROVE_EXITS', jobRoleId: roles.hrManager.id },
+      { permission: 'MANAGE_RECRUITMENT', jobRoleId: roles.hrManager.id },
+      { permission: 'APPROVE_RECRUITMENT', jobRoleId: roles.hrManager.id },
+
+      // MD permissions
+      { permission: 'APPROVE_PAYROLL_OVERRIDE', jobRoleId: roles.md.id },
+
+      // Supervisor permissions (employee supervisor)
+      { permission: 'APPROVE_EXITS', jobRoleId: roles.employeeSupervisor.id },
     ],
     { ignoreDuplicates: true },
   );
