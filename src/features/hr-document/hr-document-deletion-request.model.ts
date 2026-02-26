@@ -51,4 +51,11 @@ HRDocumentDeletionRequest.init(
   },
 );
 
+// Association with User for requester info
+HRDocumentDeletionRequest.belongsTo(User, {
+  foreignKey: 'requestedBy',
+  as: 'requester',
+  targetKey: 'id',
+});
+
 export default HRDocumentDeletionRequest;
