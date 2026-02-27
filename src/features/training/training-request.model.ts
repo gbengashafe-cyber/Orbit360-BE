@@ -1,0 +1,213 @@
+import { DataTypes, Model, Optional } from 'sequelize';
+import { db } from '../../db';
+
+export enum TrainingRequestStatus {
+  PENDING = 'PENDING',
+  SUPERVISOR_APPROVED = 'SUPERVISOR_APPROVED',
+  SUPERVISOR_REJECTED = 'SUPERVISOR_REJECTED',
+  HR_REVIEWING = 'HR_REVIEWING',
+  HR_APPROVED = 'HR_APPROVED',
+  HR_REJECTED = 'HR_REJECTED',
+  FINAL_APPROVED = 'FINAL_APPROVED',
+  FINAL_REJECTED = 'FINAL_REJECTED',
+}
+
+export enum DeliveryMethod {
+  ONLINE = 'ONLINE',
+  IN_PERSON = 'IN_PERSON',
+  HYBRID = 'HYBRID',
+  SELF_PACED = 'SELF_PACED',
+}
+
+export enum TrainingPriority {
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
+  CRITICAL = 'CRITICAL',
+}
+
+export enum RequestScope {
+  SELF = 'SELF',
+  TEAM = 'TEAM',
+}
+
+interface TrainingRequestAttributes {
+  id?: string;
+  requesterId: number;
+  supervisorId?: number;
+  trainingType: string;
+  trainingTitle: string;
+  trainingDescription: string;
+  priority: TrainingPriority;
+  businessJustification: string;
+  skillsToGain: string;
+  deliveryMethod: DeliveryMethod;
+  preferredTimeframe: string;
+  estimatedDuration: string;
+  estimatedCost: number;
+  trainingProvider: string;
+  requestScope: RequestScope;
+  numberOfTeamMembers?: number;
+  teamMemberIds?: number[];
+  status: TrainingRequestStatus;
+  supervisorApprovedAt?: Date;
+  supervisorApprovedBy?: number;
+  supervisorRejectionReason?: string;
+  hrApprovedAt?: Date;
+  hrApprovedBy?: number;
+  hrRejectionReason?: string;
+  finalApprovedAt?: Date;
+  finalApprovedBy?: number;
+  finalRejectionReason?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+interface TrainingRequestCreationAttributes extends Optional<TrainingRequestAttributes, 'id' | 'createdAt' | 'updatedAt'> {}
+
+class TrainingRequest
+  extends Model<TrainingRequestAttributes, TrainingRequestCreationAttributes>
+  implements TrainingRequestAttributes
+{
+  public id!: string;
+  public requesterId!: number;
+  public supervisorId?: number;
+  public trainingType!: string;
+  public trainingTitle!: string;
+  public trainingDescription!: string;
+  public priority!: TrainingPriority;
+  public businessJustification!: string;
+  public skillsToGain!: string;
+  public deliveryMethod!: DeliveryMethod;
+  public preferredTimeframe!: string;
+  public estimatedDuration!: string;
+  public estimatedCost!: number;
+  public trainingProvider!: string;
+  public requestScope!: RequestScope;
+  public numberOfTeamMembers?: number;
+  public teamMemberIds?: number[];
+  public status!: TrainingRequestStatus;
+  public supervisorApprovedAt?: Date;
+  public supervisorApprovedBy?: number;
+  public supervisorRejectionReason?: string;
+  public hrApprovedAt?: Date;
+  public hrApprovedBy?: number;
+  public hrRejectionReason?: string;
+  public finalApprovedAt?: Date;
+  public finalApprovedBy?: number;
+  public finalRejectionReason?: string;
+  public readonly createdAt!: Date;
+  public readonly updatedAt!: Date;
+}
+
+TrainingRequest.init(
+  {
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true,
+    },
+    requesterId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: { model: 'Employees', key: 'id' },
+    },
+    supervisorId: {
+      type: DataTypes.INTEGER,
+      references: { model: 'Employees', key: 'id' },
+    },
+    trainingType: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    trainingTitle: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    trainingDescription: {
+      type: DataTypes.TEXT,
+      allowNull: false,
+    },
+    priority: {
+      type: DataTypes.ENUM(...Object.values(TrainingPriority)),
+      defaultValue: TrainingPriority.MEDIUM,
+    },
+    businessJustification: {
+      type: DataTypes.TEXT,
+      allowNull: false,
+    },
+    skillsToGain: {
+      type: DataTypes.TEXT,
+      allowNull: false,
+    },
+    deliveryMethod: {
+      type: DataTypes.ENUM(...Object.values(DeliveryMethod)),
+      allowNull: false,
+    },
+    preferredTimeframe: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    estimatedDuration: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    estimatedCost: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
+    },
+    trainingProvider: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    requestScope: {
+      type: DataTypes.ENUM(...Object.values(RequestScope)),
+      defaultValue: RequestScope.SELF,
+    },
+    numberOfTeamMembers: {
+      type: DataTypes.INTEGER,
+    },
+    teamMemberIds: {
+      type: DataTypes.JSON,
+      allowNull: true,
+    },
+    status: {
+      type: DataTypes.ENUM(...Object.values(TrainingRequestStatus)),
+      defaultValue: TrainingRequestStatus.PENDING,
+    },
+    supervisorApprovedAt: {
+      type: DataTypes.DATE,
+    },
+    supervisorApprovedBy: {
+      type: DataTypes.INTEGER,
+    },
+    supervisorRejectionReason: {
+      type: DataTypes.TEXT,
+    },
+    hrApprovedAt: {
+      type: DataTypes.DATE,
+    },
+    hrApprovedBy: {
+      type: DataTypes.INTEGER,
+    },
+    hrRejectionReason: {
+      type: DataTypes.TEXT,
+    },
+    finalApprovedAt: {
+      type: DataTypes.DATE,
+    },
+    finalApprovedBy: {
+      type: DataTypes.INTEGER,
+    },
+    finalRejectionReason: {
+      type: DataTypes.TEXT,
+    },
+  },
+  {
+    sequelize: db,
+    tableName: 'TrainingRequests',
+    timestamps: true,
+  },
+);
+
+export { TrainingRequest };
