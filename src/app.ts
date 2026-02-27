@@ -27,6 +27,7 @@ import { payrollReportRoutes } from './features/payroll/reports/payroll-report.r
 import { performanceRoutes } from './features/performance/performance.routes';
 import { recruitmentRoutes } from './features/recruitment/recruitment.routes';
 import { userRoutes } from './features/users/user.router';
+import { trainingRequestRoutes } from './features/training/training-request.routes';
 import { authorizationRoutes } from './pending-authorization/pending-authorization.routes';
 import { ApiError } from './utils/api-error';
 import { globalErrorHandler } from './utils/global-error-handler';
@@ -137,6 +138,7 @@ app.use('/api/v1/departments', departmentRoutes);
 app.use('/api/v1/job-roles', jobRoleRoutes);
 app.use('/api/v1/employees', employeeRoutes);
 app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/training-requests', trainingRequestRoutes);
 app.use('/api/v1/loans/types', loanTypeRoutes);
 app.use('/api/v1/loans', loanRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);

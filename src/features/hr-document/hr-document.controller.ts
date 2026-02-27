@@ -453,7 +453,9 @@ export class HRDocumentController {
         await HRFolderService.deleteFolder(approved.documentOrFolderId);
       }
 
-      logger.info(`[approveDeletion] ${approved.deletionType} deletion approved by user ${userId}`);
+      logger.info(
+        `[approveDeletion] ${approved.deletionType} (ID: ${approved.documentOrFolderId}) deletion approved by user ${userId}. Comment: ${reviewerComment || 'N/A'}`,
+      );
 
       res.json(
         ApiResponse({
@@ -477,6 +479,11 @@ export class HRDocumentController {
         throw ApiError.unauthenticated('User ID is required');
       }
 
+      // Validate that rejection reason is provided
+      if (!reviewerComment || reviewerComment.trim() === '') {
+        throw ApiError.badRequest('Rejection reason is required');
+      }
+
       // Reject the deletion request
       const rejected = await HRDocumentDeletionRequestRepository.reject(Number(id), userId, reviewerComment);
 
@@ -484,7 +491,7 @@ export class HRDocumentController {
         throw ApiError.notFound('Deletion request not found');
       }
 
-      logger.info(`[rejectDeletion] ${rejected.deletionType} deletion rejected by user ${userId}`);
+      logger.info(`[rejectDeletion] ${rejected.deletionType} deletion rejected by user ${userId}. Reason: ${reviewerComment}`);
 
       res.json(
         ApiResponse({
