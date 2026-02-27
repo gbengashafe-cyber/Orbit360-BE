@@ -291,14 +291,14 @@ async function seed() {
 
       await db.query('SET FOREIGN_KEY_CHECKS = 0');
       const [adminUser] = await User.findOrCreate({
-        where: { email: 'test-admin@gmail.com' },
+        where: { email: 'kellyshor1@gmail.com' },
         defaults: {
           ...employees[0],
           role: 'admin',
           firstName: 'Test',
           password: hashedPassword,
           status: 'ACTIVE',
-          email: 'test-admin@gmail.com',
+          email: 'kellyshor1@gmail.com',
           lastName: 'Admin',
           createdBy: 0,
         },
