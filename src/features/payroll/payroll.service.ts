@@ -10,7 +10,7 @@ import { PayrollRepository } from './payroll.repository';
 import { calculatePayroll } from './payroll.utils';
 
 export class PayrollService {
-  static readonly generateBatch = async (payPeriod, makerId: number, overwrite) => {
+  static readonly generateBatch = async (payPeriod, makerId: number, overwrite: boolean) => {
     const CHUNK_SIZE = 500;
     const existingPayroll = await PayrollRepository.payPeriodExist(payPeriod);
     let totalGross = 0;

@@ -43,7 +43,7 @@ export class EmployeeRepository {
   static readonly activeEmployeesCompensation = ({ rows, page }) => {
     const offset = (page - 1) * rows;
 
-    return Employee.findAll({ where: { status: ['active', 'on_leave'] }, limit: rows, offset });
+    return Employee.findAll({ where: { status: ['ACTIVE', 'ON_LEAVE'] }, limit: rows, offset });
   };
 
   static readonly read = ({ rows = 25, page = 1, filters, orderBy = 'createdAt', orderDirection = 'ASC' }: ReadAllProps) => {
@@ -58,6 +58,7 @@ export class EmployeeRepository {
         { email: { [Op.like]: `%${filters.search}%` } },
       ];
     }
+    if (filters.companyId) where.companyId = filters.companyId;
 
     if (filters.status && employeeStatus.includes(filters.status?.toUpperCase())) {
       where.status = filters.status;
@@ -107,9 +108,8 @@ export class EmployeeRepository {
       ];
     }
 
-    if (filters.position) where.position = filters.position;
-    if (filters.gender) where.gender = filters.gender;
     if (filters.supervisorId) where.supervisorId = filters.supervisorId;
+    if (filters.companyId) where.companyId = filters.companyId;
 
     if (filters.hireDateFrom || filters.hireDateTo) {
       where.hireDate = {

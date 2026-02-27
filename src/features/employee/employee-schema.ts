@@ -87,33 +87,29 @@ export const EmployeeFields: ModelAttributes<Model, any> = {
   annualOtherAllowances: { type: DataTypes.DECIMAL(17, 2), defaultValue: 0 },
   bankName: {
     type: DataTypes.STRING(50),
-    allowNull: false,
     set(value: string) {
       this.setDataValue('bankName', value.toUpperCase());
     },
   },
   bankCode: {
     type: DataTypes.STRING(30),
-    allowNull: false,
   },
   accountNumber: {
     type: DataTypes.STRING(20),
-    allowNull: false,
   },
   accountName: {
     type: DataTypes.STRING(100),
-    allowNull: false,
     set(value: string) {
       this.setDataValue('accountName', value.toUpperCase());
     },
   },
-  beneficiaryName: { type: DataTypes.STRING(100), allowNull: false },
-  beneficiaryRelationship: { type: DataTypes.STRING(50), allowNull: false },
-  beneficiaryPhone: { type: DataTypes.STRING(50), allowNull: false },
-  nokName: { type: DataTypes.STRING(100), allowNull: false },
-  nokRelationship: { type: DataTypes.STRING(50), allowNull: false },
-  nokPhone: { type: DataTypes.STRING(50), allowNull: false },
-  nokAddress: { type: DataTypes.STRING(100), allowNull: false },
+  beneficiaryName: { type: DataTypes.STRING(100) },
+  beneficiaryRelationship: { type: DataTypes.STRING(50) },
+  beneficiaryPhone: { type: DataTypes.STRING(50) },
+  nokName: { type: DataTypes.STRING(100) },
+  nokRelationship: { type: DataTypes.STRING(50) },
+  nokPhone: { type: DataTypes.STRING(50) },
+  nokAddress: { type: DataTypes.STRING(100) },
   leaveEntitlement: { type: DataTypes.INTEGER() },
   nhfApplicable: {
     type: DataTypes.BOOLEAN,

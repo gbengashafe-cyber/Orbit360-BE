@@ -17,12 +17,12 @@ const employeeSchema = z.object({
   email: z.email('Invalid email format').max(100, 'Email cannot exceed 100 characters'),
   staffId: z.string().min(1, 'Staff ID is required').max(10, 'Only 10 characters are allowed for staff ID'),
   phone: z.string().min(1, 'Phone number is required').max(20, 'Phone number cannot exceed 20 characters'),
-  hireDate: z.iso.date('Invalid hire date format'),
+  hireDate: z.iso.date({ error: (issue) => (!issue.input ? 'Hire date is required' : 'Invalid hire date provided') }),
+  jobRoleId: z.coerce.number('Job role provided is not valid').positive('Job role provided is not valid'),
   companyId: z.coerce.number('SBU (Company) is required').int('SBU (Company) is required'),
   departmentId: z.coerce.number('Employee department is required'),
-  jobRoleId: z.coerce.number('Job role provided is not valid').positive('Job role provided is not valid'),
   supervisorId: z.preprocess(emptyToNull, z.coerce.number().int().positive().nullable().optional()),
-  dob: z.iso.date('Invalid dob date provided'),
+  dob: z.iso.date({ error: (issue) => (!issue.input ? 'DOB is required' : 'Invalid dob date provided') }),
   gender: z.enum(['M', 'F']),
   nationality: z.string().nullable().optional(),
   address: z.string().max(100, 'Address should not exceed 100 characters'),
@@ -59,6 +59,10 @@ const validate = (schema: z.ZodObject<any>) => {
 
     if (result?.id && result.id === result.supervisorId) {
       throw ApiError.badRequest('Employee and supervisor cannot be the same');
+    }
+
+    if (result.phone && result.phone === result.beneficiaryPhone) {
+      throw ApiError.badRequest('Employee and beneficiary phone cannot be the same');
     }
 
     req.body.validated = { employee: result };
