@@ -1,5 +1,6 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import { db } from '../../db';
+import { Employee } from '../employee/employee.model';
 
 export enum TrainingRequestStatus {
   PENDING = 'PENDING',
@@ -110,11 +111,11 @@ TrainingRequest.init(
     requesterId: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      references: { model: 'Employees', key: 'id' },
+      references: { model: Employee, key: 'id' },
     },
     supervisorId: {
       type: DataTypes.INTEGER,
-      references: { model: 'Employees', key: 'id' },
+      references: { model: Employee, key: 'id' },
     },
     trainingType: {
       type: DataTypes.STRING,
