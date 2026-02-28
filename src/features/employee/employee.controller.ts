@@ -10,7 +10,7 @@ export class EmployeeController {
   static async getAll(req: Request, res: Response) {
     const { page, rows } = req.pagination;
 
-    const { count, rows: employees } = await EmployeeRepository.read({
+    const { count, rows: employees } = await EmployeeRepository.readWithNoCompany({
       rows,
       page,
       filters: req.parsedQuery,
@@ -36,7 +36,7 @@ export class EmployeeController {
     if (!search) {
       throw ApiError.badRequest('User email address not provided');
     }
-    const employee = await EmployeeRepository.read({ rows: 1, page: 1, filters: { search } });
+    const employee = await EmployeeRepository.readWithNoCompany({ rows: 1, page: 1, filters: { search } });
 
     res.json(ApiResponse({ data: employee.rows[0], message: 'Employee fetched successfully' }));
   }

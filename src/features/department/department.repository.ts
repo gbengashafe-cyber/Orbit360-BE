@@ -1,13 +1,13 @@
 import { Op } from 'sequelize';
 import { Employee } from '../employee/employee.model';
-import { ReadAllProps } from '../employee/employee.repository';
+import { ReadAllPropsWithNoCompany } from '../employee/employee.repository';
 import { JobRole } from '../job-role/job-role.model';
 import { Department } from './department.model';
 
 export class DepartmentRepository {
   static readonly getEmployees = (
     id: number | string,
-    { rows, page, filters, orderBy = 'createdAt', orderDirection = 'ASC' }: ReadAllProps,
+    { rows, page, filters, orderBy = 'createdAt', orderDirection = 'ASC' }: ReadAllPropsWithNoCompany,
   ) => {
     const offset = (page - 1) * rows;
 
@@ -42,7 +42,7 @@ export class DepartmentRepository {
 
   static readonly getJobRoles = (
     id: number | string,
-    { rows, page, filters, orderBy = 'createdAt', orderDirection = 'DESC' }: ReadAllProps,
+    { rows, page, filters, orderBy = 'createdAt', orderDirection = 'DESC' }: ReadAllPropsWithNoCompany,
   ) => {
     const offset = (page - 1) * rows;
 

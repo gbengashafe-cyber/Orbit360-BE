@@ -56,7 +56,7 @@ export class AuthorizationService {
       .map((perm) => perm.replace('APPROVE_', ''));
 
     // If the user is a supervisor, add leaves module
-    const supervisorSearch = await EmployeeRepository.read({
+    const supervisorSearch = await EmployeeRepository.readWithNoCompany({
       filters: { supervisorId: userEmployeeId },
       rows: 1,
       page: 1,

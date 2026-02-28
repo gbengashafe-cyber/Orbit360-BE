@@ -22,14 +22,29 @@ const fieldLabelMap: Record<string, string> = {
   dob: 'Date of Birth',
 };
 
+function serializeError(err: any) {
+  return {
+    message: err.message,
+    name: err.name,
+    stack: err.stack,
+    ...err,
+  };
+}
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const globalErrorHandler: ErrorRequestHandler = (err, req: Request, res: Response, next: NextFunction): Response => {
-  logger.debug(err);
-
   if (['development', 'test'].includes(env.NODE_ENV)) {
-    console.log('GLOBAL ERROR HANDLER:\n RequestID: ', req?.requestId, '\n', err);
+    console.error('\n\n');
+    console.error('==================================================');
+    console.error('\n');
+    console.error('GLOBAL ERROR HANDLER');
+    console.error('RequestID: ', req?.requestId);
+    console.error(err);
+    console.error('\n');
+    console.error('==================================================');
+    console.error('\n\n');
   }
 
+  logger.debug(serializeError(err));
   enrichErrorWithRequestDetails(err, req);
 
   if (err instanceof BaseError) {
@@ -39,10 +54,16 @@ const globalErrorHandler: ErrorRequestHandler = (err, req: Request, res: Respons
   } else if (err instanceof MulterError) {
     err = handleMulterError(err, req);
   } else if (!(err instanceof ApiError)) {
-    err = handleUnknownError(err);
+    err = handleUnknownError();
   }
 
-  logger.error({ method: req?.method, path: req?.requestPath, requestId: req?.requestId, ...err });
+  logger.error({
+    method: req?.method,
+    path: req?.requestPath,
+    requestId: req?.requestId,
+    message: err.message,
+    name: err.name,
+  });
 
   return res.status(err.code || 500).json({ success: false, message: err.message, data: {} });
 };
@@ -114,7 +135,7 @@ function handleSequelizeError(err: BaseError): ApiError {
 function handleZodError(err: ZodError, req: Request): ApiError {
   const errors = err.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`).join(', ');
 
-  logger.debug(`RequestId: ${req.requestId}, Validation Error: ${errors}`);
+  logger.error(`RequestId: ${req.requestId}, Validation Error: ${errors}`);
   return ApiError.badRequest(errors);
 }
 
@@ -127,14 +148,13 @@ function handleMulterError(err: MulterError, req: Request): ApiError {
     message = 'Unexpected field name. Please use "reportFile".';
   }
 
-  logger.debug(`RequestId: ${req.requestId}, Multer Error: ${message}`);
+  logger.error(`RequestId: ${req.requestId}, File Handling Error: ${message}`);
 
   const statusCode = err.code === 'LIMIT_FILE_SIZE' ? 413 : 400;
   return new ApiError(statusCode, message);
 }
 
-function handleUnknownError(err: any): ApiError {
-  logger.debug(err);
+function handleUnknownError(): ApiError {
   const message = 'Oops! Something went wrong on the server. Please try again later';
   return ApiError.internalServerError(message);
 }

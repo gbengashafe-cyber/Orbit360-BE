@@ -14,8 +14,8 @@ export class PayrollRepository {
     return Payroll.bulkCreate(payrollData, { transaction });
   };
 
-  static readonly payPeriodExist = (payPeriod: string) => {
-    return PayrollBatch.findOne({ where: { payPeriod }, order: [['id', 'desc']] });
+  static readonly payPeriodExist = ({ companyId, payPeriod }: { payPeriod: string; companyId: number }) => {
+    return PayrollBatch.findOne({ where: { payPeriod, companyId }, order: [['id', 'desc']] });
   };
 
   static readonly readById = (id: string | number) => {
@@ -25,18 +25,21 @@ export class PayrollRepository {
   static readonly readByPayPeriod = async ({
     rows,
     page,
+    companyId,
     filters,
     orderBy = 'createdAt',
     orderDirection = 'ASC',
   }: ReadAllProps) => {
     const offset = (page - 1) * rows;
 
-    const where: any = {};
+    const where: WhereOptions = {};
 
     if (filters.status) where.status = filters.status;
     if (filters.payPeriod) where.payPeriod = filters.payPeriod;
+    where.companyId = companyId;
 
     const { count, rows: data } = await Payroll.findAndCountAll({
+      where,
       include: [
         {
           model: Employee,
@@ -44,7 +47,6 @@ export class PayrollRepository {
           attributes: ['id', 'staffId', 'firstName', 'lastName', 'email', 'departmentId', 'jobRoleId'],
         },
       ],
-      where,
       limit: rows,
       offset,
       order: [[orderBy, orderDirection]],
@@ -94,8 +96,11 @@ export class PayrollRepository {
     return Payroll.update(payroll, { where: { payPeriod }, transaction });
   };
 
-  static readonly deleteByPayPeriod = (payPeriod: string, transaction: Transaction) => {
-    return Payroll.destroy({ where: { payPeriod }, transaction });
+  static readonly deleteByPayPeriod = (
+    { payPeriod, companyId }: { payPeriod: string; companyId: number },
+    transaction: Transaction,
+  ) => {
+    return Payroll.destroy({ where: { payPeriod, companyId }, transaction });
   };
 
   static readonly getByEmployee = async ({ employeeId, filters, rows, page }) => {

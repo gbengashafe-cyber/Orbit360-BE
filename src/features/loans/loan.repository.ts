@@ -50,8 +50,8 @@ export class LoanRepository {
     });
   };
 
-  static readonly readEmployeesActiveLoans = (employeeId: (number | string)[]) => {
-    return Loan.findAll({ where: { employeeId, status: 'active' } });
+  static readonly readEmployeesActiveLoans = (employeeId: (number | string)[], transaction?: Transaction) => {
+    return Loan.findAll({ where: { employeeId, status: 'active' }, transaction });
   };
 
   static readonly create = (loan: CreationAttributes<Loan>, { transaction }: { transaction: Transaction }) => {
@@ -69,7 +69,10 @@ export class LoanRepository {
   static readonly delete = (id: number) => {
     return Loan.destroy({ where: { id } });
   };
-  static readonly deleteRepaymentByPayPeriod = (payPeriod: string, transaction: Transaction) => {
-    return LoanPayment.destroy({ where: { payPeriod }, transaction });
+  static readonly deleteRepaymentByPayPeriod = (
+    { payPeriod, companyId }: { payPeriod: string; companyId: number },
+    transaction: Transaction,
+  ) => {
+    return LoanPayment.destroy({ where: { payPeriod, companyId }, transaction });
   };
 }

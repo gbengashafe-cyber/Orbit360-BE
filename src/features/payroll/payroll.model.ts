@@ -1,13 +1,14 @@
 import { CreationOptional, DataTypes, ForeignKey, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import { db } from '../../db';
+import { Company } from '../company/company.model';
 import { Employee } from '../employee/employee.model';
-import { User } from '../users/user.model';
 import { PayrollBatch } from './payroll-batch.model';
 
 export const payrollStatus = ['PENDING_APPROVAL', 'APPROVED'] as const;
 
 export class Payroll extends Model<InferAttributes<Payroll>, InferCreationAttributes<Payroll>> {
   declare id: CreationOptional<number>;
+  declare companyId: ForeignKey<Company['id']>;
   declare batchId: ForeignKey<PayrollBatch['batchId']>;
   declare employeeId: ForeignKey<Employee['id']>;
   declare payPeriod: string;
@@ -38,6 +39,7 @@ Payroll.init(
       autoIncrement: true,
       primaryKey: true,
     },
+    companyId: { type: DataTypes.INTEGER, references: { model: Company, key: 'id' } },
     batchId: {
       type: DataTypes.STRING(50),
       allowNull: false,
@@ -149,6 +151,10 @@ Payroll.init(
         fields: ['employee_id', 'pay_period'],
       },
       {
+        name: 'company_idx',
+        fields: ['company_id'],
+      },
+      {
         name: 'payroll_batch_id_idx',
         fields: ['batch_id'],
       },
@@ -163,8 +169,8 @@ Payroll.init(
 Payroll.belongsTo(Employee, { foreignKey: 'employeeId', as: 'employee' });
 Employee.hasMany(Payroll, { foreignKey: 'employeeId', as: 'payrolls' });
 
-PayrollBatch.belongsTo(User, { foreignKey: 'createdBy', as: 'initiator' });
-PayrollBatch.belongsTo(User, { foreignKey: 'approvedBy', as: 'approver' });
+Payroll.belongsTo(Company, { foreignKey: 'companyId', as: 'company' });
+Company.hasMany(Payroll, { foreignKey: 'companyId' });
 
 Payroll.belongsTo(PayrollBatch, { foreignKey: 'batchId', targetKey: 'batchId' });
 PayrollBatch.hasMany(Payroll, { foreignKey: 'batchId', sourceKey: 'batchId', as: 'items' });

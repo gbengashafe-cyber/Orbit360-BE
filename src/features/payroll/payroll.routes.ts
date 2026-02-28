@@ -19,10 +19,10 @@ router.get(
   hasRequiredPermission('LIST_PAYROLLS', { allowAdmin: true }),
   PayrollController.getByEmployee,
 );
+router.get('/companies/:companyId/batches/periods/:payPeriod', PayrollController.getBatchByPeriod);
+router.get('/companies/:companyId/periods/:payPeriod', PayrollController.getByPayPeriod);
 router.get('/:id', validatePayrollIdParam, PayrollController.getById);
-router.get('/periods/batches/:payPeriod', PayrollController.getPayrollBatchByPeriod);
-router.get('/periods/:payPeriod', PayrollController.getByPayPeriod);
-router.post('/', hasRequiredPermission('MANAGE_PAYROLLS'), validateGeneratePayroll, PayrollController.generatePayroll);
+router.post('/', hasRequiredPermission('MANAGE_PAYROLLS'), validateGeneratePayroll, PayrollController.generate);
 router.put('/:id', validatePayrollIdParam, validateUpdatePayroll, PayrollController.update);
 router.patch('/:batchId/approval', validatePayrollIdParam, PayrollController.markAsApproved);
 router.patch('/:batchId/rejection', validatePayrollIdParam, PayrollController.markAsRejected);

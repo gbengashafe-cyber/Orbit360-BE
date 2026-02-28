@@ -19,14 +19,9 @@ const RoleSchema = z.object({
 });
 
 const validateRole = async (req: Request, res: Response, next: NextFunction) => {
-  const result = RoleSchema.safeParse(req.body);
-  if (!result.success) {
-    const errors = result.error.issues.map((_error) => `${_error.path}: ${_error.message}`).join(', ');
-    logger.debug(`RequestId: ${req.requestId}, Validation Error: ${errors}`);
-    throw ApiError.badRequest(errors);
-  }
+  const result = RoleSchema.parse(req.body);
 
-  req.body.role = result.data;
+  req.body.role = result;
   next();
 };
 

@@ -9,7 +9,7 @@ const createPayrollSchema = z.object({
     .int('Month must be an integer')
     .min(1, 'Month must be between 1 and 12')
     .max(12, 'Month must be between 1 and 12'),
-  year: z.number().int('Year must be an integer').min(1900, 'Year is invalid'), // Assuming a reasonable minimum year
+  year: z.number().int('Year must be an integer').min(1900, 'Year is invalid'),
   baseSalary: z.number().positive('Base salary must be a positive number'),
   allowances: z.number().min(0, 'Allowances cannot be negative').optional(),
   deductions: z.number().min(0, 'Deductions cannot be negative').optional(),
@@ -21,7 +21,7 @@ const updatePayrollSchema = z
     allowances: z.number().min(0, 'Allowances cannot be negative').optional().default(0),
     deductions: z.number().min(0, 'Deductions cannot be negative').optional().default(0),
   })
-  .partial(); // All fields are optional for update
+  .partial();
 
 const payrollIdParamSchema = z.object({
   id: z
@@ -33,16 +33,26 @@ const payrollIdParamSchema = z.object({
 const validate =
   (schema: z.ZodObject<any>, source: 'body' | 'params' | 'query' = 'body') =>
   (req: Request, res: Response, next: NextFunction) => {
-    const result = schema.safeParse(req[source]);
+    const result = schema.parse(req[source]);
 
-    req.body.validated = { payroll: result.data };
+    req.body._validated = { payroll: result };
     next();
   };
 
 export const payPeriodRegex = /^20\d{2}-(0[1-9]|1[0-2])$/;
 
-const generatePayrollSchema = z.object({
+export const generatePayrollSchema = z.object({
   payPeriod: z.string().regex(payPeriodRegex, { error: 'Invalid payPeriod format. The allowed format is YYYY-MM' }),
+  companyId: z.coerce
+    .number({
+      error: (value) => {
+        if (value.input === undefined) {
+          return 'SBU code is required';
+        }
+      },
+    })
+    .int('SBU code is required')
+    .positive('SBU code is not allowed'),
 });
 
 const updatePayrollStatusSchema = z.object({
@@ -51,16 +61,16 @@ const updatePayrollStatusSchema = z.object({
 });
 
 const validateGeneratePayroll = (req: Request, res: Response, next: NextFunction) => {
-  const result = generatePayrollSchema.safeParse(req.body);
+  const result = generatePayrollSchema.parse(req.body);
 
-  req.body.validated = { payroll: result.data };
+  req.body._validated = { payroll: result };
   next();
 };
 
 const validatePayrollStatus = (req: Request, res: Response, next: NextFunction) => {
-  const result = updatePayrollStatusSchema.safeParse(req.body);
+  const result = updatePayrollStatusSchema.parse(req.body);
 
-  req.body.validated = { payroll: result.data };
+  req.body.validated = { payroll: result };
   next();
 };
 

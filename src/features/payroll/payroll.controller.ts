@@ -10,16 +10,18 @@ import { PayrollBatch } from './payroll-batch.model';
 import { Payroll } from './payroll.model';
 import { PayrollRepository } from './payroll.repository';
 import { PayrollService } from './payroll.service';
+import { PayPeriod } from './payroll.utils';
+import { generatePayrollSchema } from './payroll.validators';
 
 const approverNoteSchema = z.object({ approverNote: z.string('Approver note should be a string of texts') });
 
 export class PayrollController {
   currentPeriod = new Date(new Date().setDate(1));
 
-  static readonly getPayrollBatchByPeriod = async (req: Request, res: Response) => {
-    const payPeriod = req.params?.payPeriod;
+  static readonly getBatchByPeriod = async (req: Request, res: Response) => {
+    const { payPeriod, companyId } = req.params as unknown as { payPeriod: PayPeriod; companyId: number };
 
-    const batch = await PayrollRepository.payPeriodExist(payPeriod);
+    const batch = await PayrollRepository.payPeriodExist({ payPeriod, companyId });
 
     res.json(ApiResponse({ data: batch ?? {} }));
   };
@@ -103,7 +105,7 @@ export class PayrollController {
   }
 
   static async getByPayPeriod(req: Request, res: Response) {
-    const { payPeriod } = req.params;
+    const { payPeriod, companyId } = req.params;
     const { page, rows } = req.pagination;
 
     const {
@@ -112,7 +114,8 @@ export class PayrollController {
       totalGrossPay,
       totalNetPay,
     } = await PayrollRepository.readByPayPeriod({
-      filters: { payPeriod },
+      companyId: Number(companyId),
+      filters: { payPeriod, companyId },
       page,
       rows,
     });
@@ -127,15 +130,19 @@ export class PayrollController {
     );
   }
 
-  static readonly generatePayroll = async (req: Request, res: Response, next: NextFunction) => {
-    const { payPeriod } = req.body.validated.payroll;
+  static readonly generate = async (req: Request, res: Response, next: NextFunction) => {
+    const { payPeriod, companyId } = req.body._validated?.payroll as { payPeriod: PayPeriod; companyId: number };
     const overwrite = req.parsedQuery?.overwrite === 'true';
 
     try {
       if (!req.user?.id) {
         throw ApiError.badRequest('Maker ID is required.');
       }
-      const result = await PayrollService.generateBatch(payPeriod, req.user.id, overwrite);
+
+      if (!payPeriod) {
+        throw ApiError.badRequest('Pay period is required.');
+      }
+      const result = await PayrollService.generateBatch({ payPeriod, makerId: req.user.id, overwrite, companyId });
 
       res.status(201).json(ApiResponse({ data: { id: result.id }, message: 'Payroll generated successfully' }));
     } catch (error) {
@@ -186,6 +193,7 @@ export class PayrollController {
 
   static async markAsApproved(req: Request, res: Response) {
     const { batchId } = req.params;
+    const { companyId } = generatePayrollSchema.pick({ companyId: true }).parse(req.params);
     const checkerId = req.user?.id;
 
     const validationResult = approverNoteSchema.nullable().optional().parse(req.body);
@@ -195,12 +203,13 @@ export class PayrollController {
       throw ApiError.forbidden('Checker ID is not provided');
     }
 
-    const result = await PayrollService.approveBatch(batchId, checkerId, approverNote);
+    const result = await PayrollService.approveBatch({ batchId, checkerId, approverNote, companyId });
     res.json(ApiResponse({ data: result, message: 'Payroll marked as approved' }));
   }
 
   static async markAsRejected(req: Request, res: Response) {
     const { batchId } = req.params;
+    const { companyId } = generatePayrollSchema.pick({ companyId: true }).parse(req.params);
 
     const validationResult = approverNoteSchema.parse(req.body);
     const approverNote = validationResult.approverNote;
@@ -211,7 +220,7 @@ export class PayrollController {
       throw ApiError.forbidden('Checker ID is not provided');
     }
 
-    const result = await PayrollService.rejectBatch(batchId, checkerId, approverNote);
+    const result = await PayrollService.rejectBatch({ batchId, checkerId, approverNote, companyId });
     res.json(ApiResponse({ data: { id: result }, message: 'Payroll marked as rejected' }));
   }
 

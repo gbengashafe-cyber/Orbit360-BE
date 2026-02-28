@@ -2,9 +2,11 @@ import { CreationOptional, DataTypes, ForeignKey, InferAttributes, InferCreation
 import { db } from '../../db';
 import { Employee } from '../employee/employee.model';
 import { Loan } from './loan.model';
+import { Company } from '../company/company.model';
 
 export class LoanPayment extends Model<InferAttributes<LoanPayment>, InferCreationAttributes<LoanPayment>> {
   declare id: CreationOptional<number>;
+  declare companyId: ForeignKey<Company['id']>;
   declare loanId: ForeignKey<Loan['id']>;
   declare employeeId: ForeignKey<Employee['id']>;
   declare payPeriod: string;
@@ -19,6 +21,7 @@ LoanPayment.init(
       autoIncrement: true,
       primaryKey: true,
     },
+    companyId: { type: DataTypes.INTEGER, references: { model: Company, key: 'id' } },
     loanId: {
       type: DataTypes.INTEGER,
       references: { model: Loan, key: 'id' },
@@ -50,3 +53,6 @@ LoanPayment.init(
 
 LoanPayment.belongsTo(Employee, { foreignKey: 'employeeId', as: 'employee' });
 Employee.hasMany(LoanPayment, { foreignKey: 'employeeId', as: 'loanPayments' });
+
+LoanPayment.belongsTo(Company, { foreignKey: 'companyId', as: 'company' });
+Company.hasMany(LoanPayment, { foreignKey: 'companyId' });

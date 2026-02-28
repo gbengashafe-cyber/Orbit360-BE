@@ -1,5 +1,6 @@
 {
   "allowedOrigins": "https://orbit360.isaacbern.com.ng",
+  "payroll": { "pensionRate": 0.08 },
   "payrollReport": {
     "storagePath": "payroll-reports",
     "maxFileSizeInMB": 5,

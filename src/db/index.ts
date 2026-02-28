@@ -33,3 +33,4 @@ db.authenticate()
   });
 
 export { db };
+module.exports = { db };

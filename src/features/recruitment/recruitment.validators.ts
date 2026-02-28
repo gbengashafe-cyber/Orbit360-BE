@@ -76,7 +76,7 @@ const jobPostingIdRouteParamSchema = z.object({
 const validate =
   (schema: z.ZodObject<any>, source: 'body' | 'params' | 'query' = 'body') =>
   (req: Request, res: Response, next: NextFunction) => {
-    schema.safeParse(req[source]);
+    schema.parse(req[source]);
     next();
   };
 

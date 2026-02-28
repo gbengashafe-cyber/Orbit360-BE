@@ -16,10 +16,10 @@ import { userSchema } from '../users/user.validation';
 import { EmployeeChangeRequest } from './employee-change-request.model';
 import { EmployeeDraft } from './employee-draft.model';
 import { Employee } from './employee.model';
-import { EmployeeRepository, ReadAllProps } from './employee.repository';
+import { EmployeeRepository, ReadAllPropsWithNoCompany } from './employee.repository';
 
 export class EmployeeService {
-  static readonly getDirectory = async ({ page, rows, filters }: ReadAllProps) => {
+  static readonly getDirectory = async ({ page, rows, filters }: ReadAllPropsWithNoCompany) => {
     const { count, rows: data } = await EmployeeRepository.findActiveDirectory({ page, rows, filters });
 
     return {
