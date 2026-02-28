@@ -1,18 +1,20 @@
 import { Router } from 'express';
-import { JobPostingController, JobApplicationController } from './recruitment.controller';
+import { hasRequiredPermission } from '../../utils/check-permission';
+import { JobApplicationController, JobPostingController } from './recruitment.controller';
 import {
-  validateCreateJobPosting,
-  validateUpdateJobPosting,
-  validateApproveJobPosting,
-  validateJobPostingIdParam,
   validateCreateJobApplication,
-  validateUpdateApplicationStatus,
-  validateScheduleInterview,
   validateJobApplicationIdParam,
+  validateJobPostingIdParam,
   validateJobPostingIdRouteParam,
+  validateScheduleInterview,
+  validateUpdateApplicationStatus,
+  validateUpdateJobPosting,
 } from './recruitment.validators';
+import { validateAuthToken } from '../authentication/auth.middleware';
 
 const router = Router();
+
+router.use(validateAuthToken);
 
 // Dashboard Stats
 router.get('/dashboard/stats', JobPostingController.getDashboardStats);
@@ -20,10 +22,15 @@ router.get('/dashboard/stats', JobPostingController.getDashboardStats);
 // Job Postings
 router.get('/postings', JobPostingController.getAll);
 router.get('/postings/:id', validateJobPostingIdParam, JobPostingController.getById);
-router.post('/postings', validateCreateJobPosting, JobPostingController.create);
+router.post('/postings', hasRequiredPermission('MANAGE_JOB_POSTINGS'), JobPostingController.create);
 router.put('/postings/:id', validateJobPostingIdParam, validateUpdateJobPosting, JobPostingController.update);
-router.post('/postings/:id/approve', validateJobPostingIdParam, validateApproveJobPosting, JobPostingController.approve);
-router.post('/postings/:id/reject', validateJobPostingIdParam, JobPostingController.reject);
+router.post('/postings/:id/approve', hasRequiredPermission('APPROVE_JOB_POSTINGS'), JobPostingController.approve);
+router.post(
+  '/postings/:id/reject',
+  hasRequiredPermission('APPROVE_JOB_POSTINGS'),
+  validateJobPostingIdParam,
+  JobPostingController.reject,
+);
 router.post('/postings/:id/close', validateJobPostingIdParam, JobPostingController.closeRole);
 router.delete('/postings/:id', validateJobPostingIdParam, JobPostingController.delete);
 
@@ -50,4 +57,4 @@ router.post('/applications/:id/hire', validateJobApplicationIdParam, JobApplicat
 router.post('/applications/:id/reject', validateJobApplicationIdParam, JobApplicationController.reject);
 router.delete('/applications/:id', validateJobApplicationIdParam, JobApplicationController.delete);
 
-export const recruitmentRoutes = router;
+export { router as recruitmentRoutes };

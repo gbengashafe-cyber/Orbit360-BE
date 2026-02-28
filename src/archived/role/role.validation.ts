@@ -1,7 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
-import { ApiError } from '../../utils/api-error';
-import { logger } from '../../utils/logger';
 
 const RoleSchema = z.object({
   name: z

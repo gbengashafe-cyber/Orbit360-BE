@@ -51,7 +51,7 @@ export class AuthorizationController {
 }
 
 const hasModuleApprovalPermission = ({ moduleName, req }) => {
-  const requiredPermission = `APPROVE_${moduleName.toUpperCase()}`;
+  const requiredPermission = `APPROVE_${moduleName.split(' ').join('_').toUpperCase()}`;
 
   const hasPermission = req.user?.permissions?.includes(requiredPermission);
 

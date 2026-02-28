@@ -1,26 +1,11 @@
-import { DataTypes, Model } from 'sequelize';
+import { CreationOptional, DataTypes, ForeignKey, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import { db } from '../../db';
+import { User } from '../users/user.model';
 
-export interface JobPostingAttributes {
-  id?: number;
-  title: string;
-  description: string;
-  department: string;
-  location: string;
-  employment_type: 'full_time' | 'part_time' | 'contract' | 'temporary';
-  salary_range_min?: number;
-  salary_range_max?: number;
-  requirements?: string;
-  posted_date: Date;
-  status: 'draft' | 'pending_approval' | 'active' | 'closed' | 'on_hold' | 'rejected';
-  created_by: string;
-  approved_by?: string;
-  approved_date?: Date;
-  closedDate?: Date;
-}
+export const JOB_POSTING_STATUS = ['draft', 'pending_approval', 'active', 'closed', 'on_hold', 'rejected'] as const;
 
-export class JobPosting extends Model<JobPostingAttributes> implements JobPostingAttributes {
-  public id!: number;
+export class JobPosting extends Model<InferAttributes<JobPosting>, InferCreationAttributes<JobPosting>> {
+  declare id: CreationOptional<number>;
   public title!: string;
   public description!: string;
   public department!: string;
@@ -30,11 +15,11 @@ export class JobPosting extends Model<JobPostingAttributes> implements JobPostin
   public salary_range_max!: number;
   public requirements!: string;
   public posted_date!: Date;
-  public status!: 'draft' | 'pending_approval' | 'active' | 'closed' | 'on_hold' | 'rejected';
-  public created_by!: string;
-  public approved_by!: string;
-  public approved_date!: Date;
-  public closedDate!: Date;
+  declare status: CreationOptional<(typeof JOB_POSTING_STATUS)[number]>;
+  declare created_by: ForeignKey<User['id']>;
+  declare approved_by: CreationOptional<ForeignKey<User['id']>>;
+  declare approved_date: CreationOptional<Date>;
+  declare closedDate: CreationOptional<Date>;
 }
 
 JobPosting.init(
@@ -83,16 +68,17 @@ JobPosting.init(
       defaultValue: DataTypes.NOW,
     },
     status: {
-      type: DataTypes.ENUM('draft', 'pending_approval', 'active', 'closed', 'on_hold', 'rejected'),
+      type: DataTypes.ENUM(...JOB_POSTING_STATUS),
       defaultValue: 'draft',
     },
     created_by: {
-      type: DataTypes.STRING(255),
+      type: DataTypes.INTEGER,
+      references: { model: User, key: 'id' },
       allowNull: false,
     },
     approved_by: {
-      type: DataTypes.STRING(255),
-      allowNull: true,
+      type: DataTypes.INTEGER,
+      references: { model: User, key: 'id' },
     },
     approved_date: {
       type: DataTypes.DATE,
@@ -109,3 +95,6 @@ JobPosting.init(
     tableName: 'job_postings',
   },
 );
+
+JobPosting.belongsTo(User, { foreignKey: 'createdBy', as: 'initiator' });
+JobPosting.belongsTo(User, { foreignKey: 'approvedBy', as: 'approver' });

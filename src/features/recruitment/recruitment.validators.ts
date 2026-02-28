@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
 
-const createJobPostingSchema = z.object({
+export const createJobPostingSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters').max(255, 'Title must be at most 255 characters'),
   description: z.string().min(10, 'Description must be at least 10 characters'),
   department: z.string().min(1, 'Department is required'),
@@ -22,10 +22,6 @@ const updateJobPostingSchema = z.object({
   salary_range_min: z.number().positive('Salary range minimum must be positive').optional(),
   salary_range_max: z.number().positive('Salary range maximum must be positive').optional(),
   requirements: z.string().optional(),
-});
-
-const approveJobPostingSchema = z.object({
-  approved_by: z.string().min(1, 'Approved by is required'),
 });
 
 const createJobApplicationSchema = z.object({
@@ -52,7 +48,7 @@ const scheduleInterviewSchema = z.object({
   interview_notes: z.string().optional(),
 });
 
-const jobPostingIdParamSchema = z.object({
+export const jobPostingIdParamSchema = z.object({
   id: z
     .string()
     .refine((val) => !isNaN(Number(val)), { message: 'Job posting ID must be a number' })
@@ -82,7 +78,6 @@ const validate =
 
 const validateCreateJobPosting = validate(createJobPostingSchema, 'body');
 const validateUpdateJobPosting = validate(updateJobPostingSchema, 'body');
-const validateApproveJobPosting = validate(approveJobPostingSchema, 'body');
 const validateJobPostingIdParam = validate(jobPostingIdParamSchema, 'params');
 const validateCreateJobApplication = validate(createJobApplicationSchema, 'body');
 const validateUpdateApplicationStatus = validate(updateApplicationStatusSchema, 'body');
@@ -91,7 +86,6 @@ const validateJobApplicationIdParam = validate(jobApplicationIdParamSchema, 'par
 const validateJobPostingIdRouteParam = validate(jobPostingIdRouteParamSchema, 'params');
 
 export {
-  validateApproveJobPosting,
   validateCreateJobApplication,
   validateCreateJobPosting,
   validateJobApplicationIdParam,

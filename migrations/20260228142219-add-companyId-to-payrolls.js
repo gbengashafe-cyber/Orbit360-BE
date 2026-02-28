@@ -1,12 +1,12 @@
 module.exports = {
   async up(queryInterface, Sequelize) {
     const transaction = await queryInterface.sequelize.transaction();
-
     try {
-      await queryInterface.removeColumn('payroll_batches', 'updated_at');
+      await queryInterface.removeColumn('payrolls', 'company_id', { transaction });
+      await queryInterface.removeColumn('payroll_batches', 'company_id', { transaction });
 
       await queryInterface.addColumn(
-        'Payrolls',
+        'payrolls',
         'company_id',
         {
           type: Sequelize.INTEGER,
@@ -27,7 +27,7 @@ module.exports = {
 
       await queryInterface.sequelize.query(
         `
-        UPDATE Payrolls p 
+        UPDATE payrolls p 
         SET company_id = (
           SELECT company_id FROM employees WHERE employee_id = p.employee_id LIMIT 1
         )
@@ -38,19 +38,19 @@ module.exports = {
 
       await queryInterface.sequelize.query(
         `
-        UPDATE payroll_batches pb SET company_id = (SELECT company_id FROM Payrolls WHERE batch_id = pb.batch_id LIMIT 1) WHERE pb.company_id IS NULL;
+        UPDATE payroll_batches pb SET company_id = (SELECT company_id FROM payrolls WHERE batch_id = pb.batch_id LIMIT 1) WHERE pb.company_id IS NULL;
         `,
         { transaction },
       );
 
       await queryInterface.changeColumn(
-        'Payrolls',
+        'payrolls',
         'company_id',
         {
           type: Sequelize.INTEGER,
           allowNull: false,
           references: {
-            model: 'Companies',
+            model: 'companies',
             key: 'id',
           },
           onUpdate: 'CASCADE',
@@ -66,7 +66,7 @@ module.exports = {
           type: Sequelize.INTEGER,
           allowNull: false,
           references: {
-            model: 'Companies',
+            model: 'companies',
             key: 'id',
           },
           onUpdate: 'CASCADE',
@@ -77,6 +77,7 @@ module.exports = {
 
       await transaction.commit();
     } catch (error) {
+      console.log('🚀 ~ error:', error);
       await transaction.rollback();
       throw error;
     }
@@ -86,7 +87,7 @@ module.exports = {
     const transaction = await queryInterface.sequelize.transaction();
 
     try {
-      await queryInterface.removeColumn('Payrolls', 'company_id', { transaction });
+      await queryInterface.removeColumn('payrolls', 'company_id', { transaction });
       await queryInterface.removeColumn('payroll_batches', 'company_id', { transaction });
 
       await transaction.commit();

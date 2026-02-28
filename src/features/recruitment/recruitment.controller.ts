@@ -2,9 +2,10 @@ import { NextFunction, Request, Response } from 'express';
 import { ApiError } from '../../utils/api-error';
 import { ApiResponse } from '../../utils/api-response';
 import { logger } from '../../utils/logger';
-import { Applicant } from './applicant.model';
 import { JobApplication } from '../job-application/job-application.model';
+import { Applicant } from './applicant.model';
 import { JobPosting } from './job-posting.model';
+import { createJobPostingSchema, jobPostingIdParamSchema } from './recruitment.validators';
 
 // ============ Job Posting Controller ============
 export class JobPostingController {
@@ -50,47 +51,25 @@ export class JobPostingController {
     }
   }
 
-  static async create(req: Request, res: Response, next: NextFunction) {
-    try {
-      const {
-        title,
-        description,
-        department,
-        location,
-        employment_type,
-        salary_range_min,
-        salary_range_max,
-        requirements,
-        created_by,
-      } = req.body;
+  static async create(req: Request, res: Response) {
+    const payload = createJobPostingSchema.parse(req.body);
 
-      if (!title) throw ApiError.badRequest('Job title is required');
-      if (!description) throw ApiError.badRequest('Job description is required');
-      if (!department) throw ApiError.badRequest('Department is required');
-      if (!location) throw ApiError.badRequest('Location is required');
-      if (!created_by) throw ApiError.badRequest('Created by (user ID) is required');
+    const posting = await JobPosting.create({
+      ...payload,
+      employment_type: payload.employment_type || 'full_time',
+      salary_range_min: payload.salary_range_min || 0,
+      salary_range_max: payload.salary_range_max || 0,
+      requirements: payload.requirements || '',
+      posted_date: new Date(),
+      status: 'pending_approval',
+      created_by: req.user?.id,
+    });
 
-      const posting = await JobPosting.create({
-        title,
-        description,
-        department,
-        location,
-        employment_type: employment_type || 'full_time',
-        salary_range_min,
-        salary_range_max,
-        requirements,
-        posted_date: new Date(),
-        status: 'pending_approval',
-        created_by,
-      });
-
-      res
-        .status(201)
-        .json(ApiResponse({ data: posting, message: `Job posting '${title}' created successfully and is pending approval` }));
-    } catch (error) {
-      logger.error(`Error creating job posting: ${error}`);
-      next(error);
-    }
+    res
+      .status(201)
+      .json(
+        ApiResponse({ data: posting, message: `Job posting '${payload.title}' created successfully and is pending approval` }),
+      );
   }
 
   static async update(req: Request, res: Response, next: NextFunction) {
@@ -114,10 +93,9 @@ export class JobPostingController {
 
   static async approve(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
-      const { approved_by } = req.body;
+      const { id } = jobPostingIdParamSchema.parse(req.params);
 
-      if (!approved_by) throw ApiError.badRequest('Approver ID is required');
+      if (!req.user?.id) throw ApiError.badRequest('Approver ID is required');
 
       const posting = await JobPosting.findByPk(id);
       if (!posting) throw ApiError.notFound(`Job posting with ID ${id} not found`);
@@ -128,9 +106,10 @@ export class JobPostingController {
 
       await posting.update({
         status: 'active',
-        approved_by,
+        approved_by: req.user?.id,
         approved_date: new Date(),
       });
+
       res.json(ApiResponse({ data: posting, message: `Job posting '${posting.title}' approved and is now active` }));
     } catch (error) {
       logger.error(`Error approving job posting: ${error}`);

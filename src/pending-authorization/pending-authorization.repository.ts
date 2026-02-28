@@ -3,11 +3,12 @@ import { EmployeeChangeRequest } from '../features/employee/employee-change-requ
 import { EmployeeDraft } from '../features/employee/employee-draft.model';
 import { Employee } from '../features/employee/employee.model';
 import { Leave } from '../features/leave/leave.model';
+import { LoanType } from '../features/loans/loan-types/loan-types.model';
 import { Loan } from '../features/loans/loan.model';
 import { PayrollBatch } from '../features/payroll/payroll-batch.model';
+import { JobPosting } from '../features/recruitment/job-posting.model';
 import { User } from '../features/users/user.model';
 import { PendingModuleItemsProps } from './pending-authorization.service';
-import { LoanType } from '../features/loans/loan-types/loan-types.model';
 
 export class AuthorizationRepository {
   static readonly getPendingLoans = async (limit: number) => {
@@ -107,6 +108,15 @@ export class AuthorizationRepository {
       );
     }
 
+    if (modules.includes('JOB_POSTINGS')) {
+      tasks.push(
+        JobPosting.count({ where: { status: 'pending_approval' } }).then((c) => ({
+          key: 'job postings',
+          count: c,
+        })),
+      );
+    }
+
     return Promise.all(tasks);
   };
 
@@ -135,6 +145,14 @@ export class AuthorizationRepository {
         });
       case 'PAYROLLS':
         return PayrollBatch.findAndCountAll({
+          where: { status: 'PENDING_APPROVAL' },
+          limit: rows,
+          offset: offset,
+          include: [{ model: User, as: 'initiator', attributes: ['id', 'firstName', 'lastName'] }],
+          order: [['createdAt', 'DESC']],
+        });
+      case 'JOB POSTINGS':
+        return JobPosting.findAndCountAll({
           where: { status: 'PENDING_APPROVAL' },
           limit: rows,
           offset: offset,
