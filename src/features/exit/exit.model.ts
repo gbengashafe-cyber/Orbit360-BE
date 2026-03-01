@@ -20,7 +20,7 @@ export interface ExitAttributes {
   outstandingTasks?: string;
   outstandingApprovals?: string;
   assetsToReturn?: string;
-  assetReturnStatus?: 'not_applicable' | 'pending_return' | 'returned' | 'not_returned';
+  assetReturnStatus?: 'not_applicable' | 'pending_return' | 'returned';
   salaryBalanceNotes?: string;
   loanDeductionNotes?: string;
   leaveEncashmentRequest?: boolean;
@@ -32,6 +32,10 @@ export interface ExitAttributes {
   supervisorApprovalStatus?: 'pending' | 'approved' | 'cleared' | 'rejected' | 'issues';
   supervisorApprovalDate?: Date;
   supervisorComments?: string;
+  itAdminClearance?: boolean;
+  supervisorClearance?: boolean;
+  financeClearance?: boolean;
+  hrClearance?: boolean;
   hrApprovalStatus?: 'pending' | 'approved' | 'cleared' | 'rejected' | 'issues';
   hrApprovalDate?: Date;
   hrComments?: string;
@@ -60,7 +64,7 @@ export class Exit extends Model<ExitAttributes> implements ExitAttributes {
   public outstandingTasks!: string;
   public outstandingApprovals!: string;
   public assetsToReturn!: string;
-  public assetReturnStatus!: 'not_applicable' | 'pending_return' | 'returned' | 'not_returned';
+  public assetReturnStatus!: 'not_applicable' | 'pending_return' | 'returned';
   public salaryBalanceNotes!: string;
   public loanDeductionNotes!: string;
   public leaveEncashmentRequest!: boolean;
@@ -72,6 +76,10 @@ export class Exit extends Model<ExitAttributes> implements ExitAttributes {
   public supervisorApprovalStatus!: 'pending' | 'approved' | 'cleared' | 'rejected' | 'issues';
   public supervisorApprovalDate!: Date;
   public supervisorComments!: string;
+  public itAdminClearance!: boolean;
+  public supervisorClearance!: boolean;
+  public financeClearance!: boolean;
+  public hrClearance!: boolean;
   public hrApprovalStatus!: 'pending' | 'approved' | 'cleared' | 'rejected' | 'issues';
   public hrApprovalDate!: Date;
   public hrComments!: string;
@@ -204,6 +212,26 @@ Exit.init(
     supervisorComments: {
       type: DataTypes.TEXT,
       allowNull: true,
+    },
+    itAdminClearance: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
+    supervisorClearance: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
+    financeClearance: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
+    hrClearance: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
     },
     hrApprovalStatus: {
       type: DataTypes.ENUM('pending', 'approved', 'cleared', 'rejected', 'issues'),

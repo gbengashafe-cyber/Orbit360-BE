@@ -31,6 +31,10 @@ const createExitSchema = z.object({
   positiveExperience: z.string().optional(),
   areasForImprovementOrg: z.string().optional(),
   wouldRecommendOrg: z.boolean().optional(),
+  itAdminClearance: z.boolean().optional(),
+  supervisorClearance: z.boolean().optional(),
+  financeClearance: z.boolean().optional(),
+  hrClearance: z.boolean().optional(),
 });
 
 const exitIdParamSchema = z.object({
