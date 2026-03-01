@@ -1,6 +1,6 @@
-import { Router, Request, Response, NextFunction } from 'express';
-import { TrainingRequestController } from './training-request.controller';
+import { Router } from 'express';
 import { validateAuthToken } from '../authentication/auth.middleware';
+import { TrainingRequestController } from './training-request.controller';
 
 const router = Router();
 

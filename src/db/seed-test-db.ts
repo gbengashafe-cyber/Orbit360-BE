@@ -177,6 +177,7 @@ const setupSystemConfiguration = async () => {
       { permission: 'MANAGE_DOCUMENTS', jobRoleId: roles.hrOperations.id },
       { permission: 'MANAGE_RECRUITMENT', jobRoleId: roles.hrOperations.id },
       { permission: 'MANAGE_JOB_POSTINGS', jobRoleId: roles.hrOperations.id },
+      { permission: 'MANAGE_EXITS', jobRoleId: roles.hrOperations.id },
       { permission: 'LIST_LOANS', jobRoleId: roles.hrOperations.id },
       { permission: 'LIST_EMPLOYEES', jobRoleId: roles.hrOperations.id },
       { permission: 'LIST_PAYROLLS', jobRoleId: roles.hrOperations.id },

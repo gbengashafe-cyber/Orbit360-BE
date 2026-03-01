@@ -1,18 +1,18 @@
 import { Op, WhereOptions } from 'sequelize';
+import { Department } from '../features/department/department.model';
 import { EmployeeChangeRequest } from '../features/employee/employee-change-request.model';
 import { EmployeeDraft } from '../features/employee/employee-draft.model';
 import { Employee } from '../features/employee/employee.model';
 import { Exit } from '../features/exit/exit.model';
+import { JobRole } from '../features/job-role/job-role.model';
 import { Leave } from '../features/leave/leave.model';
 import { LoanType } from '../features/loans/loan-types/loan-types.model';
 import { Loan } from '../features/loans/loan.model';
 import { PayrollBatch } from '../features/payroll/payroll-batch.model';
+import { JobApplication } from '../features/recruitment/job-application.model';
 import { JobPosting } from '../features/recruitment/job-posting.model';
 import { User } from '../features/users/user.model';
 import { PendingModuleItemsProps } from './pending-authorization.service';
-import { Department } from '../features/department/department.model';
-import { JobRole } from '../features/job-role/job-role.model';
-import { JobApplication } from '../features/recruitment/job-application.model';
 
 export class AuthorizationRepository {
   static readonly getPendingLoans = async (limit: number) => {
@@ -97,7 +97,7 @@ export class AuthorizationRepository {
     }
     if (modules.includes('EXITS')) {
       tasks.push(
-        Exit.count({ where: { status: 'submitted', employeeId: { [Op.ne]: userEmployeeId } } }).then((c) => ({
+        Exit.count({ where: { status: 'CLEARED', employeeId: { [Op.ne]: userEmployeeId } } }).then((c) => ({
           key: 'exits',
           count: c,
         })),
@@ -180,7 +180,7 @@ export class AuthorizationRepository {
         });
       case 'EXITS':
         return Exit.findAndCountAll({
-          where: { status: 'SUBMITTED' },
+          where: { status: 'CLEARED' },
           limit: rows,
           offset: offset,
           include: [
