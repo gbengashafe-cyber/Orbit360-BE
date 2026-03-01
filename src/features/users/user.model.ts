@@ -1,0 +1,121 @@
+import { CreationOptional, DataTypes, ForeignKey, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
+import { db } from '../../db';
+import { Department } from '../department/department.model';
+import { JobRole } from '../job-role/job-role.model';
+
+/* 
+role (Built-in, System-level):
+
+Values: admin or user
+Purpose: Core system access level
+admin = full platform access, can manage users, see all data
+user = standard employee access, restricted to self-service features
+
+job_role (Descriptive):
+
+Values: Specific job titles (e.g., 'human_resources_manager', 'finance_officer', 'loan_officer')
+Purpose: Defines what the person actually does in the organization
+Used for UI display, reporting, and potentially mapping to permissions
+
+department (Organizational):
+
+Values: hr, finance, operations, it, sales, etc.
+Purpose: Groups users by business unit
+Used for filtering data, routing approvals, and reporting
+
+In Practice:
+
+A user might be role='user', job_role='human_resources_manager', department='hr', with permissions=['manage_employees', 'process_payroll', 'approve_leave_requests']
+This gives them HR-specific access without full admin privileges
+*/
+export const userStatusOptions = ['ACTIVE', 'INACTIVE', 'PENDING_APPROVAL'] as const;
+export const userRoleOptions = ['admin', 'user'] as const;
+
+export class User extends Model<InferAttributes<User>, InferCreationAttributes<User>> {
+  declare id: CreationOptional<number>;
+  public firstName!: string;
+  public lastName!: string;
+  public email!: string;
+  declare password: string;
+  declare profileImage: CreationOptional<string>;
+  declare googleId: CreationOptional<string | null>;
+  // Defines what the user can do no the admin platform
+  declare role: CreationOptional<(typeof userRoleOptions)[number]>;
+  // Defines what the user does for the organization
+  declare jobRoleId: ForeignKey<JobRole['id']>;
+  declare departmentId: ForeignKey<Department['id']>;
+  declare status: CreationOptional<(typeof userStatusOptions)[number]>;
+  declare lastLoginDate: CreationOptional<Date>;
+}
+
+User.init(
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
+    },
+    email: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+      unique: 'email',
+    },
+    password: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    firstName: {
+      type: DataTypes.STRING(50),
+      allowNull: false,
+    },
+    lastName: {
+      type: DataTypes.STRING(50),
+      allowNull: false,
+    },
+    profileImage: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    googleId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      unique: 'googleId',
+    },
+    role: {
+      type: DataTypes.ENUM,
+      values: userRoleOptions,
+      allowNull: false,
+      defaultValue: 'user',
+    },
+    jobRoleId: {
+      type: DataTypes.INTEGER,
+      references: { model: JobRole, key: 'id' },
+      allowNull: false,
+    },
+    departmentId: {
+      type: DataTypes.INTEGER,
+      references: { model: Department, key: 'id' },
+      allowNull: false,
+    },
+    status: {
+      type: DataTypes.ENUM(...userStatusOptions),
+      allowNull: false,
+      defaultValue: 'active',
+    },
+    lastLoginDate: {
+      type: DataTypes.DATE,
+    },
+  },
+  {
+    sequelize: db,
+    tableName: 'users',
+    timestamps: true,
+    paranoid: true,
+  },
+);
+
+User.belongsTo(JobRole, { foreignKey: { name: 'jobRoleId', allowNull: false } });
+JobRole.hasMany(User, { foreignKey: { name: 'jobRoleId', allowNull: false }, as: 'users' });
+
+User.belongsTo(Department, { foreignKey: { name: 'departmentId', allowNull: false } });
+Department.hasMany(User, { foreignKey: { name: 'departmentId', allowNull: false }, as: 'users' });

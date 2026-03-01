@@ -1,0 +1,9 @@
+{
+  "allowedOrigins": ["http://localhost:5173", "https://orbit360.isaacbern.com.ng"],
+  "mail": {
+    "mailSender": "Orbit360 HR <test@example.com>",
+    "server": "smtp.gmail.com",
+    "serverPort": 587,
+    "frontendURL": "http://localhost:5173"
+  }
+}
