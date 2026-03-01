@@ -97,7 +97,7 @@ export class AuthorizationRepository {
     }
     if (modules.includes('EXITS')) {
       tasks.push(
-        Exit.count({ where: { status: 'CLEARED', employeeId: { [Op.ne]: userEmployeeId } } }).then((c) => ({
+        Exit.count({ where: { finalApprovalStatus: 'cleared', employeeId: { [Op.ne]: userEmployeeId } } }).then((c) => ({
           key: 'exits',
           count: c,
         })),
@@ -180,7 +180,7 @@ export class AuthorizationRepository {
         });
       case 'EXITS':
         return Exit.findAndCountAll({
-          where: { status: 'CLEARED' },
+          where: { finalApprovalStatus: 'cleared' },
           limit: rows,
           offset: offset,
           include: [
