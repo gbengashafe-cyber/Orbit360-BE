@@ -1,8 +1,6 @@
-import { v4 as uuidv4 } from 'uuid';
-import { TrainingRequest, TrainingRequestStatus, RequestScope } from './training-request.model';
 import { ApiError } from '../../utils/api-error';
 import { logger } from '../../utils/logger';
-import { sendEmail } from '../../utils/email'; // Assuming email service exists
+import { RequestScope, TrainingRequest, TrainingRequestStatus } from './training-request.model';
 
 export class TrainingRequestService {
   static async createRequest(data: any, requesterId: number) {
@@ -44,28 +42,10 @@ export class TrainingRequestService {
       }
 
       const request = await TrainingRequest.create({
-        id: uuidv4(),
+        ...data,
         requesterId,
-        trainingType: data.trainingType,
-        trainingTitle: data.trainingTitle,
-        trainingDescription: data.trainingDescription,
-        priority: data.priority,
-        businessJustification: data.businessJustification,
-        skillsToGain: data.skillsToGain,
-        deliveryMethod: data.deliveryMethod,
-        preferredTimeframe: data.preferredTimeframe,
-        estimatedDuration: data.estimatedDuration,
-        estimatedCost: data.estimatedCost,
-        trainingProvider: data.trainingProvider,
-        requestScope: data.requestScope || RequestScope.SELF,
-        numberOfTeamMembers: data.numberOfTeamMembers,
-        teamMemberIds: data.teamMemberIds,
-        status: TrainingRequestStatus.PENDING,
       });
 
-      logger.info(`[createRequest] Training request created: ${request.id} by user ${requesterId}`);
-
-      // Trigger email notifications
       await this.sendSubmissionNotifications(request, requesterId);
 
       return request;
@@ -77,7 +57,7 @@ export class TrainingRequestService {
 
   static async getRequests(userId: number, userRole: string, filters?: any) {
     try {
-      let query: any = {};
+      const query: any = {};
 
       // Filter based on user role
       if (userRole === 'employee') {

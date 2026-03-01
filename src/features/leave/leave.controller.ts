@@ -7,6 +7,8 @@ import { LeaveType } from './leave-type.model';
 import { Leave } from './leave.model';
 import { ApiResponse } from '../../utils/api-response';
 import { calculateWorkingDays, validateLeaveDates } from './leave.utils';
+import { db } from '../../db';
+import { EmployeeRepository } from '../employee/employee.repository';
 
 export class LeaveController {
   static async create(req: Request, res: Response, next: NextFunction) {
@@ -343,12 +345,24 @@ export class LeaveController {
         throw ApiError.badRequest('Leave request has already been processed');
       }
 
+      const employeeRecord = await Employee.findByPk(leave.employeeId);
+
+      if (employeeRecord?.supervisorId !== req.user?.id) {
+        throw ApiError.forbidden(
+          'You are no authorised to approve leave for this employee. Kindly contact the employee to approve.',
+        );
+      }
       const updateData: any = { status: action };
       if (action.toLowerCase() === 'rejected' && rejection_reason) {
         updateData.rejection_reason = rejection_reason;
       }
 
-      await leave.update(updateData);
+      await db.transaction(async (transaction) => {
+        await leave.update(updateData, { transaction });
+        if (action.toLowerCase() === 'approved') {
+          await Employee.update({ status: 'ON_LEAVE' }, { where: { id: leave.employeeId }, transaction });
+        }
+      });
 
       const updatedLeave = await Leave.findByPk(id, {
         include: [

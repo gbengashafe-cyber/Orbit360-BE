@@ -12,6 +12,7 @@ import { User } from '../features/users/user.model';
 import { PendingModuleItemsProps } from './pending-authorization.service';
 import { Department } from '../features/department/department.model';
 import { JobRole } from '../features/job-role/job-role.model';
+import { JobApplication } from '../features/recruitment/job-application.model';
 
 export class AuthorizationRepository {
   static readonly getPendingLoans = async (limit: number) => {
@@ -98,6 +99,14 @@ export class AuthorizationRepository {
       tasks.push(
         Exit.count({ where: { status: 'submitted', employeeId: { [Op.ne]: userEmployeeId } } }).then((c) => ({
           key: 'exits',
+          count: c,
+        })),
+      );
+    }
+    if (modules.includes('RECRUITMENTS')) {
+      tasks.push(
+        JobApplication.count({ where: { status: 'INTERVIEW_SCHEDULED' } }).then((c) => ({
+          key: 'recruitments',
           count: c,
         })),
       );

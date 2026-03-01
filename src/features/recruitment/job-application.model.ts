@@ -1,30 +1,23 @@
-import { DataTypes, Model } from 'sequelize';
+import { CreationOptional, DataTypes, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import { db } from '../../db';
+import { Applicant } from './applicant.model';
 
-export interface JobApplicationAttributes {
-  id?: number;
-  job_posting_id: number;
-  applicant_id?: number;
-  applied_date: Date;
-  status: 'applied' | 'under_review' | 'interview_scheduled' | 'interviewed' | 'offered' | 'hired' | 'rejected';
-  interview_date?: Date;
-  interview_notes?: string;
-  rating?: number;
-  // Denormalized fields for backward compatibility (will be fetched from Applicant)
-  applicant_name?: string;
-  applicant_email?: string;
-  applicant_phone?: string;
-  resume_url?: string;
-  cover_letter?: string;
-  salary_expectation?: number;
-}
+export const JOB_APPLICATION_STATUS = [
+  'applied',
+  'under_review',
+  'interview_scheduled',
+  'interviewed',
+  'offered',
+  'hired',
+  'rejected',
+] as const;
 
-export class JobApplication extends Model<JobApplicationAttributes> implements JobApplicationAttributes {
+export class JobApplication extends Model<InferAttributes<JobApplication>, InferCreationAttributes<JobApplication>> {
   public id!: number;
   public job_posting_id!: number;
   public applicant_id!: number;
   public applied_date!: Date;
-  public status!: 'applied' | 'under_review' | 'interview_scheduled' | 'interviewed' | 'offered' | 'hired' | 'rejected';
+  declare status: CreationOptional<(typeof JOB_APPLICATION_STATUS)[number]>;
   public interview_date!: Date;
   public interview_notes!: string;
   public rating!: number;
@@ -57,7 +50,7 @@ JobApplication.init(
       defaultValue: DataTypes.NOW,
     },
     status: {
-      type: DataTypes.ENUM('applied', 'under_review', 'interview_scheduled', 'interviewed', 'offered', 'hired', 'rejected'),
+      type: DataTypes.ENUM(...JOB_APPLICATION_STATUS),
       defaultValue: 'applied',
     },
     interview_date: {
@@ -106,11 +99,7 @@ JobApplication.init(
   },
 );
 
-// Set up associations after model definition
-export function setupJobApplicationAssociations() {
-  const Applicant = require('./applicant.model').Applicant;
-  JobApplication.belongsTo(Applicant, {
-    foreignKey: 'applicant_id',
-    as: 'applicant',
-  });
-}
+JobApplication.belongsTo(Applicant, {
+  foreignKey: 'applicant_id',
+  as: 'applicant',
+});

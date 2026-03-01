@@ -1,4 +1,4 @@
-import { DataTypes, Model, Optional } from 'sequelize';
+import { CreationOptional, DataTypes, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import { db } from '../../db';
 import { Employee } from '../employee/employee.model';
 
@@ -32,45 +32,8 @@ export enum RequestScope {
   TEAM = 'TEAM',
 }
 
-interface TrainingRequestAttributes {
-  id?: string;
-  requesterId: number;
-  supervisorId?: number;
-  trainingType: string;
-  trainingTitle: string;
-  trainingDescription: string;
-  priority: TrainingPriority;
-  businessJustification: string;
-  skillsToGain: string;
-  deliveryMethod: DeliveryMethod;
-  preferredTimeframe: string;
-  estimatedDuration: string;
-  estimatedCost: number;
-  trainingProvider: string;
-  requestScope: RequestScope;
-  numberOfTeamMembers?: number;
-  teamMemberIds?: number[];
-  status: TrainingRequestStatus;
-  supervisorApprovedAt?: Date;
-  supervisorApprovedBy?: number;
-  supervisorRejectionReason?: string;
-  hrApprovedAt?: Date;
-  hrApprovedBy?: number;
-  hrRejectionReason?: string;
-  finalApprovedAt?: Date;
-  finalApprovedBy?: number;
-  finalRejectionReason?: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-interface TrainingRequestCreationAttributes extends Optional<TrainingRequestAttributes, 'id' | 'createdAt' | 'updatedAt'> {}
-
-class TrainingRequest
-  extends Model<TrainingRequestAttributes, TrainingRequestCreationAttributes>
-  implements TrainingRequestAttributes
-{
-  public id!: string;
+export class TrainingRequest extends Model<InferAttributes<TrainingRequest>, InferCreationAttributes<TrainingRequest>> {
+  declare id: CreationOptional<string>;
   public requesterId!: number;
   public supervisorId?: number;
   public trainingType!: string;
@@ -203,12 +166,11 @@ TrainingRequest.init(
     finalRejectionReason: {
       type: DataTypes.TEXT,
     },
+    createdAt: DataTypes.DATE,
+    updatedAt: DataTypes.DATE,
   },
   {
     sequelize: db,
-    tableName: 'TrainingRequests',
     timestamps: true,
   },
 );
-
-export { TrainingRequest };
