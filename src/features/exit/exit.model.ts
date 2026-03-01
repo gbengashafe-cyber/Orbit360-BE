@@ -1,55 +1,17 @@
-import { DataTypes, Model, NonAttribute } from 'sequelize';
+import {
+  CreationOptional,
+  DataTypes,
+  ForeignKey,
+  InferAttributes,
+  InferCreationAttributes,
+  Model,
+  NonAttribute,
+} from 'sequelize';
 import { db } from '../../db';
 import { Employee } from '../employee/employee.model';
+import { User } from '../users/user.model';
 
-export interface ExitAttributes {
-  id?: string;
-  employeeId: number;
-  employeeName?: string;
-  employeeEmail?: string;
-  employeeDepartment?: string;
-  position?: string;
-  resignationDate: Date;
-  lastWorkingDate: Date;
-  noticePeriod?: number;
-  status?: 'submitted' | 'under_review' | 'clearance_pending' | 'approved' | 'completed' | 'rejected' | 'withdrawn';
-  handoverStatus?: 'in_progress' | 'yes' | 'no';
-  handoverDetails?: string;
-  handoverRecipientName?: string;
-  handoverRecipientContact?: string;
-  outstandingTasks?: string;
-  outstandingApprovals?: string;
-  assetsToReturn?: string;
-  assetReturnStatus?: 'not_applicable' | 'pending_return' | 'returned';
-  salaryBalanceNotes?: string;
-  loanDeductionNotes?: string;
-  leaveEncashmentRequest?: boolean;
-  pensionProcessingNotes?: string;
-  overallExperienceRating?: number;
-  positiveExperience?: string;
-  areasForImprovementOrg?: string;
-  wouldRecommendOrg?: boolean;
-  supervisorApprovalStatus?: 'pending' | 'approved' | 'cleared' | 'rejected' | 'issues';
-  supervisorApprovalDate?: Date;
-  supervisorComments?: string;
-  itAdminClearance?: boolean;
-  supervisorClearance?: boolean;
-  financeClearance?: boolean;
-  hrClearance?: boolean;
-  hrApprovalStatus?: 'pending' | 'approved' | 'cleared' | 'rejected' | 'issues';
-  hrApprovalDate?: Date;
-  hrComments?: string;
-  itClearanceStatus?: 'pending' | 'approved' | 'cleared' | 'rejected' | 'issues';
-  itClearanceDate?: Date;
-  itComments?: string;
-  finalApprovalStatus?: 'pending' | 'approved' | 'cleared' | 'rejected' | 'issues';
-  finalApprovalDate?: Date;
-  finalApprovalBy?: string;
-  finalComments?: string;
-  employeeSignatureDate?: Date;
-}
-
-export class Exit extends Model<ExitAttributes> implements ExitAttributes {
+export class Exit extends Model<InferAttributes<Exit>, InferCreationAttributes<Exit>> {
   public id!: string;
   public employeeId!: number;
   declare employee?: NonAttribute<Employee>;
@@ -73,16 +35,15 @@ export class Exit extends Model<ExitAttributes> implements ExitAttributes {
   public positiveExperience!: string;
   public areasForImprovementOrg!: string;
   public wouldRecommendOrg!: boolean;
-  public supervisorApprovalStatus!: 'pending' | 'approved' | 'cleared' | 'rejected' | 'issues';
   public supervisorApprovalDate!: Date;
   public supervisorComments!: string;
   public itAdminClearance!: boolean;
   public supervisorClearance!: boolean;
   public financeClearance!: boolean;
   public hrClearance!: boolean;
-  public hrApprovalStatus!: 'pending' | 'approved' | 'cleared' | 'rejected' | 'issues';
-  public hrApprovalDate!: Date;
-  public hrComments!: string;
+  declare reviewerId: ForeignKey<User['id']>;
+  declare reviewerDate: CreationOptional<Date>;
+  declare reviewerComment: CreationOptional<string>;
   public itClearanceStatus!: 'pending' | 'approved' | 'cleared' | 'rejected' | 'issues';
   public itClearanceDate!: Date;
   public itComments!: string;
@@ -104,22 +65,7 @@ Exit.init(
       type: DataTypes.INTEGER,
       allowNull: false,
     },
-    employeeName: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
-    employeeEmail: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
-    employeeDepartment: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
-    position: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
+
     resignationDate: {
       type: DataTypes.DATE,
       allowNull: false,
@@ -201,10 +147,6 @@ Exit.init(
       type: DataTypes.BOOLEAN,
       defaultValue: false,
     },
-    supervisorApprovalStatus: {
-      type: DataTypes.ENUM('pending', 'approved', 'cleared', 'rejected', 'issues'),
-      defaultValue: 'pending',
-    },
     supervisorApprovalDate: {
       type: DataTypes.DATE,
       allowNull: true,
@@ -233,15 +175,12 @@ Exit.init(
       allowNull: false,
       defaultValue: false,
     },
-    hrApprovalStatus: {
-      type: DataTypes.ENUM('pending', 'approved', 'cleared', 'rejected', 'issues'),
-      defaultValue: 'pending',
-    },
-    hrApprovalDate: {
+    reviewerId: { type: DataTypes.INTEGER, references: { model: User, key: 'id' } },
+    reviewerDate: {
       type: DataTypes.DATE,
       allowNull: true,
     },
-    hrComments: {
+    reviewerComment: {
       type: DataTypes.TEXT,
       allowNull: true,
     },
@@ -288,3 +227,6 @@ Exit.init(
 
 Exit.belongsTo(Employee, { foreignKey: 'employeeId', as: 'employee' });
 Employee.hasMany(Exit, { foreignKey: 'employeeId', as: 'exits' });
+
+Exit.belongsTo(User, { foreignKey: 'reviewerId', as: 'reviewer' });
+User.hasMany(Exit, { foreignKey: 'reviewerId' });

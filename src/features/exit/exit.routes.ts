@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { validateAuthToken } from '../authentication/auth.middleware';
 import { ExitController } from './exit.controller';
 import { validateApproveExit, validateCreateExit, validateEmployeeIdParam, validateExitIdParam } from './exit.validators';
+import { hasRequiredPermission } from '../../utils/check-permission';
 
 const router = Router();
 
@@ -19,6 +20,13 @@ router.put('/:id', validateExitIdParam, ExitController.update);
 
 router.delete('/:id', validateExitIdParam, ExitController.delete);
 
-router.patch('/:id/approve', validateExitIdParam, validateApproveExit, ExitController.approveExit);
+router.patch('/:id/review', hasRequiredPermission('MANAGE_EXITS'), validateApproveExit, ExitController.reviewExit);
+router.patch(
+  '/:id/approve',
+  hasRequiredPermission('APPROVE_EXITS'),
+  validateExitIdParam,
+  validateApproveExit,
+  ExitController.approveExit,
+);
 
 export { router as exitRoutes };

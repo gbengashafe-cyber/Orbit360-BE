@@ -37,8 +37,8 @@ const createExitSchema = z.object({
   hrClearance: z.boolean().optional(),
 });
 
-const exitIdParamSchema = z.object({
-  id: z.string().uuid({ message: 'Exit ID must be a valid UUID' }),
+export const exitIdParamSchema = z.object({
+  id: z.uuidv4({ message: 'Exit ID must be a valid UUID' }),
 });
 
 const employeeIdParamSchema = z.object({

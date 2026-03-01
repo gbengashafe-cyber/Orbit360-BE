@@ -1,6 +1,5 @@
 import { CreationOptional, DataTypes, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import { db } from '../../db';
-import { Applicant } from './applicant.model';
 
 export const JOB_APPLICATION_STATUS = [
   'applied',

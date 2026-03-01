@@ -1,11 +1,12 @@
 import { NextFunction, Request, Response } from 'express';
 import { ApiError } from '../../utils/api-error';
 import { ApiResponse } from '../../utils/api-response';
-import { logger } from '../../utils/logger';
 import { emailService } from '../../utils/email.service';
+import { logger } from '../../utils/logger';
+import { Employee } from '../employee/employee.model';
 import { User } from '../users/user.model';
 import { Exit } from './exit.model';
-import { Employee } from '../employee/employee.model';
+import { exitIdParamSchema } from './exit.validators';
 
 export class ExitController {
   static async create(req: Request, res: Response, next: NextFunction) {
@@ -205,6 +206,32 @@ export class ExitController {
         // Don't block the response if email fails
       }
     });
+
+    res.json(
+      ApiResponse({
+        data: updatedExit,
+        message: `Exit request ${action}`,
+      }),
+    );
+  }
+
+  static async reviewExit(req: Request, res: Response) {
+    const { action } = req.body;
+
+    const { id } = exitIdParamSchema.parse(req.params);
+
+    const exit = await Exit.findByPk(id);
+    if (!exit) {
+      throw ApiError.notFound('Exit request not found');
+    }
+
+    await exit.update({
+      finalApprovalStatus: action === 'approved' ? 'cleared' : 'rejected',
+      reviewerDate: new Date(),
+      reviewerId: req.user?.id,
+    });
+
+    const updatedExit = await Exit.findByPk(id, { include: [{ model: Employee, as: 'employee' }] });
 
     res.json(
       ApiResponse({
