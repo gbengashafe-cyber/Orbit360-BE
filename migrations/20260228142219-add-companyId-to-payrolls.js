@@ -2,8 +2,16 @@ module.exports = {
   async up(queryInterface, Sequelize) {
     const transaction = await queryInterface.sequelize.transaction();
     try {
-      await queryInterface.removeColumn('payrolls', 'company_id', { transaction });
-      await queryInterface.removeColumn('payroll_batches', 'company_id', { transaction });
+      const payrollsDefinition = await queryInterface.describeTable('payrolls', { transaction });
+      const payrollBatchesDefinition = await queryInterface.describeTable('payroll_batches', { transaction });
+
+      if (payrollsDefinition.company_id) {
+        await queryInterface.removeColumn('payrolls', 'company_id', { transaction });
+      }
+
+      if (payrollBatchesDefinition.company_id) {
+        await queryInterface.removeColumn('payroll_batches', 'company_id', { transaction });
+      }
 
       await queryInterface.addColumn(
         'payrolls',
@@ -87,8 +95,16 @@ module.exports = {
     const transaction = await queryInterface.sequelize.transaction();
 
     try {
-      await queryInterface.removeColumn('payrolls', 'company_id', { transaction });
-      await queryInterface.removeColumn('payroll_batches', 'company_id', { transaction });
+      const payrollsDefinition = await queryInterface.describeTable('payrolls', { transaction });
+      const payrollBatchesDefinition = await queryInterface.describeTable('payroll_batches', { transaction });
+
+      if (payrollsDefinition.company_id) {
+        await queryInterface.removeColumn('payrolls', 'company_id', { transaction });
+      }
+
+      if (payrollBatchesDefinition.company_id) {
+        await queryInterface.removeColumn('payroll_batches', 'company_id', { transaction });
+      }
 
       await transaction.commit();
     } catch (error) {
