@@ -98,8 +98,3 @@ JobApplication.init(
     tableName: 'job_applications',
   },
 );
-
-JobApplication.belongsTo(Applicant, {
-  foreignKey: 'applicant_id',
-  as: 'applicant',
-});

@@ -95,10 +95,10 @@ const seedOrganizationalStructure = async () => {
       ],
     },
     {
-      name: 'Human Resources',
+      name: 'Famous Holdings',
       departments: [
         {
-          name: 'Human Resources',
+          name: 'Group - Human Resources',
           jobRoles: [
             'Chief Human Resource Manager',
             'Talent Acquisition and Workforce Planning Officer',
