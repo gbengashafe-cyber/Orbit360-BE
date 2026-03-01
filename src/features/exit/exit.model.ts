@@ -1,4 +1,4 @@
-import { DataTypes, Model } from 'sequelize';
+import { DataTypes, Model, NonAttribute } from 'sequelize';
 import { db } from '../../db';
 import { Employee } from '../employee/employee.model';
 
@@ -48,10 +48,7 @@ export interface ExitAttributes {
 export class Exit extends Model<ExitAttributes> implements ExitAttributes {
   public id!: string;
   public employeeId!: number;
-  public employeeName!: string;
-  public employeeEmail!: string;
-  public employeeDepartment!: string;
-  public position!: string;
+  declare employee?: NonAttribute<Employee>;
   public resignationDate!: Date;
   public lastWorkingDate!: Date;
   public noticePeriod!: number;

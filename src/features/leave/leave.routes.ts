@@ -16,14 +16,16 @@ const upload = multer({
   },
 });
 
-router.post('/', validateAuthToken, upload.any(), validateCreateLeave, LeaveController.create);
-router.post('/calculate/days', validateAuthToken, LeaveController.calculateLeaveDays);
-router.get('/', validateAuthToken, LeaveController.getAll);
-router.get('/employee/:employeeId', validateAuthToken, validateEmployeeIdParam, LeaveController.getByEmployee);
-router.get('/types', validateAuthToken, LeaveController.getLeaveTypes);
-router.get('/balance/:employeeId', validateAuthToken, validateEmployeeIdParam, LeaveController.getLeaveBalance);
-router.get('/:id', validateAuthToken, validateLeaveIdParam, LeaveController.getById);
-router.patch('/:id/status', validateAuthToken, validateLeaveIdParam, validateApproveDecline, LeaveController.approveOrDecline);
-router.delete('/:id', validateAuthToken, validateLeaveIdParam, LeaveController.cancel);
+router.use(validateAuthToken);
+
+router.post('/', upload.any(), validateCreateLeave, LeaveController.create);
+router.post('/calculate/days', LeaveController.calculateLeaveDays);
+router.get('/', LeaveController.getAll);
+router.get('/employee/:employeeId', validateEmployeeIdParam, LeaveController.getByEmployee);
+router.get('/types', LeaveController.getLeaveTypes);
+router.get('/balance/:employeeId', validateEmployeeIdParam, LeaveController.getLeaveBalance);
+router.get('/:id', validateLeaveIdParam, LeaveController.getById);
+router.patch('/:id/status', validateLeaveIdParam, validateApproveDecline, LeaveController.approveOrDecline);
+router.delete('/:id', validateLeaveIdParam, LeaveController.cancel);
 
 export { router as leaveRoutes };

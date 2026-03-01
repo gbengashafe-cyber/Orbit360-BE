@@ -5,6 +5,7 @@ import { logger } from '../../utils/logger';
 import { emailService } from '../../utils/email.service';
 import { User } from '../users/user.model';
 import { Exit } from './exit.model';
+import { Employee } from '../employee/employee.model';
 
 export class ExitController {
   static async create(req: Request, res: Response, next: NextFunction) {
@@ -168,51 +169,48 @@ export class ExitController {
     }
   }
 
-  static async approveExit(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-      const { action } = req.body;
+  static async approveExit(req: Request, res: Response) {
+    const { id } = req.params;
+    const { action } = req.body;
 
-      const exit = await Exit.findByPk(id);
-      if (!exit) {
-        throw ApiError.notFound('Exit request not found');
-      }
+    const exit = await Exit.findByPk(id);
+    if (!exit) {
+      throw ApiError.notFound('Exit request not found');
+    }
 
-      await exit.update({
-        status: action === 'approved' ? 'approved' : 'rejected',
-        finalApprovalStatus: action === 'approved' ? 'approved' : 'rejected',
-        finalApprovalDate: new Date(),
-        finalApprovalBy: String(req.user?.id || 'system'),
-      });
+    await exit.update({
+      status: action === 'approved' ? 'approved' : 'rejected',
+      finalApprovalStatus: action === 'approved' ? 'approved' : 'rejected',
+      finalApprovalDate: new Date(),
+      finalApprovalBy: String(req.user?.id || 'system'),
+    });
 
-      const updatedExit = await Exit.findByPk(id);
+    const updatedExit = await Exit.findByPk(id, { include: [{ model: Employee, as: 'employee' }] });
 
-      // Send notification email to employee (non-blocking)
-      setImmediate(async () => {
-        try {
-          if (updatedExit && action === 'approved' && updatedExit.employeeEmail) {
-            await emailService.sendExitApprovalEmail(
-              updatedExit.employeeEmail,
-              updatedExit.employeeName,
-              new Date(updatedExit.lastWorkingDate).toLocaleDateString(),
-            );
-            logger.info(`Exit approval email sent to ${updatedExit.employeeEmail}`);
-          } else if (action === 'rejected' && updatedExit) {
-            logger.info(`Exit rejected for employee ${updatedExit.employeeId}. Consider sending rejection email.`);
-          }
-        } catch (emailError) {
-          logger.error(`Failed to send approval email: ${emailError}`);
-          // Don't block the response if email fails
+    // Send notification email to employee (non-blocking)
+    setImmediate(async () => {
+      try {
+        if (updatedExit && action === 'approved' && updatedExit?.employee?.email) {
+          await emailService.sendExitApprovalEmail(
+            updatedExit?.employee?.email,
+            updatedExit?.employee?.firstName,
+            new Date(updatedExit.lastWorkingDate).toLocaleDateString(),
+          );
+          logger.info(`Exit approval email sent to ${updatedExit?.employee?.email}`);
+        } else if (action === 'rejected' && updatedExit) {
+          logger.info(`Exit rejected for employee ${updatedExit.employeeId}. Consider sending rejection email.`);
         }
-      });
+      } catch (emailError) {
+        logger.error(`Failed to send approval email: ${emailError}`);
+        // Don't block the response if email fails
+      }
+    });
 
-      res.json({
+    res.json(
+      ApiResponse({
         data: updatedExit,
         message: `Exit request ${action}`,
-      });
-    } catch (error) {
-      logger.error(`Error approving exit: ${error}`);
-      next(error);
-    }
+      }),
+    );
   }
 }

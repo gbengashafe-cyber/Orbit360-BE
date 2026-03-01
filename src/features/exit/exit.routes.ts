@@ -5,25 +5,20 @@ import { validateApproveExit, validateCreateExit, validateEmployeeIdParam, valid
 
 const router = Router();
 
-// Create new exit request
-router.post('/', validateAuthToken, validateCreateExit, ExitController.create);
+router.use(validateAuthToken);
 
-// Get all exits (admin/HR only)
-router.get('/', validateAuthToken, ExitController.getAll);
+router.post('/', validateCreateExit, ExitController.create);
 
-// Get exits by employee
-router.get('/employee/:employeeId', validateAuthToken, validateEmployeeIdParam, ExitController.getByEmployee);
+router.get('/', ExitController.getAll);
 
-// Get single exit
-router.get('/:id', validateAuthToken, validateExitIdParam, ExitController.getById);
+router.get('/employee/:employeeId', validateEmployeeIdParam, ExitController.getByEmployee);
 
-// Update exit request
-router.put('/:id', validateAuthToken, validateExitIdParam, ExitController.update);
+router.get('/:id', validateExitIdParam, ExitController.getById);
 
-// Delete exit request
-router.delete('/:id', validateAuthToken, validateExitIdParam, ExitController.delete);
+router.put('/:id', validateExitIdParam, ExitController.update);
 
-// Approve/reject exit request
-router.patch('/:id/approve', validateAuthToken, validateExitIdParam, validateApproveExit, ExitController.approveExit);
+router.delete('/:id', validateExitIdParam, ExitController.delete);
+
+router.patch('/:id/approve', validateExitIdParam, validateApproveExit, ExitController.approveExit);
 
 export { router as exitRoutes };
