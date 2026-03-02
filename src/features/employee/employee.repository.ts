@@ -102,6 +102,7 @@ export class EmployeeRepository {
         { email: { [Op.like]: `%${filters.search}%` } },
       ];
     }
+    if (filters.supervisorId) where.supervisorId = filters.supervisorId;
     if (filters.companyId) where.companyId = filters.companyId;
 
     if (filters.status && employeeStatus.includes(filters.status?.toUpperCase())) {
@@ -143,6 +144,7 @@ export class EmployeeRepository {
     }
     if (filters.companyId) where.companyId = filters.companyId;
 
+    if (filters.supervisorId) where.supervisorId = filters.supervisorId;
     if (filters.status && employeeStatus.includes(filters.status?.toUpperCase())) {
       where.status = filters.status;
     }

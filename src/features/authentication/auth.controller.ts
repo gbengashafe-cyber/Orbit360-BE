@@ -151,18 +151,30 @@ export class AuthController {
         throw ApiError.unauthenticated('User is inactive');
       }
 
-      const userEmployeeRecord = await EmployeeRepository.readWithNoCompanyMini({
+      const userEmployeeSearch = await EmployeeRepository.readWithNoCompanyMini({
         rows: 1,
         page: 1,
         filters: { search: user.email },
       });
 
-      const isHR = userEmployeeRecord.rows[0]?.department?.name?.toUpperCase() === 'GROUP - HUMAN RESOURCES';
+      const userEmployeeRecord = userEmployeeSearch.rows[0];
+
+      const isHR = userEmployeeSearch.rows[0]?.department?.name?.toUpperCase() === 'GROUP - HUMAN RESOURCES';
+      const isSupervisorSearchResult = userEmployeeRecord?.id
+        ? await EmployeeRepository.readWithNoCompany({
+            filters: { supervisorId: userEmployeeRecord.id },
+            rows: 1,
+            page: 1,
+          })
+        : null;
+
+      const isSupervisor = !!isSupervisorSearchResult?.rows?.[0];
 
       const userData = {
         ...user,
         isHR,
-        employeeData: userEmployeeRecord.rows[0] ?? {},
+        employeeData: userEmployeeRecord ?? {},
+        isSupervisor,
         permissions: req.user?.permissions || [],
       };
       res.json(ApiResponse(ApiResponse({ data: userData, message: 'Fetched current user successfully' })));
