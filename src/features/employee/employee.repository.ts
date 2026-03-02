@@ -83,6 +83,7 @@ export class EmployeeRepository {
       order: [[orderBy, orderDirection]],
     });
   };
+
   static readonly readWithNoCompany = ({
     rows = 25,
     page = 1,
@@ -116,6 +117,46 @@ export class EmployeeRepository {
 
     return Employee.findAndCountAll({
       where,
+      include: this.includes,
+      limit: rows,
+      offset,
+      order: [[orderBy, orderDirection]],
+    });
+  };
+  static readonly readWithNoCompanyMini = ({
+    rows = 25,
+    page = 1,
+    filters,
+    orderBy = 'createdAt',
+    orderDirection = 'ASC',
+  }: ReadAllPropsWithNoCompany) => {
+    const offset = (page - 1) * rows;
+
+    const where: any = {};
+
+    if (filters.search) {
+      where[Op.or] = [
+        { firstName: { [Op.like]: `%${filters.search}%` } },
+        { lastName: { [Op.like]: `%${filters.search}%` } },
+        { email: { [Op.like]: `%${filters.search}%` } },
+      ];
+    }
+    if (filters.companyId) where.companyId = filters.companyId;
+
+    if (filters.status && employeeStatus.includes(filters.status?.toUpperCase())) {
+      where.status = filters.status;
+    }
+
+    if (filters.hireDateFrom || filters.hireDateTo) {
+      where.hireDate = {
+        ...(filters.hireDateFrom && { [Op.gte]: filters.hireDateFrom }),
+        ...(filters.hireDateTo && { [Op.lte]: filters.hireDateTo }),
+      };
+    }
+
+    return Employee.findAndCountAll({
+      where,
+      attributes: ['id', 'firstName', 'lastName', 'staffId'],
       include: this.includes,
       limit: rows,
       offset,

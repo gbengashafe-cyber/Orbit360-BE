@@ -9,6 +9,10 @@ const hasRequiredPermission = (permission: Permission, { allowAdmin = false }: {
     logger.debug(`Checking required permission: RequestId: ${req.requestId}: Required Permission: ${permission}`);
     logger.debug(`Checking required permission: RequestId: ${req.requestId}: User job role: ${req.user?.jobRoleId}`);
 
+    if (allowAdmin && req.user?.role?.toUpperCase() === 'ADMIN') {
+      next();
+    }
+
     if (!req.user?.jobRoleId) {
       throw ApiError.forbidden('Missing/incomplete authorization header. You are not authorized to perform this action.');
     }
@@ -17,11 +21,9 @@ const hasRequiredPermission = (permission: Permission, { allowAdmin = false }: {
 
     logger.debug(`Permissions for user: ${JSON.stringify(userJobRolePermissions)}`);
 
-    const userHasRequiredPermission =
-      (allowAdmin && req.user?.role?.toUpperCase() === 'ADMIN') ||
-      userJobRolePermissions.some((_result) => _result.toUpperCase() === permission.toUpperCase());
+    const hasPermission = userJobRolePermissions.some((_result) => _result.toUpperCase() === permission.toUpperCase());
 
-    if (!userHasRequiredPermission) {
+    if (!hasPermission) {
       throw ApiError.forbidden('You are not authorized to perform this action');
     }
 
@@ -29,10 +31,14 @@ const hasRequiredPermission = (permission: Permission, { allowAdmin = false }: {
   };
 };
 
-const isInAllowedDepartment = (requiredDepartment: string[]) => {
+const isInAllowedDepartment = (requiredDepartment: string[], { allowAdmin = false } = { allowAdmin: false }) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     logger.debug(`Checking required department: RequestId: ${req.requestId}: Required Department(s): ${requiredDepartment}`);
     logger.debug(`Checking required department: RequestId: ${req.requestId}: User department: ${req.user?.departmentId}`);
+
+    if (allowAdmin && req.user?.role?.toUpperCase() === 'ADMIN') {
+      next();
+    }
 
     if (!req.user?.departmentId) {
       throw ApiError.forbidden('Missing/incomplete authorization header. You are not authorized to perform this action.');

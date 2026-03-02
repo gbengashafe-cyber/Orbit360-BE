@@ -6,6 +6,7 @@ import {
   InferCreationAttributes,
   Model,
   ModelAttributes,
+  NonAttribute,
 } from 'sequelize';
 import { db } from '../../db';
 import { Company } from '../company/company.model';
@@ -29,7 +30,9 @@ export class Employee extends Model<InferAttributes<Employee>, InferCreationAttr
   // Employment details
   declare companyId: number;
   declare departmentId: ForeignKey<Department['id']>;
+  declare department: NonAttribute<Department>;
   declare jobRoleId: ForeignKey<JobRole['id']>;
+  declare jobRole: NonAttribute<JobRole>;
   declare hireDate: Date;
   declare status: (typeof employeeStatus)[number];
   declare terminationDate: CreationOptional<Date>;

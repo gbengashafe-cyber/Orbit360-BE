@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { DashboardController } from './dashboard.controller';
 import { validateAuthToken } from '../features/authentication/auth.middleware';
+import { DashboardController } from './dashboard.controller';
 
 const router = Router();
 

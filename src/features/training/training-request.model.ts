@@ -34,34 +34,34 @@ export enum RequestScope {
 
 export class TrainingRequest extends Model<InferAttributes<TrainingRequest>, InferCreationAttributes<TrainingRequest>> {
   declare id: CreationOptional<string>;
-  public requesterId!: number;
-  public supervisorId?: number;
-  public trainingType!: string;
-  public trainingTitle!: string;
-  public trainingDescription!: string;
-  public priority!: TrainingPriority;
-  public businessJustification!: string;
-  public skillsToGain!: string;
-  public deliveryMethod!: DeliveryMethod;
-  public preferredTimeframe!: string;
-  public estimatedDuration!: string;
-  public estimatedCost!: number;
-  public trainingProvider!: string;
-  public requestScope!: RequestScope;
-  public numberOfTeamMembers?: number;
-  public teamMemberIds?: number[];
-  public status!: TrainingRequestStatus;
-  public supervisorApprovedAt?: Date;
-  public supervisorApprovedBy?: number;
-  public supervisorRejectionReason?: string;
-  public hrApprovedAt?: Date;
-  public hrApprovedBy?: number;
-  public hrRejectionReason?: string;
-  public finalApprovedAt?: Date;
-  public finalApprovedBy?: number;
-  public finalRejectionReason?: string;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare requesterId: Employee['id'];
+  declare supervisorId: CreationOptional<Employee['id']>;
+  declare trainingType: string;
+  declare trainingTitle: string;
+  declare trainingDescription: string;
+  declare priority: TrainingPriority;
+  declare businessJustification: string;
+  declare skillsToGain: string;
+  declare deliveryMethod: DeliveryMethod;
+  declare preferredTimeframe: string;
+  declare estimatedDuration: string;
+  declare estimatedCost: number;
+  declare trainingProvider: string;
+  declare requestScope: RequestScope;
+  declare numberOfTeamMembers: number;
+  declare teamMemberIds: number[];
+  declare status: TrainingRequestStatus;
+  declare supervisorApprovedAt: Date;
+  declare supervisorApprovedBy: number;
+  declare supervisorRejectionReason: string;
+  declare hrApprovedAt: Date;
+  declare hrApprovedBy: number;
+  declare hrRejectionReason: string;
+  declare finalApprovedAt: Date;
+  declare finalApprovedBy: number;
+  declare finalRejectionReason: string;
+  declare createdAt: Date;
+  declare updatedAt: Date;
 }
 
 TrainingRequest.init(
@@ -78,6 +78,7 @@ TrainingRequest.init(
     },
     supervisorId: {
       type: DataTypes.INTEGER,
+      allowNull: true,
       references: { model: Employee, key: 'id' },
     },
     trainingType: {
@@ -174,3 +175,9 @@ TrainingRequest.init(
     timestamps: true,
   },
 );
+
+TrainingRequest.belongsTo(Employee, { foreignKey: 'requesterId' });
+Employee.hasMany(TrainingRequest, { foreignKey: 'requesterId' });
+
+TrainingRequest.belongsTo(Employee, { foreignKey: { name: 'supervisorId', allowNull: true } });
+Employee.hasMany(TrainingRequest, { foreignKey: 'supervisorId' });

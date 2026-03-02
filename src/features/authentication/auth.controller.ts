@@ -5,6 +5,7 @@ import { db } from '../../db';
 import { ApiError } from '../../utils/api-error';
 import { ApiResponse } from '../../utils/api-response';
 import { logger } from '../../utils/logger';
+import { EmployeeRepository } from '../employee/employee.repository';
 import { User } from '../users/user.model';
 import { UserRepository } from '../users/user.repository';
 import { AuthRepository } from './auth.repository';
@@ -150,7 +151,20 @@ export class AuthController {
         throw ApiError.unauthenticated('User is inactive');
       }
 
-      const userData = { ...user, permissions: req.user?.permissions || [] };
+      const userEmployeeRecord = await EmployeeRepository.readWithNoCompanyMini({
+        rows: 1,
+        page: 1,
+        filters: { search: user.email },
+      });
+
+      const isHR = userEmployeeRecord.rows[0]?.department?.name?.toUpperCase() === 'GROUP - HUMAN RESOURCES';
+
+      const userData = {
+        ...user,
+        isHR,
+        employeeData: userEmployeeRecord.rows[0] ?? {},
+        permissions: req.user?.permissions || [],
+      };
       res.json(ApiResponse(ApiResponse({ data: userData, message: 'Fetched current user successfully' })));
     } catch (error) {
       logger.error(`Error fetching user: ${error}`);

@@ -219,7 +219,7 @@ async function seed() {
     }
 
     const [hrDepartment, operationsDepartment, itDepartment, mdsDepartment] = await Promise.all([
-      Department.findOne({ where: { name: 'Human Resources' } }),
+      Department.findOne({ where: { name: 'Group - Human Resources' } }),
       Department.findOne({ where: { name: 'Operations' } }),
       Department.findOne({ where: { name: 'Information Technology' } }),
       Department.findOne({ where: { name: "MD's Office - MFB" } }),

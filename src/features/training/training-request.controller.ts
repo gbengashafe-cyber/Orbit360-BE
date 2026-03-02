@@ -4,27 +4,21 @@ import { ApiResponse } from '../../utils/api-response';
 import { logger } from '../../utils/logger';
 
 export class TrainingRequestController {
-  static async submitRequest(req: Request, res: Response, next: NextFunction) {
-    try {
-      const userId = req.user?.id;
-      if (!userId) {
-        throw new Error('User ID is required');
-      }
+  static async submitRequest(req: Request, res: Response) {
+    const userId = req.user?.id;
 
-      const request = await TrainingRequestService.createRequest(req.body, userId);
-
-      logger.info(`[submitRequest] Training request submitted by user ${userId}`);
-
-      return res.status(201).json(
-        ApiResponse({
-          data: request,
-          message: 'Training request submitted successfully. It is now pending supervisor approval.',
-        }),
-      );
-    } catch (error) {
-      logger.error(`Error submitting training request: ${error}`);
-      next(error);
+    if (!userId) {
+      throw new Error('User ID is required');
     }
+
+    const request = await TrainingRequestService.createRequest(req.body, userId);
+
+    return res.status(201).json(
+      ApiResponse({
+        data: request,
+        message: 'Training request submitted successfully. It is now pending supervisor approval.',
+      }),
+    );
   }
 
   static async getRequests(req: Request, res: Response, next: NextFunction) {

@@ -48,7 +48,7 @@ const validateAuthToken = async (req: Request, res: Response, next: NextFunction
   const permissions = await JobRoleRepository.getJobRolePermissions(user.jobRoleId);
 
   req.user = { ...user, permissions: permissions };
-  const userEmployeeSearch = await EmployeeRepository.readWithNoCompany({
+  const userEmployeeSearch = await EmployeeRepository.readWithNoCompanyMini({
     rows: 1,
     page: 1,
     filters: { search: user.email },
