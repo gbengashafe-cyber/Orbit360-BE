@@ -35,7 +35,7 @@ export class Employee extends Model<InferAttributes<Employee>, InferCreationAttr
   declare jobRole: NonAttribute<JobRole>;
   declare hireDate: Date;
   declare status: (typeof employeeStatus)[number];
-  declare terminationDate: CreationOptional<Date>;
+  declare exitDate: CreationOptional<Date>;
   // Reporting Line
   declare supervisorId: CreationOptional<ForeignKey<Employee['id']>>;
   // Compensation and benefit

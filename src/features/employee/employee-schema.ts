@@ -4,7 +4,7 @@ import { Department } from '../department/department.model';
 import { JobRole } from '../job-role/job-role.model';
 import { Employee } from './employee.model';
 
-export const employeeStatus = ['ACTIVE', 'SUSPENDED', 'TERMINATED', 'ON_LEAVE', 'PENDING_APPROVAL', 'CANCELLED'] as const;
+export const employeeStatus = ['ACTIVE', 'SUSPENDED', 'EXITED', 'ON_LEAVE', 'PENDING_APPROVAL', 'CANCELLED'] as const;
 
 export const EmployeeFields: ModelAttributes<Model, any> = {
   companyId: { type: DataTypes.INTEGER, allowNull: false, references: { model: Company, key: 'id' } },
@@ -72,7 +72,7 @@ export const EmployeeFields: ModelAttributes<Model, any> = {
       this.setDataValue('status', value.toUpperCase() as (typeof employeeStatus)[number]);
     },
   },
-  terminationDate: {
+  exitDate: {
     type: DataTypes.DATEONLY,
   },
   supervisorId: {

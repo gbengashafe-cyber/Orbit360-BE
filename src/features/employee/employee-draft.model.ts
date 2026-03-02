@@ -36,7 +36,7 @@ export class EmployeeDraft extends Model<InferAttributes<EmployeeDraft>, InferCr
   declare jobRoleId: ForeignKey<JobRole['id']>;
   declare hireDate: Date;
   declare status: (typeof employeeStatus)[number];
-  declare terminationDate: CreationOptional<Date>;
+  declare exitDate: CreationOptional<Date>;
   // Reporting Line
   declare supervisorId: CreationOptional<ForeignKey<Employee['id']>>;
   // Compensation and benefit

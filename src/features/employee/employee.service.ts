@@ -94,11 +94,11 @@ export class EmployeeService {
       const previousStatus = employeeExistingData.status;
       employeeExistingData.update({ status: 'PENDING_APPROVAL' }, { silent: true });
 
-      const shouldUpdateTerminationDate =
-        employeeExistingData.status?.toUpperCase() !== 'TERMINATED' && payload?.status?.toUpperCase() === 'TERMINATED';
+      const shouldUpdateExitDate =
+        employeeExistingData.status?.toUpperCase() !== 'EXITED' && payload?.status?.toUpperCase() === 'EXITED';
 
-      if (shouldUpdateTerminationDate) {
-        payload = { ...payload, terminationDate: new Date() };
+      if (shouldUpdateExitDate) {
+        payload = { ...payload, exitDate: new Date() };
         // Revoke user access
         const employeeUserRecord = await UserRepository.readByEmail(employeeExistingData.email);
         await UserRepository.update(employeeUserRecord?.id, { status: 'INACTIVE' }, { transaction: t });

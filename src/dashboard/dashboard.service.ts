@@ -21,7 +21,7 @@ export class DashboardService {
     }));
 
     const headcount = metrics?.totalHeadcount || 0;
-    const terminations = metrics?.totalTerminations || 0;
+    const exits = metrics?.totalExited || 0;
 
     return {
       overview: {
@@ -29,7 +29,7 @@ export class DashboardService {
         pendingLeaveRequests: leaves?.pendingRequests || 0,
         pendingLoanRequests: pendingLoanRequests || 0,
         currentlyOnLeave: leaves?.currentlyOnLeave || 0,
-        attritionRate: headcount + terminations > 0 ? ((terminations / (headcount + terminations)) * 100).toFixed(2) + '%' : '0%',
+        attritionRate: headcount + exits > 0 ? ((exits / (headcount + exits)) * 100).toFixed(2) + '%' : '0%',
       },
       salaryDistribution: {
         average: metrics?.avgSalary?.toFixed(2),

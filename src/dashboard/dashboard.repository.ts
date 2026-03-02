@@ -5,7 +5,7 @@ import { Loan } from '../features/loans/loan.model';
 
 type AggregatedMetrics = {
   totalHeadcount: number;
-  totalTerminations: number;
+  totalExited: number;
   avgSalary: number;
   minSalary: number;
   maxSalary: number;
@@ -29,7 +29,7 @@ export class DashboardRepository {
     return Employee.findOne({
       attributes: [
         [literal(`COUNT(DISTINCT CASE WHEN status IN ('active', 'on_leave', 'suspended') THEN id END)`), 'totalHeadcount'],
-        [literal(`COUNT(CASE WHEN status = 'terminated' THEN 1 END)`), 'totalTerminations'],
+        [literal(`COUNT(CASE WHEN status = 'EXITED' THEN 1 END)`), 'totalExited'],
         [fn('AVG', col('annual_basic_salary')), 'avgSalary'],
         [fn('MIN', col('annual_basic_salary')), 'minSalary'],
         [fn('MAX', col('annual_basic_salary')), 'maxSalary'],
@@ -78,8 +78,8 @@ export class DashboardRepository {
 
   static readonly getAttritionTrend = async ({ startDate, endDate, departmentId }: DashboardStatsParams) => {
     const where: any = {
-      status: 'terminated',
-      terminationDate: {
+      status: 'exited',
+      exitDate: {
         [Op.ne]: null,
         [Op.between]: [startDate, endDate],
       },
@@ -89,18 +89,18 @@ export class DashboardRepository {
 
     return Employee.findAll({
       attributes: [
-        [fn('DATE_FORMAT', col('termination_date'), '%Y-%m'), 'month'],
+        [fn('DATE_FORMAT', col('exit_date'), '%Y-%m'), 'month'],
         [fn('COUNT', col('id')), 'count'],
       ],
       where,
-      group: [literal("DATE_FORMAT(termination_date, '%Y-%m')") as any as string],
+      group: [literal("DATE_FORMAT(exit_date, '%Y-%m')") as any as string],
       order: [[literal('month'), 'ASC']],
       raw: true,
     }) as unknown as Promise<{ month: string; count: number }[]>;
   };
 
   static readonly getGenderDistribution = async (departmentId?: number) => {
-    const where: any = { status: { [Op.ne]: 'terminated' } };
+    const where: any = { status: { [Op.ne]: 'EXITED' } };
     if (departmentId) where.departmentId = departmentId;
 
     return Employee.findAll({

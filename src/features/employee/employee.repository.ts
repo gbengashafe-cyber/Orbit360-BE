@@ -184,7 +184,7 @@ export class EmployeeRepository {
     orderBy = 'createdAt',
     orderDirection = 'DESC',
   }: ReadAllPropsWithNoCompany) => {
-    const where: any = { status: { [Op.notIn]: ['TERMINATED', 'PENDING_APPROVAL', 'CANCELLED'] } };
+    const where: any = { status: { [Op.notIn]: ['EXITED', 'PENDING_APPROVAL', 'CANCELLED'] } };
 
     if (filters.search) {
       where[Op.or] = [
