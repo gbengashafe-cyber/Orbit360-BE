@@ -1,6 +1,7 @@
 import { ApiError } from '../../utils/api-error';
 import { logger } from '../../utils/logger';
-import { EmployeeRepository } from '../employee/employee.repository';
+import { Employee } from '../employee/employee.model';
+import { DEFAULT_EMPLOYEE_INCLUDE_FIELDS, EmployeeRepository } from '../employee/employee.repository';
 import { TrainingRequest } from './training-request.model';
 import { TrainingRequestSchema } from './training-request.validation';
 
@@ -18,7 +19,18 @@ export class TrainingRequestService {
     return request;
   }
 
-  static async getRequests({ employeeId, rows, page }) {
+  static async getRequests({ rows, page }) {
+    const requests = await TrainingRequest.findAll({
+      order: [['createdAt', 'DESC']],
+      limit: rows,
+      offset: (page - 1) * rows,
+      include: [{ model: Employee, attributes: DEFAULT_EMPLOYEE_INCLUDE_FIELDS }],
+    });
+
+    return requests;
+  }
+
+  static async getRequestsByEmployee({ employeeId, rows, page }) {
     const requests = await TrainingRequest.findAll({
       where: { employeeId },
       order: [['createdAt', 'DESC']],
@@ -85,14 +97,14 @@ export class TrainingRequestService {
     return request;
   }
 
-  static async hrReview(requestId: string, hrOfficerId: number, approved: boolean, rejectionReason?: string) {
+  static async hrReview(requestId: string, hrOfficerId: number, approved: 'APPROVE' | 'REJECT', rejectionReason?: string) {
     const request = await this.getRequestById(requestId);
 
     if (!['PENDING_HR_REVIEW', 'PENDING_SUPERVISOR_APPROVAL'].includes(request.status)) {
       throw ApiError.badRequest(`Request cannot be reviewed in ${request.status} status`);
     }
 
-    if (approved) {
+    if (approved === 'APPROVE') {
       request.status = 'PENDING_HR_APPROVAL';
       request.hrReviewedAt = new Date();
       request.hrReviewedBy = hrOfficerId;
@@ -100,7 +112,7 @@ export class TrainingRequestService {
 
       this.sendApprovalNotifications(request, 'PENDING_HR_APPROVAL');
     } else {
-      if (!rejectionReason || rejectionReason.trim() === '') {
+      if (!rejectionReason || rejectionReason === '') {
         throw ApiError.badRequest('Rejection reason is required');
       }
 
@@ -123,7 +135,7 @@ export class TrainingRequestService {
     }
 
     if (approved) {
-      request.status = 'FINAL_APPROVED';
+      request.status = 'APPROVED';
       request.finalApprovedAt = new Date();
       request.finalApprovedBy = hrManagerId;
       await request.save();
@@ -134,7 +146,7 @@ export class TrainingRequestService {
         throw ApiError.badRequest('Rejection reason is required');
       }
 
-      request.status = 'FINAL_REJECTED';
+      request.status = 'REJECTED';
       request.finalNote = rejectionReason;
       request.finalApprovedBy = hrManagerId;
       await request.save();

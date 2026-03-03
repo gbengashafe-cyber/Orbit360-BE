@@ -182,11 +182,9 @@ const setupSystemConfiguration = async () => {
       { permission: 'LIST_LOANS', jobRoleId: roles.hrOperations.id },
       { permission: 'LIST_EMPLOYEES', jobRoleId: roles.hrOperations.id },
       { permission: 'LIST_PAYROLLS', jobRoleId: roles.hrOperations.id },
+      { permission: 'LIST_TRAINING_REQUESTS', jobRoleId: roles.hrOperations.id },
 
       // HR Manager permissions
-      { permission: 'LIST_LOANS', jobRoleId: roles.hrManager.id },
-      { permission: 'LIST_EMPLOYEES', jobRoleId: roles.hrManager.id },
-      { permission: 'LIST_PAYROLLS', jobRoleId: roles.hrManager.id },
       { permission: 'APPROVE_LOANS', jobRoleId: roles.hrManager.id },
       { permission: 'APPROVE_PAYROLLS', jobRoleId: roles.hrManager.id },
       { permission: 'APPROVE_EMPLOYEES', jobRoleId: roles.hrManager.id },
@@ -195,6 +193,10 @@ const setupSystemConfiguration = async () => {
       { permission: 'APPROVE_RECRUITMENT', jobRoleId: roles.hrManager.id },
       { permission: 'APPROVE_JOB_POSTINGS', jobRoleId: roles.hrManager.id },
       { permission: 'APPROVE_TRAINING_REQUESTS', jobRoleId: roles.hrManager.id },
+      { permission: 'LIST_LOANS', jobRoleId: roles.hrManager.id },
+      { permission: 'LIST_EMPLOYEES', jobRoleId: roles.hrManager.id },
+      { permission: 'LIST_PAYROLLS', jobRoleId: roles.hrManager.id },
+      { permission: 'LIST_TRAINING_REQUESTS', jobRoleId: roles.hrManager.id },
       { permission: 'MANAGE_DOCUMENTS', jobRoleId: roles.hrManager.id },
       { permission: 'MANAGE_RECRUITMENT', jobRoleId: roles.hrManager.id },
 

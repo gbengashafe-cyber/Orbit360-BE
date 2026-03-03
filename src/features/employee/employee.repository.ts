@@ -15,6 +15,8 @@ export type ReadAllProps = {
   orderDirection?: 'ASC' | 'DESC';
 };
 
+export const DEFAULT_EMPLOYEE_INCLUDE_FIELDS = ['id', 'firstName', 'lastName', 'staffId', 'email'];
+
 export type ReadAllPropsWithNoCompany = Omit<ReadAllProps, 'companyId'>;
 
 export class EmployeeRepository {

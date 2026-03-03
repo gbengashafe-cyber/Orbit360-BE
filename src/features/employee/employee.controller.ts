@@ -3,6 +3,7 @@ import { ApiError } from '../../utils/api-error';
 import { ApiResponse } from '../../utils/api-response';
 import { logger } from '../../utils/logger';
 import { PayrollRepository } from '../payroll/payroll.repository';
+import { TrainingRequestService } from '../training/training-request.service';
 import { EmployeeRepository } from './employee.repository';
 import { EmployeeService } from './employee.service';
 
@@ -107,6 +108,20 @@ export class EmployeeController {
 
     res.status(201).json(ApiResponse({ message: 'Loan request initiated successfully', data: {} }));
   };
+
+  static async getTrainingRequests(req: Request, res: Response) {
+    const employeeId = req.user?.employeeRecord?.id;
+    const { page, rows } = req.pagination;
+
+    const requests = await TrainingRequestService.getRequestsByEmployee({ employeeId, page, rows });
+
+    return res.json(
+      ApiResponse({
+        data: requests,
+        message: 'Training requests fetched successfully',
+      }),
+    );
+  }
 
   static async getLoanRecords(req: Request, res: Response) {
     const employeeId = req.user?.employeeRecord?.id;

@@ -9,8 +9,8 @@ export const TrainingRequestStatus = [
   'PENDING_HR_REVIEW',
   'HR_REJECTED',
   'PENDING_HR_APPROVAL',
-  'FINAL_APPROVED',
-  'FINAL_REJECTED',
+  'APPROVED',
+  'REJECTED',
 ];
 
 export const DeliveryMethod = ['ONLINE', 'IN_PERSON', 'HYBRID'];

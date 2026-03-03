@@ -12,6 +12,7 @@ router.use([validateAuthToken]);
 router.get('/me', EmployeeController.getUserEmployeeRecord);
 router.get('/:id/payrolls', EmployeeController.getEmployeePayrollRecords);
 router.get('/loans', EmployeeController.getLoanRecords);
+router.get('/training-requests', EmployeeController.getTrainingRequests);
 router.post('/loans', validateEmployeeLoanRequest, EmployeeController.createLoanRequest);
 router.put('/loans/:loanId', validateEmployeeLoanRequest, EmployeeController.updateLoanRequest);
 router.patch('/loans/:loanId/cancellation', EmployeeController.cancelLoanRequest);

@@ -1,8 +1,23 @@
 import { Request, Response } from 'express';
+import z from 'zod';
 import { ApiError } from '../../utils/api-error';
 import { ApiResponse } from '../../utils/api-response';
-import { logger } from '../../utils/logger';
 import { TrainingRequestService } from './training-request.service';
+
+const trainingRequestReviewSchema = z
+  .object({
+    reviewerDecision: z.preprocess(
+      (val) => (typeof val === 'string' ? val.toUpperCase() : val),
+      z.enum(['APPROVE', 'REJECT'], 'Invalid decision was provided'),
+    ),
+    hrReviewerNote: z.string().max(300),
+  })
+  .refine(
+    ({ reviewerDecision, hrReviewerNote }) => {
+      return !(reviewerDecision.toUpperCase() === 'REJECT' && hrReviewerNote.length < 2);
+    },
+    { message: 'Note is required if recommendation is `Reject`', path: ['hrReviewerNote'] },
+  );
 
 export class TrainingRequestController {
   static async submitRequest(req: Request, res: Response) {
@@ -23,10 +38,9 @@ export class TrainingRequestController {
   }
 
   static async getRequests(req: Request, res: Response) {
-    const employeeId = req.user?.employeeRecord?.id;
     const { page, rows } = req.pagination;
 
-    const requests = await TrainingRequestService.getRequests({ employeeId, page, rows });
+    const requests = await TrainingRequestService.getRequests({ page, rows });
 
     return res.json(
       ApiResponse({
@@ -81,14 +95,14 @@ export class TrainingRequestController {
 
   static async hrReview(req: Request, res: Response) {
     const { id } = req.params;
-    const { approved, rejectionReason } = req.body;
+    const { hrReviewerNote, reviewerDecision } = trainingRequestReviewSchema.parse(req.body);
     const hrOfficerId = req.user?.id;
 
     if (!hrOfficerId) {
       throw new Error('HR Officer ID is required');
     }
 
-    const request = await TrainingRequestService.hrReview(id, hrOfficerId, approved, rejectionReason);
+    const request = await TrainingRequestService.hrReview(id, hrOfficerId, reviewerDecision, hrReviewerNote);
 
     return res.json(
       ApiResponse({
@@ -100,20 +114,18 @@ export class TrainingRequestController {
 
   static async finalApprove(req: Request, res: Response) {
     const { id } = req.params;
-    const { approved, rejectionReason } = req.body;
+    const { approved, finalNote } = req.body;
     const hrManagerId = req.user?.id;
 
     if (!hrManagerId) {
       throw new Error('HR Manager ID is required');
     }
 
-    const request = await TrainingRequestService.finalApproval(id, hrManagerId, approved, rejectionReason);
+    const request = await TrainingRequestService.finalApproval(id, hrManagerId, approved, finalNote);
 
     const message = approved
       ? 'Training request approved. Employee will be notified.'
-      : `Training request rejected. Reason: ${rejectionReason}`;
-
-    logger.info(`[finalApprove] Request ${id} ${approved ? 'approved' : 'rejected'} by HR Manager ${hrManagerId}`);
+      : `Training request rejected. Reason: ${finalNote}`;
 
     return res.json(
       ApiResponse({

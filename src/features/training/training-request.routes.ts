@@ -22,7 +22,7 @@ router.post('/', TrainingRequestController.submitRequest);
  * - Supervisor: requests they need to approve
  * - HR: all requests with status filter option
  */
-router.get('/', TrainingRequestController.getRequests);
+router.get('/', hasRequiredPermission('LIST_TRAINING_REQUESTS'), TrainingRequestController.getRequests);
 
 /**
  * GET /api/training-requests/:id
