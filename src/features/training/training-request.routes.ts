@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { validateAuthToken } from '../authentication/auth.middleware';
 import { TrainingRequestController } from './training-request.controller';
+import { hasRequiredPermission } from '../../utils/check-permission';
 
 const router = Router();
 
@@ -37,18 +38,18 @@ router.get('/:id', TrainingRequestController.getRequestById);
 router.put('/:id/supervisor-approval', TrainingRequestController.supervisorApprove);
 
 /**
- * PUT /api/training-requests/:id/hr-approval
+ * PUT /api/training-requests/:id/hr-review
  * HR Officer approves or rejects training request
  * Body: { approved: boolean, rejectionReason?: string }
  */
-router.put('/:id/hr-approval', TrainingRequestController.hrApprove);
+router.put('/:id/hr-review', hasRequiredPermission('MANAGE_TRAINING_REQUESTS'), TrainingRequestController.hrReview);
 
 /**
  * PUT /api/training-requests/:id/final-approval
  * HR Manager gives final approval or rejection
  * Body: { approved: boolean, rejectionReason?: string }
  */
-router.put('/:id/final-approval', TrainingRequestController.finalApprove);
+router.put('/:id/final-approval', hasRequiredPermission('APPROVE_TRAINING_REQUESTS'), TrainingRequestController.finalApprove);
 
 /**
  * DELETE /api/training-requests/:id

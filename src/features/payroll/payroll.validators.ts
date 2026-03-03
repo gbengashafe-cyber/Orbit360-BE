@@ -23,11 +23,8 @@ const updatePayrollSchema = z
   })
   .partial();
 
-const payrollIdParamSchema = z.object({
-  id: z
-    .string()
-    .refine((val) => !Number.isNaN(Number(val)), { message: 'Payroll ID must be a number' })
-    .transform(Number),
+export const payrollIdParamSchema = z.object({
+  id: z.coerce.number('Payroll ID must be a number'),
 });
 
 const validate =

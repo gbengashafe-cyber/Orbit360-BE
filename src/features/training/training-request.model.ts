@@ -1,67 +1,63 @@
-import { CreationOptional, DataTypes, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
+import { CreationOptional, DataTypes, ForeignKey, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import { db } from '../../db';
 import { Employee } from '../employee/employee.model';
+import { User } from '../users/user.model';
 
-export enum TrainingRequestStatus {
-  PENDING = 'PENDING',
-  SUPERVISOR_APPROVED = 'SUPERVISOR_APPROVED',
-  SUPERVISOR_REJECTED = 'SUPERVISOR_REJECTED',
-  HR_REVIEWING = 'HR_REVIEWING',
-  HR_APPROVED = 'HR_APPROVED',
-  HR_REJECTED = 'HR_REJECTED',
-  FINAL_APPROVED = 'FINAL_APPROVED',
-  FINAL_REJECTED = 'FINAL_REJECTED',
-}
+export const TrainingRequestStatus = [
+  'PENDING_SUPERVISOR_APPROVAL',
+  'SUPERVISOR_REJECTED',
+  'PENDING_HR_REVIEW',
+  'HR_REJECTED',
+  'PENDING_HR_APPROVAL',
+  'FINAL_APPROVED',
+  'FINAL_REJECTED',
+];
 
-export enum DeliveryMethod {
-  ONLINE = 'ONLINE',
-  IN_PERSON = 'IN_PERSON',
-  HYBRID = 'HYBRID',
-  SELF_PACED = 'SELF_PACED',
-}
+export const DeliveryMethod = ['ONLINE', 'IN_PERSON', 'HYBRID'];
 
-export enum TrainingPriority {
-  LOW = 'LOW',
-  MEDIUM = 'MEDIUM',
-  HIGH = 'HIGH',
-  CRITICAL = 'CRITICAL',
-}
+export const TrainingPriority = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] as const;
 
-export enum RequestScope {
-  SELF = 'SELF',
-  TEAM = 'TEAM',
-}
+export const RequestScope = ['SELF', 'TEAM'] as const;
+
+export const TRAINING_TYPES = [
+  'TECHNICAL SKILLS',
+  'SOFT SKILLS',
+  'LEADERSHIP',
+  'COMPLIANCE',
+  'CERTIFICATION',
+  'PROFESSIONAL DEVELOPMENT',
+  'OTHER',
+] as const;
 
 export class TrainingRequest extends Model<InferAttributes<TrainingRequest>, InferCreationAttributes<TrainingRequest>> {
   declare id: CreationOptional<string>;
-  declare requesterId: Employee['id'];
-  declare supervisorId: CreationOptional<Employee['id']>;
-  declare trainingType: string;
+  declare employeeId: ForeignKey<Employee['id']>;
+  declare trainingType: (typeof TRAINING_TYPES)[number];
   declare trainingTitle: string;
   declare trainingDescription: string;
-  declare priority: TrainingPriority;
+  declare priority: (typeof TrainingPriority)[number];
   declare businessJustification: string;
   declare skillsToGain: string;
-  declare deliveryMethod: DeliveryMethod;
+  declare deliveryMethod: (typeof DeliveryMethod)[number];
   declare preferredTimeframe: string;
   declare estimatedDuration: string;
   declare estimatedCost: number;
   declare trainingProvider: string;
-  declare requestScope: RequestScope;
-  declare numberOfTeamMembers: number;
-  declare teamMemberIds: number[];
-  declare status: TrainingRequestStatus;
-  declare supervisorApprovedAt: Date;
-  declare supervisorApprovedBy: number;
-  declare supervisorRejectionReason: string;
-  declare hrApprovedAt: Date;
-  declare hrApprovedBy: number;
-  declare hrRejectionReason: string;
-  declare finalApprovedAt: Date;
-  declare finalApprovedBy: number;
-  declare finalRejectionReason: string;
-  declare createdAt: Date;
-  declare updatedAt: Date;
+  declare requestScope: (typeof RequestScope)[number];
+  declare numberOfTeamMembers: CreationOptional<number>;
+  declare teamMemberIds: CreationOptional<number[]>;
+  declare status: CreationOptional<(typeof TrainingRequestStatus)[number]>;
+  declare supervisorApprovedAt: CreationOptional<Date>;
+  declare supervisorApprovedBy: CreationOptional<ForeignKey<User['id']>>;
+  declare supervisorNote: CreationOptional<string>;
+  declare hrReviewedAt: CreationOptional<Date>;
+  declare hrReviewedBy: CreationOptional<ForeignKey<User['id']>>;
+  declare hrReviewerNote: CreationOptional<string>;
+  declare finalApprovedAt: CreationOptional<Date>;
+  declare finalApprovedBy: CreationOptional<ForeignKey<User['id']>>;
+  declare finalNote: CreationOptional<string>;
+  declare createdAt: CreationOptional<Date>;
+  declare updatedAt: CreationOptional<Date>;
 }
 
 TrainingRequest.init(
@@ -71,14 +67,9 @@ TrainingRequest.init(
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
-    requesterId: {
+    employeeId: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      references: { model: Employee, key: 'id' },
-    },
-    supervisorId: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
       references: { model: Employee, key: 'id' },
     },
     trainingType: {
@@ -94,8 +85,7 @@ TrainingRequest.init(
       allowNull: false,
     },
     priority: {
-      type: DataTypes.ENUM(...Object.values(TrainingPriority)),
-      defaultValue: TrainingPriority.MEDIUM,
+      type: DataTypes.ENUM(...TrainingPriority),
     },
     businessJustification: {
       type: DataTypes.TEXT,
@@ -126,19 +116,20 @@ TrainingRequest.init(
       allowNull: false,
     },
     requestScope: {
-      type: DataTypes.ENUM(...Object.values(RequestScope)),
-      defaultValue: RequestScope.SELF,
+      type: DataTypes.ENUM(...RequestScope),
+      defaultValue: 'SELF',
     },
     numberOfTeamMembers: {
       type: DataTypes.INTEGER,
+      allowNull: true,
     },
     teamMemberIds: {
       type: DataTypes.JSON,
       allowNull: true,
     },
     status: {
-      type: DataTypes.ENUM(...Object.values(TrainingRequestStatus)),
-      defaultValue: TrainingRequestStatus.PENDING,
+      type: DataTypes.ENUM(...TrainingRequestStatus),
+      defaultValue: 'PENDING_SUPERVISOR_APPROVAL',
     },
     supervisorApprovedAt: {
       type: DataTypes.DATE,
@@ -146,16 +137,16 @@ TrainingRequest.init(
     supervisorApprovedBy: {
       type: DataTypes.INTEGER,
     },
-    supervisorRejectionReason: {
+    supervisorNote: {
       type: DataTypes.TEXT,
     },
-    hrApprovedAt: {
+    hrReviewedAt: {
       type: DataTypes.DATE,
     },
-    hrApprovedBy: {
+    hrReviewedBy: {
       type: DataTypes.INTEGER,
     },
-    hrRejectionReason: {
+    hrReviewerNote: {
       type: DataTypes.TEXT,
     },
     finalApprovedAt: {
@@ -164,11 +155,11 @@ TrainingRequest.init(
     finalApprovedBy: {
       type: DataTypes.INTEGER,
     },
-    finalRejectionReason: {
+    finalNote: {
       type: DataTypes.TEXT,
     },
-    createdAt: DataTypes.DATE,
-    updatedAt: DataTypes.DATE,
+    createdAt: { type: DataTypes.DATE },
+    updatedAt: { type: DataTypes.DATE },
   },
   {
     sequelize: db,
@@ -176,8 +167,14 @@ TrainingRequest.init(
   },
 );
 
-TrainingRequest.belongsTo(Employee, { foreignKey: 'requesterId' });
-Employee.hasMany(TrainingRequest, { foreignKey: 'requesterId' });
+TrainingRequest.belongsTo(Employee, { foreignKey: 'employeeId' });
+Employee.hasMany(TrainingRequest, { foreignKey: 'employeeId' });
 
-TrainingRequest.belongsTo(Employee, { foreignKey: { name: 'supervisorId', allowNull: true } });
-Employee.hasMany(TrainingRequest, { foreignKey: 'supervisorId' });
+TrainingRequest.belongsTo(User, { foreignKey: 'supervisorApprovedBy', as: 'supervisorApprover' });
+User.hasMany(TrainingRequest, { foreignKey: 'supervisorApprovedBy' });
+
+TrainingRequest.belongsTo(User, { foreignKey: 'hrReviewedBy', as: 'hrReviewer' });
+User.hasMany(TrainingRequest, { foreignKey: 'hrReviewedBy' });
+
+TrainingRequest.belongsTo(User, { foreignKey: 'finalApprovedBy', as: 'hrApprover' });
+User.hasMany(TrainingRequest, { foreignKey: 'finalApprovedBy' });

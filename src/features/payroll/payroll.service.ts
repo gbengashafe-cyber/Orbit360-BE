@@ -2,6 +2,7 @@ import config from 'config';
 import { CreationAttributes, Transaction } from 'sequelize';
 import { db } from '../../db';
 import { ApiError } from '../../utils/api-error';
+import { Employee } from '../employee/employee.model';
 import { EmployeeRepository } from '../employee/employee.repository';
 import { LoanPayment } from '../loans/loan-payment.model';
 import { LoanRepository } from '../loans/loan.repository';
@@ -9,7 +10,6 @@ import { PayrollBatch } from './payroll-batch.model';
 import { Payroll } from './payroll.model';
 import { PayrollRepository } from './payroll.repository';
 import { calculatePayroll, PayPeriod } from './payroll.utils';
-import { Employee } from '../employee/employee.model';
 
 type GenerateBatchProp = {
   payPeriod: PayPeriod;
@@ -17,7 +17,7 @@ type GenerateBatchProp = {
   overwrite: boolean;
   companyId: number;
 };
-type ReviewBatchProp = { batchId: string; checkerId: number; approverNote: string; companyId: number };
+type ReviewBatchProp = { id: number; checkerId: number; approverNote: string };
 
 export class PayrollService {
   private static readonly processChunk = async ({
@@ -164,8 +164,8 @@ export class PayrollService {
     if (batch.status !== 'PENDING_APPROVAL') throw ApiError.badRequest('Batch is not pending approval.');
   };
 
-  static readonly approveBatch = async ({ batchId, checkerId, approverNote, companyId }: ReviewBatchProp) => {
-    const batch = await PayrollBatch.findOne({ where: { id: batchId, companyId } });
+  static readonly approveBatch = async ({ id, checkerId, approverNote }: ReviewBatchProp) => {
+    const batch = await PayrollBatch.findByPk(id);
 
     if (!batch) throw ApiError.notFound('Payroll batch not found.');
 
@@ -185,8 +185,8 @@ export class PayrollService {
     });
   };
 
-  static readonly rejectBatch = async ({ batchId, checkerId, approverNote, companyId }: ReviewBatchProp) => {
-    const batch = await PayrollBatch.findOne({ where: { id: batchId, companyId } });
+  static readonly rejectBatch = async ({ id, checkerId, approverNote }: ReviewBatchProp) => {
+    const batch = await PayrollBatch.findByPk(id);
 
     if (!batch) throw ApiError.notFound('Payroll batch not found.');
 

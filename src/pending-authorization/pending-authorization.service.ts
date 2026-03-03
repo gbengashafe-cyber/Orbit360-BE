@@ -64,6 +64,7 @@ export class AuthorizationService {
 
     if (supervisorSearch.count) {
       authorizedModules.push('LEAVES');
+      authorizedModules.push('TRAINING REQUESTS');
     }
 
     if (authorizedModules.length === 0) {
@@ -121,7 +122,7 @@ export class AuthorizationService {
     });
 
     if (!result) {
-      throw ApiError.badRequest(`Invalid module type: ${moduleName}`);
+      throw ApiError.badRequest(`No authorization setup found for module type: ${moduleName}`);
     }
 
     return {

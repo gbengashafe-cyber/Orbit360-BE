@@ -1,240 +1,162 @@
 import { ApiError } from '../../utils/api-error';
 import { logger } from '../../utils/logger';
-import { RequestScope, TrainingRequest, TrainingRequestStatus } from './training-request.model';
+import { EmployeeRepository } from '../employee/employee.repository';
+import { TrainingRequest } from './training-request.model';
+import { TrainingRequestSchema } from './training-request.validation';
 
 export class TrainingRequestService {
-  static async createRequest(data: any, requesterId: number) {
-    try {
-      // Validate required fields
-      const requiredFields = [
-        'trainingType',
-        'trainingTitle',
-        'trainingDescription',
-        'priority',
-        'businessJustification',
-        'skillsToGain',
-        'deliveryMethod',
-        'preferredTimeframe',
-        'estimatedDuration',
-        'estimatedCost',
-        'trainingProvider',
-      ];
+  static async createRequest(data: any, employeeId: number) {
+    const validatedPayload = TrainingRequestSchema.parse(data);
 
-      for (const field of requiredFields) {
-        if (!data[field]) {
-          throw ApiError.badRequest(`${field} is required`);
-        }
-      }
+    const request = await TrainingRequest.create({
+      ...validatedPayload,
+      employeeId,
+    });
 
-      // Validate cost is a positive number
-      if (isNaN(data.estimatedCost) || data.estimatedCost < 0) {
-        throw ApiError.badRequest('Estimated cost must be a valid positive number');
-      }
+    this.sendSubmissionNotifications(request, employeeId);
 
-      // Validate team scope
-      if (data.requestScope === RequestScope.TEAM) {
-        if (!data.numberOfTeamMembers || data.numberOfTeamMembers <= 0) {
-          throw ApiError.badRequest('Number of team members is required for team scope');
-        }
-        if (!Array.isArray(data.teamMemberIds) || data.teamMemberIds.length === 0) {
-          throw ApiError.badRequest('Team member IDs are required for team scope');
-        }
-      }
-
-      const request = await TrainingRequest.create({
-        ...data,
-        requesterId,
-      });
-
-      await this.sendSubmissionNotifications(request, requesterId);
-
-      return request;
-    } catch (error) {
-      logger.error(`Error creating training request: ${error}`);
-      throw error;
-    }
+    return request;
   }
 
-  static async getRequests(userId: number, userRole: string, filters?: any) {
-    try {
-      const query: any = {};
+  static async getRequests({ employeeId, rows, page }) {
+    const requests = await TrainingRequest.findAll({
+      where: { employeeId },
+      order: [['createdAt', 'DESC']],
+      limit: rows,
+      offset: (page - 1) * rows,
+    });
 
-      // Filter based on user role
-      if (userRole === 'employee') {
-        query.requesterId = userId;
-      } else if (userRole === 'supervisor' || userRole === 'admin' || userRole === 'admin_officer') {
-        // Supervisors and admins see all requests
-        // No additional filter needed
-      } else if (userRole === 'hr_officer' || userRole === 'hr_manager') {
-        // HR can see all or filter by status
-        if (filters?.status) {
-          query.status = filters.status;
-        }
-      }
-
-      const requests = await TrainingRequest.findAll({
-        where: query,
-        order: [['createdAt', 'DESC']],
-        limit: filters?.limit || 50,
-        offset: filters?.offset || 0,
-      });
-
-      return requests;
-    } catch (error) {
-      logger.error(`Error fetching training requests: ${error}`);
-      throw error;
-    }
+    return requests;
   }
 
   static async getRequestById(requestId: string) {
-    try {
-      const request = await TrainingRequest.findByPk(requestId);
-      if (!request) {
-        throw ApiError.notFound('Training request not found');
-      }
-      return request;
-    } catch (error) {
-      logger.error(`Error fetching training request: ${error}`);
-      throw error;
+    const request = await TrainingRequest.findByPk(requestId);
+    if (!request) {
+      throw ApiError.notFound('Training request not found');
     }
+    return request;
   }
 
-  static async supervisorApproval(requestId: string, supervisorId: number, approved: boolean, rejectionReason?: string) {
-    try {
-      const request = await this.getRequestById(requestId);
+  static async supervisorApproval({
+    requestId,
+    supervisorId,
+    supervisorEmployeeId,
+    approved,
+    supervisorNote,
+  }: {
+    requestId: string;
+    supervisorId: number;
+    supervisorEmployeeId: number;
+    approved: boolean;
+    supervisorNote?: string;
+  }) {
+    const request = await this.getRequestById(requestId);
 
-      if (request.status !== TrainingRequestStatus.PENDING) {
-        throw ApiError.badRequest(`Request cannot be approved in ${request.status} status`);
-      }
-
-      if (approved) {
-        request.status = TrainingRequestStatus.SUPERVISOR_APPROVED;
-        request.supervisorApprovedAt = new Date();
-        request.supervisorApprovedBy = supervisorId;
-        await request.save();
-
-        logger.info(`[supervisorApproval] Request ${requestId} approved by supervisor ${supervisorId}`);
-        await this.sendApprovalNotifications(request, 'supervisor_approved');
-      } else {
-        if (!rejectionReason || rejectionReason.trim() === '') {
-          throw ApiError.badRequest('Rejection reason is required');
-        }
-
-        request.status = TrainingRequestStatus.SUPERVISOR_REJECTED;
-        request.supervisorRejectionReason = rejectionReason;
-        request.supervisorApprovedBy = supervisorId;
-        await request.save();
-
-        logger.info(
-          `[supervisorApproval] Request ${requestId} rejected by supervisor ${supervisorId}. Reason: ${rejectionReason}`,
-        );
-        await this.sendRejectionNotifications(request, 'supervisor_rejected', rejectionReason);
-      }
-
-      return request;
-    } catch (error) {
-      logger.error(`Error in supervisor approval: ${error}`);
-      throw error;
+    if (request.status !== 'PENDING_SUPERVISOR_APPROVAL') {
+      throw ApiError.badRequest(`Request cannot be approved in ${request.status} status`);
     }
+
+    const trainingInitiatorEmployeeRecord = await EmployeeRepository.readById(request.employeeId);
+
+    if (trainingInitiatorEmployeeRecord?.supervisorId !== supervisorEmployeeId) {
+      throw ApiError.forbidden('This request is pending supervisor approval OR HR review');
+    }
+
+    if (approved) {
+      request.status = 'PENDING_HR_REVIEW';
+      request.supervisorApprovedAt = new Date();
+      request.supervisorApprovedBy = supervisorId;
+      await request.save();
+
+      this.sendApprovalNotifications(request, 'supervisor_approved');
+    } else {
+      if (!supervisorNote || supervisorNote.trim() === '') {
+        throw ApiError.badRequest('Rejection reason is required');
+      }
+
+      request.status = 'SUPERVISOR_REJECTED';
+      request.supervisorNote = supervisorNote;
+      request.supervisorApprovedBy = supervisorId;
+      await request.save();
+
+      this.sendRejectionNotifications(request, 'supervisor_rejected', supervisorNote);
+    }
+
+    return request;
   }
 
-  static async hrApproval(requestId: string, hrOfficerId: number, approved: boolean, rejectionReason?: string) {
-    try {
-      const request = await this.getRequestById(requestId);
+  static async hrReview(requestId: string, hrOfficerId: number, approved: boolean, rejectionReason?: string) {
+    const request = await this.getRequestById(requestId);
 
-      // HR can approve from PENDING or SUPERVISOR_REJECTED
-      const allowedStatuses = [TrainingRequestStatus.PENDING, TrainingRequestStatus.SUPERVISOR_REJECTED];
-      if (!allowedStatuses.includes(request.status as TrainingRequestStatus)) {
-        throw ApiError.badRequest(`Request cannot be reviewed in ${request.status} status`);
-      }
-
-      if (approved) {
-        request.status = TrainingRequestStatus.HR_APPROVED;
-        request.hrApprovedAt = new Date();
-        request.hrApprovedBy = hrOfficerId;
-        await request.save();
-
-        logger.info(`[hrApproval] Request ${requestId} approved by HR Officer ${hrOfficerId}`);
-        await this.sendApprovalNotifications(request, 'hr_approved');
-      } else {
-        if (!rejectionReason || rejectionReason.trim() === '') {
-          throw ApiError.badRequest('Rejection reason is required');
-        }
-
-        request.status = TrainingRequestStatus.HR_REJECTED;
-        request.hrRejectionReason = rejectionReason;
-        request.hrApprovedBy = hrOfficerId;
-        await request.save();
-
-        logger.info(`[hrApproval] Request ${requestId} rejected by HR Officer ${hrOfficerId}. Reason: ${rejectionReason}`);
-        await this.sendRejectionNotifications(request, 'hr_rejected', rejectionReason);
-      }
-
-      return request;
-    } catch (error) {
-      logger.error(`Error in HR approval: ${error}`);
-      throw error;
+    if (!['PENDING_HR_REVIEW', 'PENDING_SUPERVISOR_APPROVAL'].includes(request.status)) {
+      throw ApiError.badRequest(`Request cannot be reviewed in ${request.status} status`);
     }
+
+    if (approved) {
+      request.status = 'PENDING_HR_APPROVAL';
+      request.hrReviewedAt = new Date();
+      request.hrReviewedBy = hrOfficerId;
+      await request.save();
+
+      this.sendApprovalNotifications(request, 'PENDING_HR_APPROVAL');
+    } else {
+      if (!rejectionReason || rejectionReason.trim() === '') {
+        throw ApiError.badRequest('Rejection reason is required');
+      }
+
+      request.status = 'HR_REJECTED';
+      request.hrReviewerNote = rejectionReason;
+      request.hrReviewedBy = hrOfficerId;
+      await request.save();
+
+      this.sendRejectionNotifications(request, 'hr_rejected', rejectionReason);
+    }
+
+    return request;
   }
 
   static async finalApproval(requestId: string, hrManagerId: number, approved: boolean, rejectionReason?: string) {
-    try {
-      const request = await this.getRequestById(requestId);
+    const request = await this.getRequestById(requestId);
 
-      if (request.status !== TrainingRequestStatus.HR_APPROVED) {
-        throw ApiError.badRequest(`Request cannot be finalized from ${request.status} status`);
-      }
-
-      if (approved) {
-        request.status = TrainingRequestStatus.FINAL_APPROVED;
-        request.finalApprovedAt = new Date();
-        request.finalApprovedBy = hrManagerId;
-        await request.save();
-
-        logger.info(`[finalApproval] Request ${requestId} final approved by HR Manager ${hrManagerId}`);
-        await this.sendFinalApprovalNotification(request);
-      } else {
-        if (!rejectionReason || rejectionReason.trim() === '') {
-          throw ApiError.badRequest('Rejection reason is required');
-        }
-
-        request.status = TrainingRequestStatus.FINAL_REJECTED;
-        request.finalRejectionReason = rejectionReason;
-        request.finalApprovedBy = hrManagerId;
-        await request.save();
-
-        logger.info(`[finalApproval] Request ${requestId} rejected by HR Manager ${hrManagerId}. Reason: ${rejectionReason}`);
-        await this.sendFinalRejectionNotification(request, rejectionReason);
-      }
-
-      return request;
-    } catch (error) {
-      logger.error(`Error in final approval: ${error}`);
-      throw error;
+    if (request.status !== 'PENDING_HR_APPROVAL') {
+      throw ApiError.badRequest(`Request cannot be finalized from ${request.status} status`);
     }
+
+    if (approved) {
+      request.status = 'FINAL_APPROVED';
+      request.finalApprovedAt = new Date();
+      request.finalApprovedBy = hrManagerId;
+      await request.save();
+
+      await this.sendFinalApprovalNotification(request);
+    } else {
+      if (!rejectionReason || rejectionReason.trim() === '') {
+        throw ApiError.badRequest('Rejection reason is required');
+      }
+
+      request.status = 'FINAL_REJECTED';
+      request.finalNote = rejectionReason;
+      request.finalApprovedBy = hrManagerId;
+      await request.save();
+
+      this.sendFinalRejectionNotification(request, rejectionReason);
+    }
+
+    return request;
   }
 
-  static async deleteRequest(requestId: string, userId: number) {
-    try {
-      const request = await this.getRequestById(requestId);
+  static async deleteRequest({ employeeId, requestId }: { employeeId: number; requestId: string }) {
+    const request = await this.getRequestById(requestId);
 
-      if (request.requesterId !== userId) {
-        throw ApiError.forbidden('You can only delete your own requests');
-      }
-
-      if (request.status !== TrainingRequestStatus.PENDING) {
-        throw ApiError.badRequest('Can only delete pending requests');
-      }
-
-      await request.destroy();
-
-      logger.info(`[deleteRequest] Training request ${requestId} deleted by user ${userId}`);
-
-      return { message: 'Request deleted successfully' };
-    } catch (error) {
-      logger.error(`Error deleting training request: ${error}`);
-      throw error;
+    if (request.employeeId !== employeeId) {
+      throw ApiError.forbidden('You can only delete your own requests');
     }
+
+    if (request.status !== 'PENDING') {
+      throw ApiError.badRequest('Can only delete pending requests');
+    }
+
+    return request.destroy();
   }
 
   // Notification helpers

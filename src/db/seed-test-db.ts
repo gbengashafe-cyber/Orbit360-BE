@@ -178,6 +178,7 @@ const setupSystemConfiguration = async () => {
       { permission: 'MANAGE_RECRUITMENT', jobRoleId: roles.hrOperations.id },
       { permission: 'MANAGE_JOB_POSTINGS', jobRoleId: roles.hrOperations.id },
       { permission: 'MANAGE_EXITS', jobRoleId: roles.hrOperations.id },
+      { permission: 'MANAGE_TRAINING_REQUESTS', jobRoleId: roles.hrOperations.id },
       { permission: 'LIST_LOANS', jobRoleId: roles.hrOperations.id },
       { permission: 'LIST_EMPLOYEES', jobRoleId: roles.hrOperations.id },
       { permission: 'LIST_PAYROLLS', jobRoleId: roles.hrOperations.id },
@@ -193,6 +194,7 @@ const setupSystemConfiguration = async () => {
       { permission: 'APPROVE_EXITS', jobRoleId: roles.hrManager.id },
       { permission: 'APPROVE_RECRUITMENT', jobRoleId: roles.hrManager.id },
       { permission: 'APPROVE_JOB_POSTINGS', jobRoleId: roles.hrManager.id },
+      { permission: 'APPROVE_TRAINING_REQUESTS', jobRoleId: roles.hrManager.id },
       { permission: 'MANAGE_DOCUMENTS', jobRoleId: roles.hrManager.id },
       { permission: 'MANAGE_RECRUITMENT', jobRoleId: roles.hrManager.id },
 

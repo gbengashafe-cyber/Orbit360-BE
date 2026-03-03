@@ -28,7 +28,7 @@ export class AuthorizationController {
     const userEmployeeId = req.user?.employeeRecord?.id as number;
     const supervisorId = req.user?.employeeRecord?.supervisorId as number;
 
-    if (!['LEAVES'].includes(moduleName.toLocaleUpperCase())) {
+    if (!['LEAVES', 'TRAINING REQUESTS'].includes(moduleName.toLocaleUpperCase())) {
       hasModuleApprovalPermission({ moduleName, req });
     }
 

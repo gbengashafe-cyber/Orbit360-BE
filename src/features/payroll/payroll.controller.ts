@@ -11,7 +11,7 @@ import { Payroll } from './payroll.model';
 import { PayrollRepository } from './payroll.repository';
 import { PayrollService } from './payroll.service';
 import { PayPeriod } from './payroll.utils';
-import { generatePayrollSchema } from './payroll.validators';
+import { payrollIdParamSchema } from './payroll.validators';
 
 const approverNoteSchema = z.object({ approverNote: z.string('Approver note should be a string of texts') });
 
@@ -86,22 +86,17 @@ export class PayrollController {
     }
   }
 
-  static async getById(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-      const payroll = await Payroll.findByPk(id, {
-        include: [{ model: Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'email'] }],
-      });
+  static async getById(req: Request, res: Response) {
+    const { id } = payrollIdParamSchema.parse(req.params);
+    const payroll = await Payroll.findByPk(id, {
+      include: [{ model: Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'email'] }],
+    });
 
-      if (!payroll) {
-        throw ApiError.notFound('Payroll record not found');
-      }
-
-      res.json(ApiResponse({ data: payroll, message: 'Payroll record fetched successfully' }));
-    } catch (error) {
-      logger.error(`Error fetching payroll: ${error}`);
-      next(error);
+    if (!payroll) {
+      throw ApiError.notFound('Payroll record not found');
     }
+
+    res.json(ApiResponse({ data: payroll, message: 'Payroll record fetched successfully' }));
   }
 
   static async getByPayPeriod(req: Request, res: Response) {
@@ -167,7 +162,7 @@ export class PayrollController {
 
   static async update(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const { id } = payrollIdParamSchema.parse(req.params);
       const { basicSalary } = req.body;
 
       const payroll = await Payroll.findByPk(id);
@@ -192,24 +187,25 @@ export class PayrollController {
   }
 
   static async markAsApproved(req: Request, res: Response) {
-    const { batchId } = req.params;
-    const { companyId } = generatePayrollSchema.pick({ companyId: true }).parse(req.params);
     const checkerId = req.user?.id;
 
-    const validationResult = approverNoteSchema.nullable().optional().parse(req.body);
+    const { id } = payrollIdParamSchema.parse(req.params);
+
+    const validationResult = req.body?.approverNote
+      ? approverNoteSchema.parse(req.body)
+      : approverNoteSchema.parse({ approverNote: '' });
     const approverNote = validationResult?.approverNote || '';
 
     if (!checkerId) {
       throw ApiError.forbidden('Checker ID is not provided');
     }
 
-    const result = await PayrollService.approveBatch({ batchId, checkerId, approverNote, companyId });
+    const result = await PayrollService.approveBatch({ id, checkerId, approverNote });
     res.json(ApiResponse({ data: result, message: 'Payroll marked as approved' }));
   }
 
   static async markAsRejected(req: Request, res: Response) {
-    const { batchId } = req.params;
-    const { companyId } = generatePayrollSchema.pick({ companyId: true }).parse(req.params);
+    const { id } = payrollIdParamSchema.parse(req.params);
 
     const validationResult = approverNoteSchema.parse(req.body);
     const approverNote = validationResult.approverNote;
@@ -220,14 +216,15 @@ export class PayrollController {
       throw ApiError.forbidden('Checker ID is not provided');
     }
 
-    const result = await PayrollService.rejectBatch({ batchId, checkerId, approverNote, companyId });
+    const result = await PayrollService.rejectBatch({ id, checkerId, approverNote });
     res.json(ApiResponse({ data: { id: result }, message: 'Payroll marked as rejected' }));
   }
 
   static readonly queueForOverride = async (req: Request, res: Response) => {
-    const { batchId } = req.params;
+    const { id } = payrollIdParamSchema.parse(req.params);
 
-    const payrollBatch = await PayrollBatch.findByPk(batchId);
+    const payrollBatch = await PayrollBatch.findByPk(id);
+
     if (!payrollBatch) {
       throw ApiError.notFound('Payroll batch record not found');
     }
@@ -237,7 +234,13 @@ export class PayrollController {
 
       const requesterId = req.user?.id as number;
       await AuditLog.create(
-        { userId: requesterId, action: 'UPDATE', entity: 'Payroll', entityId: batchId, description: 'Sent payroll for override' },
+        {
+          userId: requesterId,
+          action: 'UPDATE',
+          entity: 'Payroll',
+          entityId: String(id),
+          description: 'Sent payroll for override',
+        },
         { transaction: t },
       );
     });
@@ -246,9 +249,9 @@ export class PayrollController {
   };
 
   static readonly approveOverride = async (req: Request, res: Response) => {
-    const { batchId } = req.params;
+    const { id } = payrollIdParamSchema.parse(req.params);
 
-    const payrollBatch = await PayrollBatch.findByPk(batchId);
+    const payrollBatch = await PayrollBatch.findByPk(id);
     if (!payrollBatch) {
       throw ApiError.notFound('Payroll batch record not found');
     }
@@ -258,7 +261,13 @@ export class PayrollController {
 
       const requesterId = req.user?.id as number;
       await AuditLog.create(
-        { userId: requesterId, action: 'UPDATE', entity: 'Payroll', entityId: batchId, description: 'Approved payroll override' },
+        {
+          userId: requesterId,
+          action: 'UPDATE',
+          entity: 'Payroll',
+          entityId: String(id),
+          description: 'Approved payroll override',
+        },
         { transaction: t },
       );
     });

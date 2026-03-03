@@ -11,6 +11,7 @@ import { Loan } from '../features/loans/loan.model';
 import { PayrollBatch } from '../features/payroll/payroll-batch.model';
 import { JobApplication } from '../features/recruitment/job-application.model';
 import { JobPosting } from '../features/recruitment/job-posting.model';
+import { TrainingRequest } from '../features/training/training-request.model';
 import { User } from '../features/users/user.model';
 import { PendingModuleItemsProps } from './pending-authorization.service';
 
@@ -135,6 +136,18 @@ export class AuthorizationRepository {
         })),
       );
     }
+    if (modules.includes('TRAINING REQUESTS')) {
+      tasks.push(
+        TrainingRequest.count({
+          where: {
+            status: ['PENDING_HR_APPROVAL', 'PENDING_SUPERVISOR_APPROVAL'],
+          },
+        }).then((c) => ({
+          key: 'training requests',
+          count: c,
+        })),
+      );
+    }
 
     return Promise.all(tasks);
   };
@@ -176,6 +189,21 @@ export class AuthorizationRepository {
           limit: rows,
           offset: offset,
           include: [{ model: User, as: 'initiator', attributes: ['id', 'firstName', 'lastName'] }],
+          order: [['createdAt', 'DESC']],
+        });
+      case 'TRAINING REQUESTS':
+        return TrainingRequest.findAndCountAll({
+          where: {
+            status: ['PENDING_HR_APPROVAL', 'PENDING_SUPERVISOR_APPROVAL'],
+          },
+          limit: rows,
+          offset: offset,
+          include: [
+            { model: Employee, attributes: ['id', 'firstName', 'lastName', 'staffId'] },
+            { model: User, as: 'supervisorApprover', attributes: ['id', 'firstName', 'lastName'] },
+            { model: User, as: 'hrReviewer', attributes: ['id', 'firstName', 'lastName'] },
+            { model: User, as: 'hrApprover', attributes: ['id', 'firstName', 'lastName'] },
+          ],
           order: [['createdAt', 'DESC']],
         });
       case 'EXITS':
