@@ -10,7 +10,7 @@ const hasRequiredPermission = (permission: Permission, { allowAdmin = false }: {
     logger.debug(`Checking required permission: RequestId: ${req.requestId}: User job role: ${req.user?.jobRoleId}`);
 
     if (allowAdmin && req.user?.role?.toUpperCase() === 'ADMIN') {
-      next();
+      return next();
     }
 
     if (!req.user?.jobRoleId) {
@@ -27,7 +27,7 @@ const hasRequiredPermission = (permission: Permission, { allowAdmin = false }: {
       throw ApiError.forbidden('You are not authorized to perform this action');
     }
 
-    next();
+    return next();
   };
 };
 
@@ -37,7 +37,7 @@ const isInAllowedDepartment = (requiredDepartment: string[], { allowAdmin = fals
     logger.debug(`Checking required department: RequestId: ${req.requestId}: User department: ${req.user?.departmentId}`);
 
     if (allowAdmin && req.user?.role?.toUpperCase() === 'ADMIN') {
-      next();
+      return next();
     }
 
     if (!req.user?.departmentId) {
@@ -57,7 +57,7 @@ const isInAllowedDepartment = (requiredDepartment: string[], { allowAdmin = fals
     }
 
     logger.debug(`Checking required department: RequestId: ${req.requestId}: Successful`);
-    next();
+    return next();
   };
 };
 
@@ -66,7 +66,7 @@ const isAdmin = (req: Request, _res: Response, next: NextFunction) => {
     throw ApiError.forbidden('Only admin user can perform this action');
   }
 
-  next();
+  return next();
 };
 
 export { hasRequiredPermission, isAdmin, isInAllowedDepartment };

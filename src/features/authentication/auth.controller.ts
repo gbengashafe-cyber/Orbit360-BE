@@ -170,13 +170,11 @@ export class AuthController {
           })
         : null;
 
-      const isSupervisor = !!isSupervisorSearchResult?.rows?.[0];
-
       const userData = {
         ...user,
         isHR,
         employeeData: userEmployeeRecord ?? {},
-        isSupervisor,
+        isSupervisor: !!isSupervisorSearchResult?.rows?.[0] || user.role?.toUpperCase() === 'ADMIN',
         permissions: req.user?.permissions || [],
       };
       res.json(ApiResponse(ApiResponse({ data: userData, message: 'Fetched current user successfully' })));

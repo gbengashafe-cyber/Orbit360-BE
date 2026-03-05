@@ -52,7 +52,7 @@ export class EmployeeController {
       filters: req.parsedQuery,
     });
 
-    res.json(
+    return res.json(
       ApiResponse({
         data: payrolls,
         message: 'Payroll record(s) fetched successfully',
