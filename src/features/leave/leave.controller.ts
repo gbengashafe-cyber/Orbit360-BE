@@ -1,8 +1,7 @@
-import { NextFunction, Request, Response } from 'express';
+import { Request, Response } from 'express';
 import { db } from '../../db';
 import { ApiError } from '../../utils/api-error';
 import { ApiResponse } from '../../utils/api-response';
-import { logger } from '../../utils/logger';
 import { Employee } from '../employee/employee.model';
 import { LeaveBalance } from './leave-balance.model';
 import { LeaveType } from './leave-type.model';
@@ -237,152 +236,127 @@ export class LeaveController {
     );
   }
 
-  static async getById(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-      const leave = await Leave.findByPk(id, {
-        attributes: [
-          'id',
-          'employeeId',
-          'startDate',
-          'endDate',
-          'type',
-          'status',
-          'reason',
-          'leave_period',
-          'selected_supervisor_id',
-          'covering_employee_id',
-          'handover_notes',
-          'emergency_contact',
-          'alternative_email',
-          'rejection_reason',
-          'createdAt',
-          'updatedAt',
-        ],
-        include: [
-          {
-            model: Employee,
-            as: 'employee',
-            attributes: { exclude: ['staffId', 'approvedBy'] },
-          },
-        ],
-      });
+  static async getById(req: Request, res: Response) {
+    const { id } = req.params;
+    const leave = await Leave.findByPk(id, {
+      attributes: [
+        'id',
+        'employeeId',
+        'startDate',
+        'endDate',
+        'type',
+        'status',
+        'reason',
+        'leave_period',
+        'selected_supervisor_id',
+        'covering_employee_id',
+        'handover_notes',
+        'emergency_contact',
+        'alternative_email',
+        'rejection_reason',
+        'createdAt',
+        'updatedAt',
+      ],
+      include: [
+        {
+          model: Employee,
+          as: 'employee',
+          attributes: { exclude: ['staffId', 'approvedBy'] },
+        },
+      ],
+    });
 
-      if (!leave) {
-        throw ApiError.notFound('Leave request not found');
-      }
-
-      res.json(ApiResponse({ data: leave }));
-    } catch (error) {
-      logger.error(`Error fetching leave: ${error}`);
-      next(error);
+    if (!leave) {
+      throw ApiError.notFound('Leave request not found');
     }
+
+    res.json(ApiResponse({ data: leave }));
   }
 
-  static async getLeaveBalance(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { employeeId } = req.params;
-      const year = req.query.year ? Number(req.query.year) : new Date().getFullYear();
+  static async getLeaveBalance(req: Request, res: Response) {
+    const { employeeId } = req.params;
+    const year = req.query.year ? Number(req.query.year) : new Date().getFullYear();
 
-      const balances = await LeaveBalance.findAll({
-        where: { employeeId, year },
-        order: [['leaveType', 'ASC']],
-      });
+    const balances = await LeaveBalance.findAll({
+      where: { employeeId, year },
+      order: [['leaveType', 'ASC']],
+    });
 
-      res.json(ApiResponse({ data: balances }));
-    } catch (error) {
-      logger.error(`Error fetching leave balance: ${error}`);
-      next(error);
-    }
+    res.json(ApiResponse({ data: balances }));
   }
 
-  static async getLeaveTypes(req: Request, res: Response, next: NextFunction) {
-    try {
-      const leaveTypes = await LeaveType.findAll({
-        where: { isActive: true },
-        order: [['name', 'ASC']],
-      });
+  static async getLeaveTypes(req: Request, res: Response) {
+    const leaveTypes = await LeaveType.findAll({
+      where: { isActive: true },
+      order: [['name', 'ASC']],
+    });
 
-      res.json(ApiResponse({ data: leaveTypes }));
-    } catch (error) {
-      logger.error(`Error fetching leave types: ${error}`);
-      next(error);
-    }
+    res.json(ApiResponse({ data: leaveTypes }));
   }
 
-  static async approveOrDecline(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-      const { action, rejection_reason } = req.body;
+  static async approveOrDecline(req: Request, res: Response) {
+    const { id } = req.params;
+    const { action, rejection_reason } = req.body;
 
-      if (!['approved', 'rejected'].includes(action.toLowerCase())) {
-        throw ApiError.badRequest('Invalid action. Must be "approved" or "rejected"');
-      }
-
-      const leave = await Leave.findByPk(id);
-      if (!leave) {
-        throw ApiError.notFound('Leave request not found');
-      }
-
-      if (leave.status !== 'pending') {
-        throw ApiError.badRequest('Leave request has already been processed');
-      }
-
-      const employeeRecord = await Employee.findByPk(leave.employeeId);
-
-      if (employeeRecord?.supervisorId !== req.user?.employeeRecord?.supervisorId) {
-        throw ApiError.forbidden(
-          'You are no authorised to approve leave for this employee. Kindly contact the employee to approve.',
-        );
-      }
-      const updateData: any = { status: action };
-      if (action.toLowerCase() === 'rejected' && rejection_reason) {
-        updateData.rejection_reason = rejection_reason;
-      }
-
-      await db.transaction(async (transaction) => {
-        await leave.update(updateData, { transaction });
-        if (action.toLowerCase() === 'approved') {
-          await Employee.update({ status: 'ON_LEAVE' }, { where: { id: leave.employeeId }, transaction });
-        }
-      });
-
-      const updatedLeave = await Leave.findByPk(id, {
-        include: [
-          {
-            model: Employee,
-            as: 'employee',
-            attributes: { exclude: ['staffId', 'approvedBy'] },
-          },
-        ],
-      });
-
-      res.json(ApiResponse({ data: updatedLeave, message: `Leave request ${action}` }));
-    } catch (error) {
-      logger.error(`Error updating leave status: ${error}`);
-      next(error);
+    if (!['approved', 'rejected'].includes(action.toLowerCase())) {
+      throw ApiError.badRequest('Invalid action. Must be "approved" or "rejected"');
     }
+
+    const leave = await Leave.findByPk(id);
+    if (!leave) {
+      throw ApiError.notFound('Leave request not found');
+    }
+
+    if (leave.status !== 'pending') {
+      throw ApiError.badRequest('Leave request has already been processed');
+    }
+
+    const employeeRecord = await Employee.findByPk(leave.employeeId);
+
+    if (employeeRecord?.supervisorId !== req.user?.employeeRecord?.id) {
+      throw ApiError.forbidden(
+        'You are no authorised to approve leave for this employee. Kindly contact the employee to approve.',
+      );
+    }
+    const updateData: any = { status: action };
+    if (action.toLowerCase() === 'rejected' && rejection_reason) {
+      updateData.rejection_reason = rejection_reason;
+    }
+
+    await db.transaction(async (transaction) => {
+      await leave.update(updateData, { transaction });
+      if (action.toLowerCase() === 'approved') {
+        await Employee.update({ status: 'ON_LEAVE' }, { where: { id: leave.employeeId }, transaction });
+      }
+    });
+
+    const updatedLeave = await Leave.findByPk(id, {
+      include: [
+        {
+          model: Employee,
+          as: 'employee',
+          attributes: { exclude: ['staffId', 'approvedBy'] },
+        },
+      ],
+    });
+
+    res.json(ApiResponse({ data: updatedLeave, message: `Leave request ${action}` }));
   }
 
-  static async cancel(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
+  static async cancel(req: Request, res: Response) {
+    const { id } = req.params;
 
-      const leave = await Leave.findByPk(id);
-      if (!leave) {
-        throw ApiError.notFound('Leave request not found');
-      }
-
-      if (leave.status === 'approved') {
-        throw ApiError.badRequest('Cannot cancel an approved leave request');
-      }
-
-      await leave.destroy();
-
-      res.json(ApiResponse({ data: {}, message: 'Leave request cancelled successfully' }));
-    } catch (error) {
-      logger.error(`Error cancelling leave: ${error}`);
-      next(error);
+    const leave = await Leave.findByPk(id);
+    if (!leave) {
+      throw ApiError.notFound('Leave request not found');
     }
+
+    if (leave.status === 'approved') {
+      throw ApiError.badRequest('Cannot cancel an approved leave request');
+    }
+
+    await leave.destroy();
+
+    res.json(ApiResponse({ data: {}, message: 'Leave request cancelled successfully' }));
   }
 }

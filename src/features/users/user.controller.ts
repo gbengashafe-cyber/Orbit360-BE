@@ -107,10 +107,11 @@ class UserController {
       await db.transaction(async (transaction) => {
         await user.update({ ...req.body.user, password: await AuthUtil.hashPassword(user.password) }, { transaction });
       });
+    } else {
+      await db.transaction(async (transaction) => {
+        await user.update(req.body.user, { transaction });
+      });
     }
-    await db.transaction(async (transaction) => {
-      await user.update(req.body.user, { transaction });
-    });
     const updatedUser = await UserRepository.readById(id);
     res.json(
       ApiResponse({
