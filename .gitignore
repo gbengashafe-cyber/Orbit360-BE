@@ -149,3 +149,5 @@ create-departments.ts
 
 # Uploaded documents
 public/documents/
+
+/config/default.json

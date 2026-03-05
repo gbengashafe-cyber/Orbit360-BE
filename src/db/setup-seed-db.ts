@@ -142,6 +142,8 @@ const seedOrganizationalStructure = async () => {
       Department.findOne({ where: { name: "MD's Office - MFB" } }),
     ]);
 
+    await JobRole.create({ title: 'admin', departmentId: hrDepartment?.id }, { ignoreDuplicates: true });
+
     return { hrDepartment, operationsDepartment, itDepartment, mdsDepartment };
   } catch (error) {
     logger.error('Unable to create organization structure');
@@ -166,6 +168,7 @@ const setupSystemConfiguration = async () => {
       hrOperations: await JobRole.findOne({ where: { title: 'Compensation and Benefits Officer' } }),
       employee: await JobRole.findOne({ where: { title: 'Cash/Teller' } }),
       employeeSupervisor: await JobRole.findOne({ where: { title: 'Head - Customer Care' } }),
+      admin: await JobRole.findOne({ where: { title: 'admin' } }),
     };
 
     if (!roles.hrOperations || !roles.hrManager || !roles.employee || !roles.employeeSupervisor || !roles.md) {
@@ -221,17 +224,17 @@ const setupSystemConfiguration = async () => {
 };
 
 async function seed() {
-  if ((await User.count()) > 3) {
-    throw ApiError.badRequest('Running initial setup is not allowed');
-  }
-
-  const { hrDepartment, operationsDepartment, itDepartment, mdsDepartment } = await seedOrganizationalStructure();
-
-  if (!hrDepartment || !operationsDepartment || !mdsDepartment || !itDepartment) {
-    throw ApiError.badRequest('Missing one or more department set up');
-  }
-
   try {
+    if ((await User.count()) >= 3) {
+      throw new Error('Running initial setup is not allowed');
+    }
+
+    const { hrDepartment, operationsDepartment, itDepartment, mdsDepartment } = await seedOrganizationalStructure();
+
+    if (!hrDepartment || !operationsDepartment || !mdsDepartment || !itDepartment) {
+      throw new Error('Missing one or more department set up');
+    }
+
     const company = await Company.findOne();
 
     if (!company) {
@@ -239,47 +242,55 @@ async function seed() {
     }
 
     const roles = await setupSystemConfiguration();
-    if (!roles.hrOperations || !roles.hrManager || !roles.employee || !roles.employeeSupervisor) {
+    if (!roles.hrOperations || !roles.hrManager || !roles.admin) {
       throw ApiError.badRequest('Missing one or more job roles set up');
     }
 
     try {
       const hashedPassword = await AuthUtil.hashPassword(env.TEST_PASSWORD);
 
-      await User.bulkCreate([
-        {
-          role: 'admin',
-          firstName: 'User',
-          lastName: 'Admin',
-          password: hashedPassword,
-          status: 'ACTIVE',
-          email: 'admin@orbit360.com',
-        },
-        {
-          firstName: 'Maker',
-          lastName: 'Migration',
-          email: 'migration-maker@orbit360.com',
-          jobRoleId: roles.hrOperations.id,
-          departmentId: hrDepartment.id,
-          password: hashedPassword,
-        },
-        {
-          firstName: 'Checker',
-          lastName: 'Migration',
-          email: 'migration-checker@orbit360.com',
-          departmentId: hrDepartment.id,
-          jobRoleId: roles.hrManager.id,
-          password: hashedPassword,
-        },
-      ]);
+      await User.bulkCreate(
+        [
+          {
+            role: 'admin',
+            firstName: 'User',
+            lastName: 'Admin',
+            password: hashedPassword,
+            status: 'ACTIVE',
+            email: 'admin@orbit360.com',
+            jobRoleId: roles.admin.id,
+            departmentId: hrDepartment.id,
+          },
+          {
+            firstName: 'Maker',
+            lastName: 'Migration',
+            email: 'migration-maker@orbit360.com',
+            jobRoleId: roles.hrOperations.id,
+            departmentId: hrDepartment.id,
+            password: hashedPassword,
+          },
+          {
+            firstName: 'Checker',
+            lastName: 'Migration',
+            email: 'migration-checker@orbit360.com',
+            departmentId: hrDepartment.id,
+            jobRoleId: roles.hrManager.id,
+            password: hashedPassword,
+          },
+        ],
+        { ignoreDuplicates: true },
+      );
     } catch (error) {
       logger.error('Error setting up migration users');
       throw error;
     }
 
     logger.info('Database seeding completed successfully');
+    console.log('🚀 ~ seed ~ message: Database seeding completed successfully');
+
     process.exit(0);
   } catch (error) {
+    console.log('🚀 ~ seed ~ error:', error);
     logger.error('Error seeding database:', error);
     process.exit(1);
   }

@@ -1,7 +1,7 @@
 {
-  "allowedOrigins": ["http://localhost:5173", "https://orbit360.isaacbern.com.ng"],
+  "allowedOrigins": ["add frontend URL. Replace other variables with production equivalent"],
   "mail": {
-    "mailSender": "Orbit360 HR <test@example.com>",
+    "mailSender": "Orbit360 HR <test@orbit360.com>",
     "server": "smtp.gmail.com",
     "serverPort": 587,
     "frontendURL": "http://localhost:5173"
