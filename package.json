@@ -12,11 +12,10 @@
     "start": "node dist/index.js",
     "migrate": "npx sequelize-cli db:migrate",
     "prepare": "husky",
-    "seed": "ts-node src/db/seed-test-db.ts",
+    "seed": "ts-node src/db/setup-seed-db.ts",
     "sync": "ts-node src/db/sync.ts",
     "seed:leave-balances": "ts-node src/db/seed-leave-balances.ts",
-    "migrate:asset": "ts-node run-asset-migration.ts",
-    "check-hr-perms": "ts-node check-hr-permissions.ts"
+    "migrate:asset": "ts-node run-asset-migration.ts"
   },
   "keywords": [],
   "author": "",

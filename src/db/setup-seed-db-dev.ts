@@ -202,9 +202,6 @@ const setupSystemConfiguration = async () => {
 
       // MD permissions
       { permission: 'APPROVE_PAYROLL_OVERRIDE', jobRoleId: roles.md.id },
-
-      // Supervisor permissions (employee supervisor)
-      { permission: 'APPROVE_EXITS', jobRoleId: roles.employeeSupervisor.id },
     ],
     { ignoreDuplicates: true },
   );
@@ -213,6 +210,10 @@ const setupSystemConfiguration = async () => {
 };
 
 async function seed() {
+  if (env.NODE_ENV === 'production') {
+    throw 'Running setup script is not allowed in production environment';
+  }
+
   await seedOrganizationalStructure();
 
   try {
@@ -230,10 +231,6 @@ async function seed() {
     ]);
 
     if (!hrDepartment || !operationsDepartment || !mdsDepartment || !itDepartment) {
-      throw ApiError.badRequest('Missing one or more department set up');
-    }
-
-    if (!hrDepartment || !operationsDepartment) {
       throw ApiError.badRequest('Missing one or more department set up');
     }
 
@@ -289,10 +286,7 @@ async function seed() {
     ];
 
     try {
-      let hashedPassword = '';
-      if (env.NODE_ENV !== 'production' && env.TEST_PASSWORD) {
-        hashedPassword = await AuthUtil.hashPassword(env.TEST_PASSWORD);
-      }
+      const hashedPassword = await AuthUtil.hashPassword(env.TEST_PASSWORD);
 
       await db.query('SET FOREIGN_KEY_CHECKS = 0');
       const [adminUser] = await User.findOrCreate({
