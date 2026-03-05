@@ -1,7 +1,6 @@
-import { NextFunction, Request, Response } from 'express';
+import { Request, Response } from 'express';
 import { ApiError } from '../../utils/api-error';
 import { ApiResponse } from '../../utils/api-response';
-import { logger } from '../../utils/logger';
 import { PayrollRepository } from '../payroll/payroll.repository';
 import { TrainingRequestService } from '../training/training-request.service';
 import { EmployeeRepository } from './employee.repository';
@@ -115,7 +114,7 @@ export class EmployeeController {
 
     const requests = await TrainingRequestService.getRequestsByEmployee({ employeeId, page, rows });
 
-    return res.json(
+    res.json(
       ApiResponse({
         data: requests,
         message: 'Training requests fetched successfully',
@@ -151,20 +150,16 @@ export class EmployeeController {
     );
   }
 
-  static async getById(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-      const employee = await EmployeeRepository.readById(id);
+  static async getById(req: Request, res: Response) {
+    const { id } = req.params;
 
-      if (!employee) {
-        throw ApiError.notFound('Employee not found');
-      }
+    const employee = await EmployeeRepository.readById(id);
 
-      res.json(ApiResponse({ data: employee, message: 'Employee fetched successfully' }));
-    } catch (error) {
-      logger.error(`Error fetching employee: ${error}`);
-      next(error);
+    if (!employee) {
+      throw ApiError.notFound('Employee not found');
     }
+
+    return res.json(ApiResponse({ data: employee, message: 'Employee fetched successfully' }));
   }
 
   static readonly createCreationRequest = async (req: Request, res: Response) => {
@@ -173,7 +168,7 @@ export class EmployeeController {
 
     const requestId = await EmployeeService.initiateEmployeeCreation(payload, makerId);
 
-    return res.status(201).json(
+    res.status(201).json(
       ApiResponse({
         message: 'New employee request submitted for authorization.',
         data: { requestId },
@@ -188,7 +183,7 @@ export class EmployeeController {
 
     const result = await EmployeeService.initiateEmployeeMaintenance({ employeeId: Number(id), makerId, payload });
 
-    return res.status(201).json({
+    res.status(201).json({
       success: true,
       message: 'Change request submitted for authorization.',
       data: { requestId: result.id },
@@ -202,7 +197,7 @@ export class EmployeeController {
 
     await EmployeeService.approveMaintenance(Number(id), checkerId, reason);
 
-    return res.status(200).json(
+    res.status(200).json(
       ApiResponse({
         data: {},
         message: 'Employee modification approved and data updated successfully.',
@@ -217,7 +212,7 @@ export class EmployeeController {
 
     await EmployeeService.rejectMaintenance(Number(id), checkerId, reason);
 
-    return res.status(200).json(
+    res.status(200).json(
       ApiResponse({
         data: {},
         message: 'Employee modification rejected.',

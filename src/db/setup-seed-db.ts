@@ -264,6 +264,7 @@ async function seed() {
           {
             firstName: 'Maker',
             lastName: 'Migration',
+            role: 'admin',
             email: 'migration-maker@orbit360.com',
             jobRoleId: roles.hrOperations.id,
             departmentId: hrDepartment.id,
@@ -272,6 +273,7 @@ async function seed() {
           {
             firstName: 'Checker',
             lastName: 'Migration',
+            role: 'admin',
             email: 'migration-checker@orbit360.com',
             departmentId: hrDepartment.id,
             jobRoleId: roles.hrManager.id,

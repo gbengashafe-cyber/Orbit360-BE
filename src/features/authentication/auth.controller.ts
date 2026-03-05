@@ -159,7 +159,9 @@ export class AuthController {
 
       const userEmployeeRecord = userEmployeeSearch.rows[0];
 
-      const isHR = userEmployeeSearch.rows[0]?.department?.name?.toUpperCase() === 'GROUP - HUMAN RESOURCES';
+      const isHR =
+        userEmployeeSearch.rows[0]?.department?.name?.toUpperCase() === 'GROUP - HUMAN RESOURCES' ||
+        user.role?.toUpperCase() === 'ADMIN';
       const isSupervisorSearchResult = userEmployeeRecord?.id
         ? await EmployeeRepository.readWithNoCompany({
             filters: { supervisorId: userEmployeeRecord.id },
