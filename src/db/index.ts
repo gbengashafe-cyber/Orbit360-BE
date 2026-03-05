@@ -9,7 +9,9 @@ const db = new Sequelize(DB_NAME, DB_USER, DB_PASSWORD, {
   port: DB_PORT,
   dialect: DB_TYPE as Dialect,
   pool: {
-    max: 5,
+    max: 20,
+    min: 5,
+    idle: 10000,
   },
   define: {
     charset: 'utf8mb4',

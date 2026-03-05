@@ -94,6 +94,7 @@ app.use('/documents', express.static(path.join(process.cwd(), 'public/documents'
 
 app.use(
   express.json({
+    limit: '1mb',
     strict: false,
     verify: (req: Request, res, buf) => {
       if (buf.toString().trim() === 'null' || buf.toString().trim() === 'undefined') {
@@ -103,7 +104,7 @@ app.use(
   }),
 );
 
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ limit: '1mb', extended: true }));
 
 const allowedOrigins = config.get<string | string[]>('allowedOrigins');
 app.use(
