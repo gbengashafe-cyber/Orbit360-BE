@@ -1,110 +1,105 @@
 import { NextFunction, Request, Response } from 'express';
+import { db } from '../../db';
 import { ApiError } from '../../utils/api-error';
+import { ApiResponse } from '../../utils/api-response';
 import { logger } from '../../utils/logger';
 import { Employee } from '../employee/employee.model';
 import { LeaveBalance } from './leave-balance.model';
 import { LeaveType } from './leave-type.model';
 import { Leave } from './leave.model';
-import { ApiResponse } from '../../utils/api-response';
 import { calculateWorkingDays, validateLeaveDates } from './leave.utils';
-import { db } from '../../db';
-import { EmployeeRepository } from '../employee/employee.repository';
 
 export class LeaveController {
-  static async create(req: Request, res: Response, next: NextFunction) {
-    try {
-      const {
-        startDate,
-        endDate,
-        type,
-        reason,
-        leave_period,
-        selected_supervisor_id,
-        covering_employee_id,
-        handover_notes,
-        emergency_contact,
-        alternative_email,
-      } = req.body;
+  static async create(req: Request, res: Response) {
+    const {
+      startDate,
+      endDate,
+      type,
+      reason,
+      leave_period,
+      selected_supervisor_id,
+      covering_employee_id,
+      handover_notes,
+      emergency_contact,
+      alternative_email,
+    } = req.body;
 
-      // Extract files from multipart upload
-      const files = (req as any).files || [];
-      const supportingDocs = files
-        .filter((f: any) => f.fieldname === 'supporting_documents')
-        .map((f: any) => ({
-          name: f.originalname,
-          size: f.size,
-          type: f.mimetype,
-          uploaded_at: new Date().toISOString(),
-        }));
-      const handoverDocs = files
-        .filter((f: any) => f.fieldname === 'handover_documents')
-        .map((f: any) => ({
-          name: f.originalname,
-          size: f.size,
-          type: f.mimetype,
-          uploaded_at: new Date().toISOString(),
-        }));
-      const user = req.user;
+    // Extract files from multipart upload
+    const files = (req as any).files || [];
+    const supportingDocs = files
+      .filter((f: any) => f.fieldname === 'supporting_documents')
+      .map((f: any) => ({
+        name: f.originalname,
+        size: f.size,
+        type: f.mimetype,
+        uploaded_at: new Date().toISOString(),
+      }));
+    const handoverDocs = files
+      .filter((f: any) => f.fieldname === 'handover_documents')
+      .map((f: any) => ({
+        name: f.originalname,
+        size: f.size,
+        type: f.mimetype,
+        uploaded_at: new Date().toISOString(),
+      }));
+    const user = req.user;
 
-      logger.info(
-        `[LeaveCreate] Received fields: leave_period=${leave_period}, selected_supervisor_id=${selected_supervisor_id}, covering_employee_id=${covering_employee_id}, handover_notes=${handover_notes}, emergency_contact=${emergency_contact}, alternative_email=${alternative_email}`,
-      );
+    if (!user) {
+      throw ApiError.unauthenticated('User not authenticated');
+    }
 
-      if (!user) {
-        throw ApiError.unauthenticated('User not authenticated');
-      }
+    // Get employee record for current user
+    const employee = await Employee.findOne({
+      where: { email: user.email },
+    });
 
-      // Get employee record for current user
-      const employee = await Employee.findOne({
-        where: { email: user.email },
-      });
+    if (!employee) {
+      throw ApiError.badRequest('Employee record not found for this user');
+    }
 
-      if (!employee) {
-        throw ApiError.badRequest('Employee record not found for this user');
-      }
+    // Validate leave dates
+    const dateError = validateLeaveDates(startDate, endDate);
+    if (dateError) {
+      throw ApiError.badRequest(dateError);
+    }
 
-      // Validate leave dates
-      const dateError = validateLeaveDates(startDate, endDate);
-      if (dateError) {
-        throw ApiError.badRequest(dateError);
-      }
+    // Calculate working days (excluding weekends)
+    const workingDays = calculateWorkingDays(startDate, endDate);
 
-      // Calculate working days (excluding weekends)
-      const workingDays = calculateWorkingDays(startDate, endDate);
+    const leave = await Leave.create({
+      employeeId: employee.id,
+      startDate,
+      endDate,
+      type,
+      reason,
+      leave_period,
+      selected_supervisor_id,
+      covering_employee_id,
+      handover_notes,
+      emergency_contact,
+      alternative_email,
+      supporting_documents: supportingDocs.length > 0 ? JSON.stringify(supportingDocs) : null,
+      handover_documents: handoverDocs.length > 0 ? JSON.stringify(handoverDocs) : null,
+      status: 'pending',
+    });
 
-      const leave = await Leave.create({
-        employeeId: employee.id,
-        startDate,
-        endDate,
-        type,
-        reason,
-        leave_period,
-        selected_supervisor_id,
-        covering_employee_id,
-        handover_notes,
-        emergency_contact,
-        alternative_email,
-        supporting_documents: supportingDocs.length > 0 ? JSON.stringify(supportingDocs) : null,
-        handover_documents: handoverDocs.length > 0 ? JSON.stringify(handoverDocs) : null,
-        status: 'pending',
-      });
+    const createdLeave = await Leave.findByPk(leave.id, {
+      include: [
+        {
+          model: Employee,
+          as: 'employee',
+          attributes: { exclude: ['staffId', 'approvedBy'] },
+        },
+      ],
+    });
 
-      const createdLeave = await Leave.findByPk(leave.id, {
-        include: [
-          {
-            model: Employee,
-            as: 'employee',
-            attributes: { exclude: ['staffId', 'approvedBy'] },
-          },
-        ],
-      });
+    // Get leave balance for this employee and leave type
+    const leaveBalance = await LeaveBalance.findOne({
+      where: { employeeId: employee.id, leaveType: type, year: new Date().getFullYear() },
+    });
 
-      // Get leave balance for this employee and leave type
-      const leaveBalance = await LeaveBalance.findOne({
-        where: { employeeId: employee.id, leaveType: type, year: new Date().getFullYear() },
-      });
-
-      res.status(201).json({
+    res.status(201).json(
+      ApiResponse({
         data: createdLeave,
         message: 'Leave request created successfully',
         leaveInfo: {
@@ -112,32 +107,29 @@ export class LeaveController {
           allocatedDays: leaveBalance?.totalDays || 0,
           remainingDays: leaveBalance ? leaveBalance.remainingDays - workingDays : 0,
         },
-      });
-    } catch (error) {
-      logger.error(`Error creating leave: ${error}`);
-      next(error);
-    }
+      }),
+    );
   }
 
-  static async calculateLeaveDays(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { employeeId, startDate, endDate, type } = req.body;
+  static async calculateLeaveDays(req: Request, res: Response) {
+    const { employeeId, startDate, endDate, type } = req.body;
 
-      // Validate leave dates
-      const dateError = validateLeaveDates(startDate, endDate);
-      if (dateError) {
-        throw ApiError.badRequest(dateError);
-      }
+    // Validate leave dates
+    const dateError = validateLeaveDates(startDate, endDate);
+    if (dateError) {
+      throw ApiError.badRequest(dateError);
+    }
 
-      // Calculate working days (excluding weekends)
-      const workingDays = calculateWorkingDays(startDate, endDate);
+    // Calculate working days (excluding weekends)
+    const workingDays = calculateWorkingDays(startDate, endDate);
 
-      // Get leave balance for this employee and leave type
-      const leaveBalance = await LeaveBalance.findOne({
-        where: { employeeId, leaveType: type, year: new Date().getFullYear() },
-      });
+    // Get leave balance for this employee and leave type
+    const leaveBalance = await LeaveBalance.findOne({
+      where: { employeeId, leaveType: type, year: new Date().getFullYear() },
+    });
 
-      res.json({
+    res.json(
+      ApiResponse({
         message: 'Leave days calculated successfully',
         data: {
           calculatedDays: workingDays,
@@ -148,52 +140,49 @@ export class LeaveController {
           endDate,
           leaveType: type,
         },
-      });
-    } catch (error) {
-      logger.error(`Error calculating leave days: ${error}`);
-      next(error);
-    }
+      }),
+    );
   }
 
-  static async getAll(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { page, rows } = req.pagination;
-      const offset = (page - 1) * rows;
+  static async getAll(req: Request, res: Response) {
+    const { page, rows } = req.pagination;
+    const offset = (page - 1) * rows;
 
-      const { count, rows: leaves } = await Leave.findAndCountAll({
-        attributes: [
-          'id',
-          'employeeId',
-          'startDate',
-          'endDate',
-          'type',
-          'status',
-          'reason',
-          'leave_period',
-          'selected_supervisor_id',
-          'covering_employee_id',
-          'handover_notes',
-          'emergency_contact',
-          'alternative_email',
-          'rejection_reason',
-          'supporting_documents',
-          'handover_documents',
-          'createdAt',
-          'updatedAt',
-        ],
-        limit: rows,
-        offset,
-        include: [
-          {
-            model: Employee,
-            as: 'employee',
-            attributes: { exclude: ['staffId', 'approvedBy'] },
-          },
-        ],
-        order: [['createdAt', 'DESC']],
-      });
+    const { count, rows: leaves } = await Leave.findAndCountAll({
+      attributes: [
+        'id',
+        'employeeId',
+        'startDate',
+        'endDate',
+        'type',
+        'status',
+        'reason',
+        'leave_period',
+        'selected_supervisor_id',
+        'covering_employee_id',
+        'handover_notes',
+        'emergency_contact',
+        'alternative_email',
+        'rejection_reason',
+        'supporting_documents',
+        'handover_documents',
+        'createdAt',
+        'updatedAt',
+      ],
+      limit: rows,
+      offset,
+      include: [
+        {
+          model: Employee,
+          as: 'employee',
+          attributes: { exclude: ['staffId', 'approvedBy'] },
+        },
+      ],
+      order: [['createdAt', 'DESC']],
+    });
 
-      res.json({
+    res.json(
+      ApiResponse({
         data: leaves,
         pagination: {
           total: count,
@@ -201,45 +190,42 @@ export class LeaveController {
           rows,
           pages: Math.ceil(count / rows),
         },
-      });
-    } catch (error) {
-      logger.error(`Error fetching leaves: ${error}`);
-      next(error);
-    }
+      }),
+    );
   }
 
-  static async getByEmployee(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { employeeId } = req.params;
-      const { page, rows } = req.pagination;
-      const offset = (page - 1) * rows;
+  static async getByEmployee(req: Request, res: Response) {
+    const { employeeId } = req.params;
+    const { page, rows } = req.pagination;
+    const offset = (page - 1) * rows;
 
-      const { count, rows: leaves } = await Leave.findAndCountAll({
-        where: { employeeId },
-        attributes: [
-          'id',
-          'employeeId',
-          'startDate',
-          'endDate',
-          'type',
-          'status',
-          'reason',
-          'leave_period',
-          'selected_supervisor_id',
-          'covering_employee_id',
-          'handover_notes',
-          'emergency_contact',
-          'alternative_email',
-          'rejection_reason',
-          'createdAt',
-          'updatedAt',
-        ],
-        limit: rows,
-        offset,
-        order: [['createdAt', 'DESC']],
-      });
+    const { count, rows: leaves } = await Leave.findAndCountAll({
+      where: { employeeId },
+      attributes: [
+        'id',
+        'employeeId',
+        'startDate',
+        'endDate',
+        'type',
+        'status',
+        'reason',
+        'leave_period',
+        'selected_supervisor_id',
+        'covering_employee_id',
+        'handover_notes',
+        'emergency_contact',
+        'alternative_email',
+        'rejection_reason',
+        'createdAt',
+        'updatedAt',
+      ],
+      limit: rows,
+      offset,
+      order: [['createdAt', 'DESC']],
+    });
 
-      res.json({
+    res.json(
+      ApiResponse({
         data: leaves,
         pagination: {
           total: count,
@@ -247,11 +233,8 @@ export class LeaveController {
           rows,
           pages: Math.ceil(count / rows),
         },
-      });
-    } catch (error) {
-      logger.error(`Error fetching employee leaves: ${error}`);
-      next(error);
-    }
+      }),
+    );
   }
 
   static async getById(req: Request, res: Response, next: NextFunction) {
@@ -289,7 +272,7 @@ export class LeaveController {
         throw ApiError.notFound('Leave request not found');
       }
 
-      res.json({ data: leave });
+      res.json(ApiResponse({ data: leave }));
     } catch (error) {
       logger.error(`Error fetching leave: ${error}`);
       next(error);
@@ -306,7 +289,7 @@ export class LeaveController {
         order: [['leaveType', 'ASC']],
       });
 
-      res.json({ data: balances });
+      res.json(ApiResponse({ data: balances }));
     } catch (error) {
       logger.error(`Error fetching leave balance: ${error}`);
       next(error);
@@ -320,7 +303,7 @@ export class LeaveController {
         order: [['name', 'ASC']],
       });
 
-      res.json({ data: leaveTypes });
+      res.json(ApiResponse({ data: leaveTypes }));
     } catch (error) {
       logger.error(`Error fetching leave types: ${error}`);
       next(error);
@@ -347,7 +330,7 @@ export class LeaveController {
 
       const employeeRecord = await Employee.findByPk(leave.employeeId);
 
-      if (employeeRecord?.supervisorId !== req.user?.id) {
+      if (employeeRecord?.supervisorId !== req.user?.employeeRecord?.supervisorId) {
         throw ApiError.forbidden(
           'You are no authorised to approve leave for this employee. Kindly contact the employee to approve.',
         );
@@ -396,7 +379,7 @@ export class LeaveController {
 
       await leave.destroy();
 
-      res.json({ message: 'Leave request cancelled successfully' });
+      res.json(ApiResponse({ data: {}, message: 'Leave request cancelled successfully' }));
     } catch (error) {
       logger.error(`Error cancelling leave: ${error}`);
       next(error);

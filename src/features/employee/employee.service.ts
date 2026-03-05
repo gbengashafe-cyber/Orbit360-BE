@@ -92,7 +92,7 @@ export class EmployeeService {
       }
 
       const previousStatus = employeeExistingData.status;
-      employeeExistingData.update({ status: 'PENDING_APPROVAL' }, { silent: true });
+      employeeExistingData.update({ status: 'PENDING_APPROVAL' }, { silent: true, transaction: t });
 
       const shouldUpdateExitDate =
         employeeExistingData.status?.toUpperCase() !== 'EXITED' && payload?.status?.toUpperCase() === 'EXITED';

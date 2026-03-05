@@ -229,7 +229,7 @@ export class PayrollController {
       throw ApiError.notFound('Payroll batch record not found');
     }
 
-    db.transaction(async (t) => {
+    await db.transaction(async (t) => {
       await payrollBatch.update({ status: 'PENDING_OVERRIDE_APPROVAL' }, { transaction: t });
 
       const requesterId = req.user?.id as number;
@@ -256,7 +256,7 @@ export class PayrollController {
       throw ApiError.notFound('Payroll batch record not found');
     }
 
-    db.transaction(async (t) => {
+    await db.transaction(async (t) => {
       await payrollBatch.update({ status: 'OVERRIDE_APPROVED' }, { transaction: t });
 
       const requesterId = req.user?.id as number;

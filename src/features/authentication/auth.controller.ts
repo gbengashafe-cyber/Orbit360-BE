@@ -177,7 +177,7 @@ export class AuthController {
         isSupervisor: !!isSupervisorSearchResult?.rows?.[0] || user.role?.toUpperCase() === 'ADMIN',
         permissions: req.user?.permissions || [],
       };
-      res.json(ApiResponse(ApiResponse({ data: userData, message: 'Fetched current user successfully' })));
+      res.json(ApiResponse({ data: userData, message: 'Fetched current user successfully' }));
     } catch (error) {
       logger.error(`Error fetching user: ${error}`);
       next(error);
@@ -215,14 +215,11 @@ export class AuthController {
   static readonly passwordLogin = async (req: Request, res: Response) => {
     const { email, password } = req.body;
 
-    console.log('Login attempt:', { email, passwordLength: password?.length });
-
     if (!(password && email)) {
       throw ApiError.unauthenticated('Email and password is required');
     }
 
     const user = await AuthRepository.findLoginUser(email, password);
-    console.log('Auth result:', { found: !!user });
 
     if (!user) {
       throw ApiError.unauthenticated('Invalid email/password');

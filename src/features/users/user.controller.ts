@@ -22,8 +22,8 @@ class UserController {
 
     user.password = await AuthUtil.hashPassword(user.password);
 
-    const transaction = await db.transaction();
-    const result = await UserRepository.create(user, transaction);
+    const result = await db.transaction(async (transaction) => await UserRepository.create(user, transaction));
+
     return res.send(ApiResponse({ message: 'User created successfully', data: { id: result.id } }));
   };
 
@@ -96,7 +96,7 @@ class UserController {
       throw ApiError.notFound('User not found');
     }
 
-    const passwordWasSent = !user.password || user.password === '';
+    const passwordWasSent = !!req.body.user?.password;
 
     if (passwordWasSent) {
       const validation = AuthUtil.validate(user.password);
@@ -104,20 +104,20 @@ class UserController {
         throw ApiError.badRequest('Password is not strong enough');
       }
 
-      user.password = await AuthUtil.hashPassword(user.password);
-
       await db.transaction(async (transaction) => {
-        await UserRepository.update(id, req.body.user, { transaction });
+        await user.update({ ...req.body.user, password: await AuthUtil.hashPassword(user.password) }, { transaction });
       });
-      const updatedUser = await UserRepository.readById(id);
-
-      res.json(
-        ApiResponse({
-          data: updatedUser,
-          message: 'User updated successfully',
-        }),
-      );
     }
+    await db.transaction(async (transaction) => {
+      await user.update(req.body.user, { transaction });
+    });
+    const updatedUser = await UserRepository.readById(id);
+    res.json(
+      ApiResponse({
+        data: updatedUser,
+        message: 'User updated successfully',
+      }),
+    );
   }
 }
 

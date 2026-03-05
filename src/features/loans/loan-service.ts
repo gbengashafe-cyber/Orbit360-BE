@@ -52,10 +52,13 @@ export class LoanService {
       throw ApiError.forbidden('You cannot review/approve your own loan request');
     }
 
-    const nextStep = payload.reviewerDecision.toUpperCase() === 'APPROVE' ? 'ACTIVE' : 'REJECTED';
+    const newNextStep = payload.reviewerDecision.toUpperCase() === 'APPROVE' ? 'ACTIVE' : 'REJECTED';
 
     await db.transaction(async (transaction) => {
-      await loanRecord.update({ status: loanRecord.nextStep, nextStep, reviewedBy: reviewerId, ...payload }, { transaction });
+      await loanRecord.update(
+        { status: loanRecord.nextStep, nextStep: newNextStep, reviewedBy: reviewerId, ...payload },
+        { transaction },
+      );
 
       await AuditLog.create(
         {
