@@ -1,0 +1,3043 @@
+openapi: 3.0.3
+info:
+  title: Orbit360 HR Platform API
+  description: |
+    REST API for the Orbit360 Human Resources Management Platform.
+    Covers authentication, employee management, payroll, leave, loans, recruitment,
+    performance, onboarding, exits, complaints, training, and more.
+
+    ## Authentication
+    Most endpoints require a Bearer JWT access token obtained from `/api/auth/login` or `/api/auth/user`.
+    Refresh tokens are managed via HTTP-only cookies.
+  version: 1.0.0
+  contact:
+    name: Orbit360 API Support
+
+servers:
+  - url: /api
+    description: Auth routes (v0)
+  - url: /api/v1
+    description: Core API (v1)
+
+tags:
+  - name: Auth
+    description: Authentication and session management
+  - name: Employees
+    description: Employee records and HR operations
+  - name: Companies
+    description: Company / SBU management
+  - name: Departments
+    description: Department management
+  - name: Job Roles
+    description: Job role management
+  - name: Leave
+    description: Leave requests and balances
+  - name: Payroll
+    description: Payroll generation and approval
+  - name: Payroll Reports
+    description: Payroll Excel report uploads
+  - name: Loans
+    description: Employee loan requests and approvals
+  - name: Loan Types
+    description: Loan type configuration
+  - name: Recruitment
+    description: Job postings and applications
+  - name: Performance
+    description: Goals and appraisal cycles
+  - name: Exit
+    description: Employee exit / offboarding
+  - name: HR Documents
+    description: Document and folder management
+  - name: Onboarding
+    description: Employee onboarding documents
+  - name: Complaints
+    description: Workplace complaint management
+  - name: Training Requests
+    description: Training request lifecycle
+  - name: Dashboard
+    description: Aggregated statistics
+  - name: Pending Authorization
+    description: Pending approvals across modules
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ApiResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        data:
+          type: object
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+        statusCode:
+          type: integer
+
+    # ─── Auth ───────────────────────────────────────────────────────────────
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+
+    LdapLoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    GoogleCallbackRequest:
+      type: object
+      required: [googleId, email, firstName, lastName, role]
+      properties:
+        googleId:
+          type: string
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        profileImage:
+          type: string
+        role:
+          type: string
+
+    LoginResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        data:
+          type: object
+          properties:
+            accessToken:
+              type: string
+            expiresAt:
+              type: integer
+
+    # ─── Employee ───────────────────────────────────────────────────────────
+    CreateEmployeeRequest:
+      type: object
+      required:
+        - firstName
+        - lastName
+        - email
+        - staffId
+        - phone
+        - hireDate
+        - jobRoleId
+        - companyId
+        - departmentId
+        - dob
+        - gender
+        - address
+        - nhfApplicable
+        - annualBasicSalary
+        - annualHousingAllowance
+        - annualTransportAllowance
+        - annualLeaveAllowance
+        - annualOtherAllowances
+        - annualRentAmount
+        - leaveEntitlement
+      properties:
+        firstName:
+          type: string
+          maxLength: 50
+        lastName:
+          type: string
+          maxLength: 50
+        email:
+          type: string
+          format: email
+        staffId:
+          type: string
+          maxLength: 10
+        phone:
+          type: string
+          maxLength: 20
+        hireDate:
+          type: string
+          format: date
+        jobRoleId:
+          type: integer
+        companyId:
+          type: integer
+        departmentId:
+          type: integer
+        supervisorId:
+          type: integer
+          nullable: true
+        dob:
+          type: string
+          format: date
+        gender:
+          type: string
+          enum: [M, F]
+        nationality:
+          type: string
+          nullable: true
+        address:
+          type: string
+          maxLength: 100
+        bankName:
+          type: string
+        bankCode:
+          type: string
+        accountNumber:
+          type: string
+        accountName:
+          type: string
+        nhfApplicable:
+          type: boolean
+        annualBasicSalary:
+          type: number
+        annualHousingAllowance:
+          type: number
+        annualTransportAllowance:
+          type: number
+        annualLeaveAllowance:
+          type: number
+        annualOtherAllowances:
+          type: number
+        annualRentAmount:
+          type: number
+        beneficiaryName:
+          type: string
+          nullable: true
+        beneficiaryRelationship:
+          type: string
+          nullable: true
+        beneficiaryPhone:
+          type: string
+          nullable: true
+        nokName:
+          type: string
+          nullable: true
+        nokRelationship:
+          type: string
+          nullable: true
+        nokPhone:
+          type: string
+          nullable: true
+        leaveEntitlement:
+          type: integer
+        shouldCreateUser:
+          type: boolean
+          default: false
+
+    EmployeeLoanRequest:
+      type: object
+      required: [loanTypeId, principalAmount, tenureMonths, startDate]
+      properties:
+        loanTypeId:
+          type: integer
+        principalAmount:
+          type: number
+        tenureMonths:
+          type: integer
+        startDate:
+          type: string
+          format: date
+        employeeNote:
+          type: string
+
+    # ─── Company ────────────────────────────────────────────────────────────
+    CreateCompanyRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+          nullable: true
+
+    UpdateCompanyRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+          nullable: true
+
+    # ─── Leave ──────────────────────────────────────────────────────────────
+    CreateLeaveRequest:
+      type: object
+      required: [employeeId, startDate, endDate, type]
+      properties:
+        employeeId:
+          type: integer
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        type:
+          type: string
+          description: Leave type (e.g. ANNUAL, SICK, MATERNITY, etc.)
+        reason:
+          type: string
+          nullable: true
+        leave_period:
+          type: string
+          nullable: true
+        selected_supervisor_id:
+          type: integer
+          nullable: true
+        covering_employee_id:
+          type: integer
+          nullable: true
+        handover_notes:
+          type: string
+          nullable: true
+        emergency_contact:
+          type: string
+          nullable: true
+        alternative_email:
+          type: string
+          format: email
+          nullable: true
+        supporting_documents:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              size:
+                type: number
+              type:
+                type: string
+              uploaded_at:
+                type: string
+          nullable: true
+        handover_documents:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              size:
+                type: number
+              type:
+                type: string
+              uploaded_at:
+                type: string
+          nullable: true
+
+    ApproveDeclineRequest:
+      type: object
+      required: [action]
+      properties:
+        action:
+          type: string
+          enum: [approved, rejected]
+
+    # ─── Payroll ────────────────────────────────────────────────────────────
+    GeneratePayrollRequest:
+      type: object
+      required: [payPeriod, companyId]
+      properties:
+        payPeriod:
+          type: string
+          pattern: '^20\d{2}-(0[1-9]|1[0-2])$'
+          example: '2025-03'
+        companyId:
+          type: integer
+
+    UpdatePayrollRequest:
+      type: object
+      properties:
+        baseSalary:
+          type: number
+        allowances:
+          type: number
+        deductions:
+          type: number
+
+    # ─── Loans ──────────────────────────────────────────────────────────────
+    CreateLoanRequest:
+      type: object
+      required: [employeeId, loanTypeId, principalAmount, interestRate, tenureMonths, startDate]
+      properties:
+        employeeId:
+          type: integer
+        loanTypeId:
+          type: integer
+        principalAmount:
+          type: number
+        interestRate:
+          type: number
+          minimum: 0
+          maximum: 100
+        tenureMonths:
+          type: integer
+        startDate:
+          type: string
+          format: date
+        notes:
+          type: string
+          maxLength: 1000
+
+    UpdateLoanRequest:
+      allOf:
+        - $ref: '#/components/schemas/CreateLoanRequest'
+        - type: object
+          required: [status]
+          properties:
+            status:
+              type: string
+              enum: [PENDING, UNDER_REVIEW, APPROVED, REJECTED, DISBURSED, CLOSED]
+
+    LoanReviewRequest:
+      type: object
+      required: [reviewerDecision, reviewerNote]
+      properties:
+        reviewerDecision:
+          type: string
+          enum: [RECOMMEND, REJECT]
+        reviewerNote:
+          type: string
+          maxLength: 300
+
+    LoanApprovalRequest:
+      type: object
+      properties:
+        approverNote:
+          type: string
+          maxLength: 300
+
+    LoanRejectionRequest:
+      type: object
+      required: [approverNote]
+      properties:
+        approverNote:
+          type: string
+          minLength: 3
+          maxLength: 300
+
+    LoanTypeRequest:
+      type: object
+      required: [name, interestRate, maxTenureMonths]
+      properties:
+        name:
+          type: string
+          maxLength: 50
+        interestRate:
+          type: number
+          minimum: 0
+        maxTenureMonths:
+          type: integer
+          minimum: 1
+
+    # ─── Recruitment ────────────────────────────────────────────────────────
+    CreateJobPostingRequest:
+      type: object
+      required: [title, description, department, location, created_by]
+      properties:
+        title:
+          type: string
+          minLength: 3
+          maxLength: 255
+        description:
+          type: string
+          minLength: 10
+        department:
+          type: string
+        location:
+          type: string
+        employment_type:
+          type: string
+          enum: [full_time, part_time, contract, temporary]
+        salary_range_min:
+          type: number
+        salary_range_max:
+          type: number
+        requirements:
+          type: string
+        created_by:
+          type: string
+
+    CreateJobApplicationRequest:
+      type: object
+      required: [job_posting_id, applicant_name, applicant_email, applicant_phone]
+      properties:
+        job_posting_id:
+          type: integer
+        applicant_name:
+          type: string
+          minLength: 2
+        applicant_email:
+          type: string
+          format: email
+        applicant_phone:
+          type: string
+          minLength: 7
+        resume_url:
+          type: string
+          format: uri
+          nullable: true
+        cover_letter:
+          type: string
+          nullable: true
+        salary_expectation:
+          type: number
+          nullable: true
+
+    UpdateApplicationStatusRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [applied, under_review, interview_scheduled, interviewed, offered, hired, rejected]
+        rating:
+          type: number
+          minimum: 1
+          maximum: 5
+
+    ScheduleInterviewRequest:
+      type: object
+      required: [interview_date]
+      properties:
+        interview_date:
+          type: string
+          format: date
+        interview_notes:
+          type: string
+
+    # ─── Performance ────────────────────────────────────────────────────────
+    CreateGoalRequest:
+      type: object
+      required: [employee_id, title, description, start_date, end_date]
+      properties:
+        employee_id:
+          type: integer
+        title:
+          type: string
+          minLength: 3
+          maxLength: 255
+        description:
+          type: string
+          minLength: 10
+        target_value:
+          type: number
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        assigned_by:
+          type: string
+
+    UpdateGoalProgressRequest:
+      type: object
+      properties:
+        current_progress:
+          type: number
+        completion_percentage:
+          type: number
+          minimum: 0
+          maximum: 100
+        status:
+          type: string
+          enum: [not_started, in_progress, completed, failed, on_hold]
+
+    CreateAppraisalCycleRequest:
+      type: object
+      required: [cycle_name, start_date, end_date, review_deadline]
+      properties:
+        cycle_name:
+          type: string
+          minLength: 3
+          maxLength: 255
+        description:
+          type: string
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        review_deadline:
+          type: string
+          format: date
+        created_by:
+          type: string
+        department:
+          type: string
+
+    SubmitAppraisalRequest:
+      type: object
+      required: [appraisal_cycle_id, employee_id, manager_id]
+      properties:
+        appraisal_cycle_id:
+          type: integer
+        employee_id:
+          type: integer
+        manager_id:
+          type: integer
+        performance_summary:
+          type: string
+        strengths:
+          type: string
+        areas_for_improvement:
+          type: string
+
+    ReviewAppraisalRequest:
+      type: object
+      required: [overall_rating, goals_achievement]
+      properties:
+        overall_rating:
+          type: number
+          minimum: 1
+          maximum: 5
+        goals_achievement:
+          type: number
+          minimum: 0
+          maximum: 100
+
+    # ─── Exit ───────────────────────────────────────────────────────────────
+    CreateExitRequest:
+      type: object
+      required: [employeeId, resignationDate, lastWorkingDate]
+      properties:
+        employeeId:
+          type: string
+        employeeName:
+          type: string
+        employeeEmail:
+          type: string
+          format: email
+        employeeDepartment:
+          type: string
+        position:
+          type: string
+        resignationDate:
+          type: string
+          format: date
+        lastWorkingDate:
+          type: string
+          format: date
+        noticePeriod:
+          type: integer
+        status:
+          type: string
+          enum: [submitted, under_review, clearance_pending, approved, completed, rejected, withdrawn]
+        handoverStatus:
+          type: string
+          enum: [in_progress, yes, no]
+        handoverDetails:
+          type: string
+        handoverRecipientName:
+          type: string
+        handoverRecipientContact:
+          type: string
+        outstandingTasks:
+          type: string
+        outstandingApprovals:
+          type: string
+        assetsToReturn:
+          type: string
+        assetReturnStatus:
+          type: string
+          enum: [not_applicable, pending_return, returned, not_returned]
+        salaryBalanceNotes:
+          type: string
+        loanDeductionNotes:
+          type: string
+        leaveEncashmentRequest:
+          type: boolean
+        pensionProcessingNotes:
+          type: string
+        overallExperienceRating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        positiveExperience:
+          type: string
+        areasForImprovementOrg:
+          type: string
+        wouldRecommendOrg:
+          type: boolean
+        itAdminClearance:
+          type: boolean
+        supervisorClearance:
+          type: boolean
+        financeClearance:
+          type: boolean
+        hrClearance:
+          type: boolean
+
+    ReviewExitRequest:
+      type: object
+      required: [action]
+      properties:
+        action:
+          type: string
+          enum: [approved, rejected]
+
+    # ─── Complaints ─────────────────────────────────────────────────────────
+    CreateComplaintRequest:
+      type: object
+      required: [employee_id, complaint_type, title, description]
+      properties:
+        employee_id:
+          type: integer
+        complaint_type:
+          type: string
+          enum: [harassment, discrimination, safety, wage_dispute, working_conditions, other]
+        title:
+          type: string
+          minLength: 3
+          maxLength: 255
+        description:
+          type: string
+          minLength: 10
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+        reported_to:
+          type: string
+          nullable: true
+
+    ResolveComplaintRequest:
+      type: object
+      required: [resolution_notes]
+      properties:
+        resolution_notes:
+          type: string
+          minLength: 10
+          maxLength: 1000
+
+    # ─── Onboarding ─────────────────────────────────────────────────────────
+    CreateOnboardingRequest:
+      type: object
+      required: [employeeId, documentType, documentName]
+      properties:
+        employeeId:
+          type: integer
+        documentType:
+          type: string
+        documentName:
+          type: string
+        documentUrl:
+          type: string
+          format: uri
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+
+    UpdateOnboardingRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [pending, submitted, approved, rejected]
+        documentUrl:
+          type: string
+          format: uri
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+
+    # ─── Training ───────────────────────────────────────────────────────────
+    TrainingApprovalRequest:
+      type: object
+      required: [approved]
+      properties:
+        approved:
+          type: boolean
+        rejectionReason:
+          type: string
+
+paths:
+  # ═══════════════════════════════════════════════════════════════════════════
+  # AUTH  (/api/auth/...)
+  # ═══════════════════════════════════════════════════════════════════════════
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login with email and password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid credentials
+
+  /auth/user:
+    post:
+      tags: [Auth]
+      summary: Login via LDAP / Active Directory
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LdapLoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: AD Authentication failed
+
+  /auth/google/callback:
+    post:
+      tags: [Auth]
+      summary: Google OAuth callback
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoogleCallbackRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Get currently authenticated user
+      responses:
+        '200':
+          description: Current user data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '401':
+          description: Unauthenticated
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Logout and revoke refresh token
+      responses:
+        '204':
+          description: Logged out successfully
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh access token using HTTP-only cookie
+      security: []
+      responses:
+        '200':
+          description: New access token issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid or expired refresh token
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # EMPLOYEES  (/api/v1/employees/...)
+  # ═══════════════════════════════════════════════════════════════════════════
+  /employees:
+    get:
+      tags: [Employees]
+      summary: List all employees (HR)
+      description: Requires LIST_EMPLOYEES permission or admin role.
+      responses:
+        '200':
+          description: List of employees
+    post:
+      tags: [Employees]
+      summary: Create employee (initiates approval workflow)
+      description: Requires MANAGE_EMPLOYEES permission.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEmployeeRequest'
+      responses:
+        '201':
+          description: Employee creation request submitted
+
+  /employees/me:
+    get:
+      tags: [Employees]
+      summary: Get own employee record
+      responses:
+        '200':
+          description: Employee record for the current user
+
+  /employees/directory:
+    get:
+      tags: [Employees]
+      summary: Get employee directory (HR)
+      description: Requires LIST_EMPLOYEES permission or admin role.
+      responses:
+        '200':
+          description: Employee directory
+
+  /employees/loans:
+    get:
+      tags: [Employees]
+      summary: Get own loan records
+      responses:
+        '200':
+          description: Loan records for the current employee
+    post:
+      tags: [Employees]
+      summary: Submit a loan request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeLoanRequest'
+      responses:
+        '201':
+          description: Loan request submitted
+
+  /employees/training-requests:
+    get:
+      tags: [Employees]
+      summary: Get own training requests
+      responses:
+        '200':
+          description: Training requests for the current employee
+
+  /employees/loans/{loanId}:
+    put:
+      tags: [Employees]
+      summary: Update own loan request
+      parameters:
+        - name: loanId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeLoanRequest'
+      responses:
+        '200':
+          description: Loan request updated
+
+  /employees/loans/{loanId}/cancellation:
+    patch:
+      tags: [Employees]
+      summary: Cancel own loan request
+      parameters:
+        - name: loanId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Loan request cancelled
+
+  /employees/{id}:
+    get:
+      tags: [Employees]
+      summary: Get employee by ID (HR)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Employee record
+    patch:
+      tags: [Employees]
+      summary: Update employee (initiates approval workflow)
+      description: Requires MANAGE_EMPLOYEES permission.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEmployeeRequest'
+      responses:
+        '200':
+          description: Modification request submitted
+
+  /employees/{id}/payrolls:
+    get:
+      tags: [Employees]
+      summary: Get payroll records for an employee
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Payroll records
+
+  /employees/maintenance/{id}/approval:
+    post:
+      tags: [Employees]
+      summary: Approve employee creation/modification
+      description: Requires APPROVE_EMPLOYEES permission.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Approved
+
+  /employees/maintenance/{id}/rejection:
+    post:
+      tags: [Employees]
+      summary: Reject employee creation/modification
+      description: Requires APPROVE_EMPLOYEES permission.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Rejected
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # COMPANIES  (/api/v1/companies/...)
+  # ═══════════════════════════════════════════════════════════════════════════
+  /companies:
+    get:
+      tags: [Companies]
+      summary: List all companies
+      responses:
+        '200':
+          description: List of companies
+    post:
+      tags: [Companies]
+      summary: Create a company (Admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCompanyRequest'
+      responses:
+        '201':
+          description: Company created
+
+  /companies/{id}:
+    get:
+      tags: [Companies]
+      summary: Get company by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Company record
+    put:
+      tags: [Companies]
+      summary: Update company (Admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCompanyRequest'
+      responses:
+        '200':
+          description: Company updated
+    delete:
+      tags: [Companies]
+      summary: Delete company (Admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Deleted
+
+  /companies/{companyId}/departments:
+    get:
+      tags: [Companies]
+      summary: Get departments for a company
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of departments
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # DEPARTMENTS  (/api/v1/departments/...)
+  # ═══════════════════════════════════════════════════════════════════════════
+  /departments:
+    get:
+      tags: [Departments]
+      summary: List all departments
+      responses:
+        '200':
+          description: List of departments
+    post:
+      tags: [Departments]
+      summary: Create a department
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+      responses:
+        '201':
+          description: Department created
+
+  /departments/{id}:
+    get:
+      tags: [Departments]
+      summary: Get department by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Department record
+    put:
+      tags: [Departments]
+      summary: Update department
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        '200':
+          description: Updated
+    delete:
+      tags: [Departments]
+      summary: Delete department
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Deleted
+
+  /departments/{id}/employees:
+    get:
+      tags: [Departments]
+      summary: Get employees in a department
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of employees
+
+  /departments/{id}/job-roles:
+    get:
+      tags: [Departments]
+      summary: Get job roles in a department
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of job roles
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # JOB ROLES  (/api/v1/job-roles/...)
+  # ═══════════════════════════════════════════════════════════════════════════
+  /job-roles:
+    get:
+      tags: [Job Roles]
+      summary: List all job roles
+      responses:
+        '200':
+          description: List of job roles
+    post:
+      tags: [Job Roles]
+      summary: Create job role (Admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                departmentId:
+                  type: integer
+      responses:
+        '201':
+          description: Job role created
+
+  /job-roles/{id}:
+    get:
+      tags: [Job Roles]
+      summary: Get job role by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Job role record
+    put:
+      tags: [Job Roles]
+      summary: Update job role (Admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        '200':
+          description: Updated
+    delete:
+      tags: [Job Roles]
+      summary: Delete job role (Admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Deleted
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # LEAVE  (/api/v1/leaves/...)
+  # ═══════════════════════════════════════════════════════════════════════════
+  /leaves:
+    get:
+      tags: [Leave]
+      summary: List all leave requests
+      responses:
+        '200':
+          description: List of leave requests
+    post:
+      tags: [Leave]
+      summary: Create leave request (supports file uploads)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateLeaveRequest'
+      responses:
+        '201':
+          description: Leave request created
+
+  /leaves/calculate/days:
+    post:
+      tags: [Leave]
+      summary: Calculate number of leave days between two dates
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                startDate:
+                  type: string
+                  format: date
+                endDate:
+                  type: string
+                  format: date
+      responses:
+        '200':
+          description: Calculated leave days
+
+  /leaves/types:
+    get:
+      tags: [Leave]
+      summary: Get all leave types
+      responses:
+        '200':
+          description: List of leave types
+
+  /leaves/balance/{employeeId}:
+    get:
+      tags: [Leave]
+      summary: Get leave balance for an employee
+      parameters:
+        - name: employeeId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Leave balance
+
+  /leaves/employee/{employeeId}:
+    get:
+      tags: [Leave]
+      summary: Get leave requests for an employee
+      parameters:
+        - name: employeeId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Leave requests
+
+  /leaves/{id}:
+    get:
+      tags: [Leave]
+      summary: Get leave request by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Leave record
+    delete:
+      tags: [Leave]
+      summary: Cancel leave request
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Cancelled
+
+  /leaves/{id}/status:
+    patch:
+      tags: [Leave]
+      summary: Approve or decline a leave request
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApproveDeclineRequest'
+      responses:
+        '200':
+          description: Status updated
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # PAYROLL  (/api/v1/payrolls/...)
+  # ═══════════════════════════════════════════════════════════════════════════
+  /payrolls:
+    get:
+      tags: [Payroll]
+      summary: List all payrolls
+      responses:
+        '200':
+          description: List of payrolls
+    post:
+      tags: [Payroll]
+      summary: Generate payroll for a period
+      description: Requires MANAGE_PAYROLLS permission.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GeneratePayrollRequest'
+      responses:
+        '201':
+          description: Payroll generated
+
+  /payrolls/{id}:
+    get:
+      tags: [Payroll]
+      summary: Get payroll by ID
+      description: Requires LIST_PAYROLLS permission.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Payroll record
+    put:
+      tags: [Payroll]
+      summary: Update payroll
+      description: Requires MANAGE_PAYROLLS permission.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePayrollRequest'
+      responses:
+        '200':
+          description: Updated
+
+  /payrolls/employees/{employeeId}:
+    get:
+      tags: [Payroll]
+      summary: Get payrolls for a specific employee
+      description: Requires LIST_PAYROLLS permission or admin role.
+      parameters:
+        - name: employeeId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Payroll records
+
+  /payrolls/companies/{companyId}/periods/{payPeriod}:
+    get:
+      tags: [Payroll]
+      summary: Get payrolls for a company in a pay period
+      description: Requires LIST_PAYROLLS permission.
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: payPeriod
+          in: path
+          required: true
+          schema:
+            type: string
+            example: '2025-03'
+      responses:
+        '200':
+          description: Payrolls for the period
+
+  /payrolls/companies/{companyId}/batches/periods/{payPeriod}:
+    get:
+      tags: [Payroll]
+      summary: Get payroll batch for a company and period
+      description: Requires LIST_PAYROLLS permission.
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: payPeriod
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Payroll batch
+
+  /payrolls/{id}/approval:
+    patch:
+      tags: [Payroll]
+      summary: Mark payroll as approved
+      description: Requires APPROVE_PAYROLLS permission.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Approved
+
+  /payrolls/{id}/rejection:
+    patch:
+      tags: [Payroll]
+      summary: Mark payroll as rejected
+      description: Requires APPROVE_PAYROLLS permission.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Rejected
+
+  /payrolls/{id}/override-request:
+    patch:
+      tags: [Payroll]
+      summary: Queue payroll for override
+      description: Requires MANAGE_PAYROLLS permission.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Queued for override
+
+  /payrolls/{id}/override-approval:
+    patch:
+      tags: [Payroll]
+      summary: Approve payroll override
+      description: Requires APPROVE_PAYROLL_OVERRIDE permission.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Override approved
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # PAYROLL REPORTS  (/api/v1/payrolls/uploads/...)
+  # ═══════════════════════════════════════════════════════════════════════════
+  /payrolls/uploads:
+    get:
+      tags: [Payroll Reports]
+      summary: List all uploaded payroll reports
+      responses:
+        '200':
+          description: List of payroll reports
+    post:
+      tags: [Payroll Reports]
+      summary: Upload a payroll Excel report
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [reportFile]
+              properties:
+                reportFile:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Report uploaded
+
+  /payrolls/uploads/{id}:
+    delete:
+      tags: [Payroll Reports]
+      summary: Delete a payroll report
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Deleted
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # LOANS  (/api/v1/loans/...)
+  # ═══════════════════════════════════════════════════════════════════════════
+  /loans:
+    get:
+      tags: [Loans]
+      summary: List all loans
+      description: Requires LIST_LOANS permission or admin role.
+      responses:
+        '200':
+          description: List of loans
+
+  /loans/dashboard:
+    get:
+      tags: [Loans]
+      summary: Get loan dashboard summary
+      responses:
+        '200':
+          description: Loan dashboard data
+
+  /loans/{id}:
+    get:
+      tags: [Loans]
+      summary: Get loan by ID
+      description: Requires LIST_LOANS permission.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Loan record
+    put:
+      tags: [Loans]
+      summary: Update loan
+      description: Requires MANAGE_LOANS permission.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLoanRequest'
+      responses:
+        '200':
+          description: Updated
+
+  /loans/{loanId}/reviews:
+    patch:
+      tags: [Loans]
+      summary: Submit reviewer decision on loan
+      description: Requires MANAGE_LOANS permission.
+      parameters:
+        - name: loanId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoanReviewRequest'
+      responses:
+        '200':
+          description: Review submitted
+
+  /loans/{loanId}/approve:
+    patch:
+      tags: [Loans]
+      summary: Approve a loan
+      description: Requires APPROVE_LOANS permission.
+      parameters:
+        - name: loanId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoanApprovalRequest'
+      responses:
+        '200':
+          description: Approved
+
+  /loans/{loanId}/reject:
+    patch:
+      tags: [Loans]
+      summary: Reject a loan
+      description: Requires APPROVE_LOANS permission.
+      parameters:
+        - name: loanId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoanRejectionRequest'
+      responses:
+        '200':
+          description: Rejected
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # LOAN TYPES  (/api/v1/loans/types/...)
+  # ═══════════════════════════════════════════════════════════════════════════
+  /loans/types:
+    get:
+      tags: [Loan Types]
+      summary: List all loan types
+      responses:
+        '200':
+          description: List of loan types
+    post:
+      tags: [Loan Types]
+      summary: Create a loan type (Admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoanTypeRequest'
+      responses:
+        '201':
+          description: Loan type created
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # RECRUITMENT  (/api/v1/recruitment/...)
+  # ═══════════════════════════════════════════════════════════════════════════
+  /recruitment/dashboard/stats:
+    get:
+      tags: [Recruitment]
+      summary: Get recruitment dashboard statistics
+      responses:
+        '200':
+          description: Dashboard stats
+
+  /recruitment/postings:
+    get:
+      tags: [Recruitment]
+      summary: List all job postings
+      responses:
+        '200':
+          description: List of job postings
+    post:
+      tags: [Recruitment]
+      summary: Create job posting
+      description: Requires MANAGE_JOB_POSTINGS permission.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateJobPostingRequest'
+      responses:
+        '201':
+          description: Job posting created
+
+  /recruitment/postings/{id}:
+    get:
+      tags: [Recruitment]
+      summary: Get job posting by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Job posting record
+    put:
+      tags: [Recruitment]
+      summary: Update job posting
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Updated
+    delete:
+      tags: [Recruitment]
+      summary: Delete job posting
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Deleted
+
+  /recruitment/postings/{id}/approve:
+    post:
+      tags: [Recruitment]
+      summary: Approve job posting
+      description: Requires APPROVE_JOB_POSTINGS permission.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Approved
+
+  /recruitment/postings/{id}/reject:
+    post:
+      tags: [Recruitment]
+      summary: Reject job posting
+      description: Requires APPROVE_JOB_POSTINGS permission.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Rejected
+
+  /recruitment/postings/{id}/close:
+    post:
+      tags: [Recruitment]
+      summary: Close a job posting (role filled)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Closed
+
+  /recruitment/applications:
+    get:
+      tags: [Recruitment]
+      summary: List all job applications
+      responses:
+        '200':
+          description: List of applications
+    post:
+      tags: [Recruitment]
+      summary: Submit a job application
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateJobApplicationRequest'
+      responses:
+        '201':
+          description: Application submitted
+
+  /recruitment/applications/{id}:
+    get:
+      tags: [Recruitment]
+      summary: Get job application by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Application record
+    delete:
+      tags: [Recruitment]
+      summary: Delete job application
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Deleted
+
+  /recruitment/applications/by-posting/{jobPostingId}:
+    get:
+      tags: [Recruitment]
+      summary: Get all applications for a job posting
+      parameters:
+        - name: jobPostingId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Applications
+
+  /recruitment/applications/pipeline/{jobPostingId}:
+    get:
+      tags: [Recruitment]
+      summary: Get pipeline view for a job posting
+      parameters:
+        - name: jobPostingId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Pipeline data
+
+  /recruitment/applications/{id}/status:
+    put:
+      tags: [Recruitment]
+      summary: Update application status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateApplicationStatusRequest'
+      responses:
+        '200':
+          description: Status updated
+
+  /recruitment/applications/{id}/schedule-interview:
+    post:
+      tags: [Recruitment]
+      summary: Schedule an interview for an applicant
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScheduleInterviewRequest'
+      responses:
+        '200':
+          description: Interview scheduled
+
+  /recruitment/applications/{id}/send-offer:
+    post:
+      tags: [Recruitment]
+      summary: Send offer to applicant
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Offer sent
+
+  /recruitment/applications/{id}/hire:
+    post:
+      tags: [Recruitment]
+      summary: Mark applicant as hired
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Hired
+
+  /recruitment/applications/{id}/reject:
+    post:
+      tags: [Recruitment]
+      summary: Reject an application
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Rejected
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # PERFORMANCE  (/api/v1/performance/...)
+  # ═══════════════════════════════════════════════════════════════════════════
+  /performance/dashboard:
+    get:
+      tags: [Performance]
+      summary: Get performance dashboard
+      responses:
+        '200':
+          description: Dashboard data
+
+  /performance/goals:
+    get:
+      tags: [Performance]
+      summary: List all goals
+      responses:
+        '200':
+          description: List of goals
+    post:
+      tags: [Performance]
+      summary: Create a goal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGoalRequest'
+      responses:
+        '201':
+          description: Goal created
+
+  /performance/goals/{id}:
+    get:
+      tags: [Performance]
+      summary: Get goal by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Goal record
+    put:
+      tags: [Performance]
+      summary: Update goal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Updated
+    delete:
+      tags: [Performance]
+      summary: Delete goal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Deleted
+
+  /performance/goals/{id}/progress:
+    patch:
+      tags: [Performance]
+      summary: Update goal progress
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateGoalProgressRequest'
+      responses:
+        '200':
+          description: Progress updated
+
+  /performance/cycles:
+    get:
+      tags: [Performance]
+      summary: List all appraisal cycles
+      responses:
+        '200':
+          description: List of appraisal cycles
+    post:
+      tags: [Performance]
+      summary: Create appraisal cycle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAppraisalCycleRequest'
+      responses:
+        '201':
+          description: Cycle created
+
+  /performance/cycles/{id}:
+    get:
+      tags: [Performance]
+      summary: Get appraisal cycle by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Cycle record
+    put:
+      tags: [Performance]
+      summary: Update appraisal cycle
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Updated
+
+  /performance/cycles/{id}/activate:
+    post:
+      tags: [Performance]
+      summary: Activate appraisal cycle
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Activated
+
+  /performance/cycles/{id}/close:
+    post:
+      tags: [Performance]
+      summary: Close appraisal cycle
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Closed
+
+  /performance/appraisals:
+    get:
+      tags: [Performance]
+      summary: List all appraisals
+      responses:
+        '200':
+          description: List of appraisals
+    post:
+      tags: [Performance]
+      summary: Submit an appraisal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitAppraisalRequest'
+      responses:
+        '201':
+          description: Appraisal submitted
+
+  /performance/appraisals/{id}:
+    get:
+      tags: [Performance]
+      summary: Get appraisal by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Appraisal record
+    put:
+      tags: [Performance]
+      summary: Update appraisal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Updated
+    delete:
+      tags: [Performance]
+      summary: Delete appraisal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Deleted
+
+  /performance/appraisals/{id}/submit:
+    post:
+      tags: [Performance]
+      summary: Submit appraisal for review
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Submitted for review
+
+  /performance/appraisals/{id}/review:
+    post:
+      tags: [Performance]
+      summary: Review and rate an appraisal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewAppraisalRequest'
+      responses:
+        '200':
+          description: Review submitted
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # EXIT  (/api/v1/exits/...)
+  # ═══════════════════════════════════════════════════════════════════════════
+  /exits:
+    get:
+      tags: [Exit]
+      summary: List all exit requests
+      responses:
+        '200':
+          description: List of exit requests
+    post:
+      tags: [Exit]
+      summary: Submit employee exit request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateExitRequest'
+      responses:
+        '201':
+          description: Exit request created
+
+  /exits/{id}:
+    get:
+      tags: [Exit]
+      summary: Get exit request by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Exit record
+    put:
+      tags: [Exit]
+      summary: Update exit request
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateExitRequest'
+      responses:
+        '200':
+          description: Updated
+    delete:
+      tags: [Exit]
+      summary: Delete exit request
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Deleted
+
+  /exits/employee/{employeeId}:
+    get:
+      tags: [Exit]
+      summary: Get exits for an employee
+      parameters:
+        - name: employeeId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Exit records
+
+  /exits/{id}/review:
+    patch:
+      tags: [Exit]
+      summary: Review exit request (HR)
+      description: Requires MANAGE_EXITS permission.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewExitRequest'
+      responses:
+        '200':
+          description: Reviewed
+
+  /exits/{id}/approve:
+    patch:
+      tags: [Exit]
+      summary: Approve exit request
+      description: Requires APPROVE_EXITS permission.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewExitRequest'
+      responses:
+        '200':
+          description: Approved
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # HR DOCUMENTS  (/api/v1/hr-documents/...)
+  # ═══════════════════════════════════════════════════════════════════════════
+  /hr-documents/initialize:
+    post:
+      tags: [HR Documents]
+      summary: Initialize default document folders
+      description: Requires MANAGE_DOCUMENTS permission.
+      responses:
+        '200':
+          description: Default folders initialized
+
+  /hr-documents/documents:
+    get:
+      tags: [HR Documents]
+      summary: List documents (filtered by access level)
+      responses:
+        '200':
+          description: List of documents
+    post:
+      tags: [HR Documents]
+      summary: Upload a document
+      description: Requires MANAGE_DOCUMENTS permission. Supports multipart uploads.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                folderId:
+                  type: integer
+                title:
+                  type: string
+                access_level:
+                  type: string
+      responses:
+        '201':
+          description: Document created
+
+  /hr-documents/documents/{id}:
+    get:
+      tags: [HR Documents]
+      summary: Get document by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Document record
+    put:
+      tags: [HR Documents]
+      summary: Update document metadata
+      description: Requires MANAGE_DOCUMENTS permission.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Updated
+    delete:
+      tags: [HR Documents]
+      summary: Request document deletion
+      description: Requires MANAGE_DOCUMENTS permission.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Deletion requested
+
+  /hr-documents/folders:
+    get:
+      tags: [HR Documents]
+      summary: List document folders
+      responses:
+        '200':
+          description: List of folders
+    post:
+      tags: [HR Documents]
+      summary: Create a folder
+      description: Requires MANAGE_DOCUMENTS permission.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                parentId:
+                  type: integer
+      responses:
+        '201':
+          description: Folder created
+
+  /hr-documents/folders/{id}:
+    get:
+      tags: [HR Documents]
+      summary: Get folder by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Folder record
+    put:
+      tags: [HR Documents]
+      summary: Update folder
+      description: Requires MANAGE_DOCUMENTS permission.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Updated
+    delete:
+      tags: [HR Documents]
+      summary: Delete folder
+      description: Requires MANAGE_DOCUMENTS permission.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Deleted
+
+  /hr-documents/deletion-requests/pending:
+    get:
+      tags: [HR Documents]
+      summary: Get pending deletion requests
+      description: Requires APPROVE_DOCUMENT_DELETION permission.
+      responses:
+        '200':
+          description: Pending deletion requests
+
+  /hr-documents/deletion-requests/{id}/approve:
+    post:
+      tags: [HR Documents]
+      summary: Approve a document deletion request
+      description: Requires APPROVE_DOCUMENT_DELETION permission.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Deletion approved
+
+  /hr-documents/deletion-requests/{id}/reject:
+    post:
+      tags: [HR Documents]
+      summary: Reject a document deletion request
+      description: Requires APPROVE_DOCUMENT_DELETION permission.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Deletion rejected
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # ONBOARDING  (/api/v1/onboardings/...)
+  # ═══════════════════════════════════════════════════════════════════════════
+  /onboardings:
+    get:
+      tags: [Onboarding]
+      summary: List all onboarding records
+      description: Requires MANAGE_ONBOARDING permission.
+      responses:
+        '200':
+          description: List of onboarding records
+    post:
+      tags: [Onboarding]
+      summary: Create onboarding document record
+      description: Requires MANAGE_ONBOARDING permission.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOnboardingRequest'
+      responses:
+        '201':
+          description: Onboarding record created
+
+  /onboardings/{id}:
+    get:
+      tags: [Onboarding]
+      summary: Get onboarding record by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Onboarding record
+    patch:
+      tags: [Onboarding]
+      summary: Update onboarding record status
+      description: Requires MANAGE_ONBOARDING permission.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOnboardingRequest'
+      responses:
+        '200':
+          description: Updated
+    delete:
+      tags: [Onboarding]
+      summary: Delete onboarding record
+      description: Requires MANAGE_ONBOARDING permission.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Deleted
+
+  /onboardings/employee/{employeeId}:
+    get:
+      tags: [Onboarding]
+      summary: Get onboarding records for an employee
+      parameters:
+        - name: employeeId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Onboarding records
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # COMPLAINTS  (/api/v1/complaints/...)
+  # ═══════════════════════════════════════════════════════════════════════════
+  /complaints:
+    get:
+      tags: [Complaints]
+      summary: List all complaints
+      responses:
+        '200':
+          description: List of complaints
+    post:
+      tags: [Complaints]
+      summary: Submit a complaint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateComplaintRequest'
+      responses:
+        '201':
+          description: Complaint submitted
+
+  /complaints/{id}:
+    get:
+      tags: [Complaints]
+      summary: Get complaint by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Complaint record
+    put:
+      tags: [Complaints]
+      summary: Update complaint
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Updated
+    delete:
+      tags: [Complaints]
+      summary: Delete complaint
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Deleted
+
+  /complaints/{id}/resolve:
+    post:
+      tags: [Complaints]
+      summary: Resolve a complaint
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResolveComplaintRequest'
+      responses:
+        '200':
+          description: Complaint resolved
+
+  /complaints/{id}/close:
+    post:
+      tags: [Complaints]
+      summary: Close a complaint
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Complaint closed
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # TRAINING REQUESTS  (/api/v1/training-requests/...)
+  # ═══════════════════════════════════════════════════════════════════════════
+  /training-requests:
+    get:
+      tags: [Training Requests]
+      summary: Get training requests
+      description: Employees see own requests; HR sees all. Requires LIST_TRAINING_REQUESTS permission.
+      responses:
+        '200':
+          description: List of training requests
+    post:
+      tags: [Training Requests]
+      summary: Submit a training request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                trainingTitle:
+                  type: string
+                provider:
+                  type: string
+                startDate:
+                  type: string
+                  format: date
+                endDate:
+                  type: string
+                  format: date
+                cost:
+                  type: number
+                justification:
+                  type: string
+      responses:
+        '201':
+          description: Training request submitted
+
+  /training-requests/{id}:
+    get:
+      tags: [Training Requests]
+      summary: Get training request by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Training request record
+    delete:
+      tags: [Training Requests]
+      summary: Delete training request (only if pending)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Deleted
+
+  /training-requests/{id}/supervisor-approval:
+    put:
+      tags: [Training Requests]
+      summary: Supervisor approves or rejects training request
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrainingApprovalRequest'
+      responses:
+        '200':
+          description: Supervisor decision recorded
+
+  /training-requests/{id}/hr-review:
+    put:
+      tags: [Training Requests]
+      summary: HR officer reviews training request
+      description: Requires MANAGE_TRAINING_REQUESTS permission.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrainingApprovalRequest'
+      responses:
+        '200':
+          description: HR review recorded
+
+  /training-requests/{id}/final-approval:
+    put:
+      tags: [Training Requests]
+      summary: HR manager gives final approval/rejection
+      description: Requires APPROVE_TRAINING_REQUESTS permission.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrainingApprovalRequest'
+      responses:
+        '200':
+          description: Final decision recorded
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # DASHBOARD  (/api/v1/dashboard/...)
+  # ═══════════════════════════════════════════════════════════════════════════
+  /dashboard:
+    get:
+      tags: [Dashboard]
+      summary: Get aggregated HR dashboard statistics
+      responses:
+        '200':
+          description: Dashboard stats
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # PENDING AUTHORIZATION  (/api/v1/pending-authorization/...)
+  # ═══════════════════════════════════════════════════════════════════════════
+  /pending-authorization:
+    get:
+      tags: [Pending Authorization]
+      summary: Get all pending authorizations dashboard
+      responses:
+        '200':
+          description: Pending items dashboard
+
+  /pending-authorization/counts:
+    get:
+      tags: [Pending Authorization]
+      summary: Get counts of pending items per module
+      responses:
+        '200':
+          description: Counts per module
+
+  /pending-authorization/{moduleName}:
+    get:
+      tags: [Pending Authorization]
+      summary: Get pending items for a specific module
+      parameters:
+        - name: moduleName
+          in: path
+          required: true
+          schema:
+            type: string
+            example: payroll
+      responses:
+        '200':
+          description: Pending items for the module
