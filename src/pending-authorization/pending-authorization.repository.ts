@@ -14,6 +14,7 @@ import { JobPosting } from '../features/recruitment/job-posting.model';
 import { TrainingRequest } from '../features/training/training-request.model';
 import { User } from '../features/users/user.model';
 import { PendingModuleItemsProps } from './pending-authorization.service';
+import { Company } from '../features/company/company.model';
 
 export class AuthorizationRepository {
   static readonly getPendingLoans = async (limit: number) => {
@@ -260,7 +261,12 @@ export class AuthorizationRepository {
             {
               model: EmployeeDraft,
               as: 'employeeDraft',
-              include: [{ model: Employee, as: 'draftSupervisor', attributes: ['id', 'firstName', 'lastName'] }],
+              include: [
+                { model: Employee, as: 'draftSupervisor', attributes: ['id', 'firstName', 'lastName'] },
+                { model: Department, attributes: ['id', 'name'] },
+                { model: Company, attributes: ['id', 'name'] },
+                { model: JobRole, attributes: ['id', 'title'] },
+              ],
             },
             {
               model: Employee,

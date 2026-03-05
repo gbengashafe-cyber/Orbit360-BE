@@ -14,6 +14,7 @@ import { User } from '../users/user.model';
 import { EmployeeChangeRequest } from './employee-change-request.model';
 import { EmployeeFields, employeeStatus } from './employee-schema';
 import { Employee } from './employee.model';
+import { Company } from '../company/company.model';
 
 export class EmployeeDraft extends Model<InferAttributes<EmployeeDraft>, InferCreationAttributes<EmployeeDraft>> {
   declare id: CreationOptional<number>;
@@ -87,6 +88,19 @@ EmployeeDraft.init(
 );
 
 EmployeeDraft.belongsTo(Employee, { foreignKey: 'supervisorId', as: 'draftSupervisor' });
+
+EmployeeDraft.belongsTo(Department, {
+  foreignKey: 'departmentId',
+});
+Department.hasMany(EmployeeDraft, {
+  foreignKey: 'departmentId',
+});
+
+EmployeeDraft.belongsTo(JobRole, { foreignKey: 'jobRoleId' });
+JobRole.hasMany(EmployeeDraft, { foreignKey: 'jobRoleId' });
+
+EmployeeDraft.belongsTo(Company, { foreignKey: 'companyId' });
+Company.hasMany(EmployeeDraft, { foreignKey: 'companyId' });
 
 EmployeeDraft.belongsTo(EmployeeChangeRequest, { foreignKey: 'requestId', as: 'request' });
 EmployeeChangeRequest.hasOne(EmployeeDraft, { foreignKey: 'requestId', as: 'employeeDraft' });

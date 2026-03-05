@@ -29,6 +29,7 @@ JobRole.init(
   {
     sequelize: db,
     tableName: 'job_roles',
+    modelName: 'jobRole',
     indexes: [{ unique: true, fields: ['title', 'department_id'] }, { fields: ['title'] }],
   },
 );
