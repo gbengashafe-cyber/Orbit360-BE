@@ -109,7 +109,7 @@ class UserController {
       });
     } else {
       await db.transaction(async (transaction) => {
-        await user.update(req.body.user, { transaction });
+        await UserRepository.update(id, req.validatedBody?.user ?? {}, { transaction });
       });
     }
     const updatedUser = await UserRepository.readById(id);
