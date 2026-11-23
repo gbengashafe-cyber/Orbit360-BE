@@ -1,7 +1,7 @@
 {
   "name": "orbit360-be",
   "description": "",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "index.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
@@ -32,7 +32,7 @@
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "generate-password": "^1.7.1",
-    "glob": "^13.0.0",
+    "glob": "^13.0.6",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
     "ldapts": "^8.1.3",
@@ -42,8 +42,8 @@
     "nodemailer": "^8.0.0",
     "nodemailer-express-handlebars": "^7.0.0",
     "owasp-password-strength-test": "^1.3.0",
-    "qs": "^6.14.1",
-    "sequelize": "^6.37.7",
+    "qs": "^6.15.0",
+    "sequelize": "^6.37.8",
     "stoppable": "^1.1.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
