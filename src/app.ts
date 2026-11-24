@@ -22,6 +22,7 @@ import { jobRoleRoutes } from './features/job-role/job-role.routes';
 import { leaveRoutes } from './features/leave/leave.routes';
 import { loanTypeRoutes } from './features/loans/loan-types/loan-types.routes';
 import { loanRoutes } from './features/loans/loan.routes';
+import { notificationRoutes } from './features/notifications/notification.routes';
 import { onboardingRoutes } from './features/onboarding/onboarding.routes';
 import { payrollRoutes } from './features/payroll/payroll.routes';
 import { payrollReportRoutes } from './features/payroll/reports/payroll-report.routes';
@@ -146,6 +147,7 @@ app.use('/api/v1/loans', loanRoutes);
 app.use('/api/v1/hr-dashboard', hrDashboardRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/pending-authorization', authorizationRoutes);
+app.use('/api/v1/notifications', notificationRoutes);
 
 // Swagger Documentation
 app.use(

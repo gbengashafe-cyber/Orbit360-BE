@@ -58,6 +58,8 @@ tags:
     description: Aggregated statistics
   - name: Pending Authorization
     description: Pending approvals across modules
+  - name: Notifications
+    description: The authenticated user's notification feed, unread counts and read state
 
 security:
   - bearerAuth: []
@@ -782,6 +784,160 @@ components:
           type: boolean
         rejectionReason:
           type: string
+
+    # ─── Notifications ──────────────────────────────────────────────────────
+    NotificationCategory:
+      type: string
+      enum: [LEAVE, LOAN, TRAINING, RELIEVER, COMPLAINT, GENERAL]
+      description: Notification category. The frontend may label COMPLAINT as "Complaints".
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 42
+        category:
+          $ref: '#/components/schemas/NotificationCategory'
+        eventType:
+          type: string
+          example: LEAVE_APPROVED
+        audience:
+          type: string
+          enum: [REQUESTER, RELIEVER, DIRECT, ACTOR_QUEUE, BROADCAST]
+          description: Who the notification is for, relative to the originating record.
+        title:
+          type: string
+          example: Leave approved
+        message:
+          type: string
+          example: Your leave request submitted on 02/12/2026 has been approved.
+        entityType:
+          type: string
+          nullable: true
+          enum: [leave, loan, training_request, complaint]
+          description: Type of the originating record, used by the client to build a link.
+        entityId:
+          type: string
+          nullable: true
+          example: '128'
+        metadata:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: Small, non-identifying context (statuses, ISO timestamps, complaint reference).
+          example: { status: APPROVED, submittedAt: '2026-12-02T09:15:00.000Z' }
+        isRead:
+          type: boolean
+        readAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    NotificationFeedPagination:
+      type: object
+      description: Keyset (cursor) pagination ordered by (createdAt, id).
+      properties:
+        rows:
+          type: integer
+          description: Page size used (default 20, max 50).
+          example: 20
+        sort:
+          type: string
+          enum: [asc, desc]
+        hasMore:
+          type: boolean
+          description: True when another page exists.
+        nextCursor:
+          type: string
+          nullable: true
+          description: Opaque cursor for the next page. Pass it back unchanged with the same filters and sort. Null on the last page.
+
+    NotificationFeedResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Notifications fetched successfully
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Notification'
+        pagination:
+          $ref: '#/components/schemas/NotificationFeedPagination'
+
+    NotificationResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Notification marked as read
+        data:
+          $ref: '#/components/schemas/Notification'
+
+    NotificationUnreadCountResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Unread notification count fetched successfully
+        data:
+          type: object
+          properties:
+            total:
+              type: integer
+              example: 3
+            byCategory:
+              type: object
+              description: Unread count for every category (zero when none).
+              properties:
+                LEAVE: { type: integer, example: 2 }
+                LOAN: { type: integer, example: 0 }
+                TRAINING: { type: integer, example: 1 }
+                RELIEVER: { type: integer, example: 0 }
+                COMPLAINT: { type: integer, example: 0 }
+                GENERAL: { type: integer, example: 0 }
+
+    NotificationReadAllResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Notifications marked as read
+        data:
+          type: object
+          properties:
+            updated:
+              type: integer
+              description: Number of notifications that changed from unread to read.
+              example: 5
+
+    NotificationErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+        data:
+          type: object
+          example: {}
 
 paths:
   # ═══════════════════════════════════════════════════════════════════════════
@@ -3041,3 +3197,204 @@ paths:
       responses:
         '200':
           description: Pending items for the module
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # NOTIFICATIONS  (/api/v1/notifications/...)
+  # Every route requires the Bearer token and the token fingerprint cookie, and only reads or
+  # changes the authenticated user's own notifications. There is no create endpoint:
+  # notifications are generated internally by the backend.
+  # ═══════════════════════════════════════════════════════════════════════════
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: List the authenticated user's notifications (cursor pagination)
+      description: |
+        Returns the caller's notifications ordered by (createdAt, id).
+        To load the next page, pass `pagination.nextCursor` as `cursor` with the same filters and sort.
+        Notifications that arrive while the user scrolls do not shift pages already loaded.
+        `dateFrom` / `dateTo` are inclusive calendar days in Africa/Lagos.
+      parameters:
+        - name: category
+          in: query
+          schema:
+            $ref: '#/components/schemas/NotificationCategory'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [all, unread, read]
+            default: all
+        - name: dateFrom
+          in: query
+          description: Inclusive start date (YYYY-MM-DD, Africa/Lagos).
+          schema:
+            type: string
+            format: date
+        - name: dateTo
+          in: query
+          description: Inclusive end date (YYYY-MM-DD, Africa/Lagos). Must not be before dateFrom.
+          schema:
+            type: string
+            format: date
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [desc, asc]
+            default: desc
+        - name: cursor
+          in: query
+          description: Opaque cursor from `pagination.nextCursor`. Must have been issued for the same sort order.
+          schema:
+            type: string
+            maxLength: 200
+        - name: rows
+          in: query
+          description: Page size. Default 20; values above 50 are capped at 50.
+          schema:
+            type: integer
+            minimum: 1
+            default: 20
+      responses:
+        '200':
+          description: One page of notifications (an empty `data` array when there are none).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationFeedResponse'
+        '400':
+          description: Invalid filter, sort, rows or cursor.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationErrorResponse'
+        '401':
+          description: Missing or invalid authentication.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationErrorResponse'
+
+  /notifications/unread-count:
+    get:
+      tags: [Notifications]
+      summary: Get the authenticated user's unread notification count
+      description: Counted live from stored notifications (there is no cached counter).
+      responses:
+        '200':
+          description: Unread totals.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationUnreadCountResponse'
+        '401':
+          description: Missing or invalid authentication.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationErrorResponse'
+
+  /notifications/read-all:
+    patch:
+      tags: [Notifications]
+      summary: Mark all of the authenticated user's notifications as read
+      parameters:
+        - name: category
+          in: query
+          description: Only mark this category as read.
+          schema:
+            $ref: '#/components/schemas/NotificationCategory'
+      responses:
+        '200':
+          description: Number of notifications updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationReadAllResponse'
+        '400':
+          description: Invalid category.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationErrorResponse'
+        '401':
+          description: Missing or invalid authentication.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationErrorResponse'
+
+  /notifications/{id}/read:
+    patch:
+      tags: [Notifications]
+      summary: Mark one of the authenticated user's notifications as read
+      description: Idempotent. Keeps the original readAt if it was already read.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: The updated notification.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationResponse'
+        '400':
+          description: Invalid id.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationErrorResponse'
+        '401':
+          description: Missing or invalid authentication.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationErrorResponse'
+        '404':
+          description: Not found. Also returned for notifications that belong to another user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationErrorResponse'
+
+  /notifications/{id}/unread:
+    patch:
+      tags: [Notifications]
+      summary: Mark one of the authenticated user's notifications as unread
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: The updated notification.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationResponse'
+        '400':
+          description: Invalid id.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationErrorResponse'
+        '401':
+          description: Missing or invalid authentication.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationErrorResponse'
+        '404':
+          description: Not found. Also returned for notifications that belong to another user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationErrorResponse'

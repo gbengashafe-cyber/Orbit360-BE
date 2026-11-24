@@ -15,7 +15,8 @@
     "seed": "ts-node src/db/setup-seed-db.ts",
     "sync": "ts-node src/db/sync.ts",
     "seed:leave-balances": "ts-node src/db/seed-leave-balances.ts",
-    "migrate:asset": "ts-node run-asset-migration.ts"
+    "migrate:asset": "ts-node run-asset-migration.ts",
+    "test": "node -r ts-node/register/transpile-only --test --test-force-exit --test-concurrency=1 \"src/**/__tests__/*.test.ts\""
   },
   "keywords": [],
   "author": "",
