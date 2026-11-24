@@ -10,6 +10,7 @@ import { LeaveBalanceService } from '../leave/leave-balance.service';
 import { LoanType } from '../loans/loan-types/loan-types.model';
 import { Loan } from '../loans/loan.model';
 import { LoanRepository } from '../loans/loan.repository';
+import { NotificationService } from '../notifications/notification.service';
 import { calculatePayroll } from '../payroll/payroll.utils';
 import { UserRepository } from '../users/user.repository';
 import { userSchema } from '../users/user.validation';
@@ -309,6 +310,13 @@ export class EmployeeService {
         { transaction },
       );
 
+      NotificationService.notifyAfterCommit(transaction, 'LOAN_APPLIED', {
+        loanId: loanRecord.id,
+        requesterEmployeeId: employeeId,
+        submittedAt: loanRecord.createdAt,
+        actorUserId: userId,
+      });
+
       return loanRecord;
     });
   };
@@ -442,7 +450,20 @@ export class EmployeeService {
       throw ApiError.forbidden('You are not permitted to perform this activity');
     }
 
-    return Loan.update({ status: 'CANCELLED' }, { where: { id: loanId } });
+    const [updated] = await Loan.update(
+      { status: 'CANCELLED' },
+      { where: { id: loanId, employeeId, status: ['PENDING_APPROVAL', 'PENDING_REVIEW'] } },
+    );
+    if (updated !== 1) {
+      throw ApiError.conflict('This loan cannot be cancelled.');
+    }
+
+    await NotificationService.notify('LOAN_CANCELLED', {
+      loanId: loanRecord.id,
+      requesterEmployeeId: loanRecord.employeeId,
+      submittedAt: loanRecord.createdAt,
+    });
+    return [updated];
   };
 
   static readonly getLoans = ({ employeeId, rows, page }) => {

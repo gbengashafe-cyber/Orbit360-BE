@@ -17,6 +17,7 @@ const render = (eventType: string, payload: Record<string, unknown>) => {
 
 // 10:00 UTC on 2 Dec 2026 = 11:00 in Lagos.
 const DEC_2 = '2026-12-02T10:00:00.000Z';
+const TRAINING_REQUEST_ID = '95b4c513-00aa-4b1d-b802-7f79af5a497e';
 
 describe('notification dates (D1)', () => {
   it('formats DD/MM/YYYY in Africa/Lagos', () => {
@@ -113,7 +114,7 @@ describe('event registry', () => {
   it('uses the approved copy with dates from the payload', () => {
     const leave = { leaveId: 1, requesterEmployeeId: 2, submittedAt: DEC_2 };
     const loan = { loanId: 1, requesterEmployeeId: 2, submittedAt: DEC_2 };
-    const training = { trainingRequestId: 1, requesterEmployeeId: 2, submittedAt: DEC_2 };
+    const training = { trainingRequestId: TRAINING_REQUEST_ID, requesterEmployeeId: 2, submittedAt: DEC_2 };
 
     assert.equal(render('LEAVE_APPLIED', leave).message, 'You applied for leave on 02/12/2026. Status: Pending approval.');
     assert.equal(render('LEAVE_APPROVED', leave).message, 'Your leave request submitted on 02/12/2026 has been approved.');
@@ -135,7 +136,7 @@ describe('event registry', () => {
   it('uses the discovery report wording for the other events', () => {
     const leave = { leaveId: 1, requesterEmployeeId: 2, submittedAt: DEC_2 };
     const loan = { loanId: 1, requesterEmployeeId: 2, submittedAt: DEC_2 };
-    const training = { trainingRequestId: 1, requesterEmployeeId: 2, submittedAt: DEC_2 };
+    const training = { trainingRequestId: TRAINING_REQUEST_ID, requesterEmployeeId: 2, submittedAt: DEC_2 };
     const complaint = { complaintId: 1, ownerEmployeeId: 2, reference: 'CMP-2026-000001', submittedAt: DEC_2 };
 
     assert.equal(render('LEAVE_CANCELLED', leave).message, 'Your leave request submitted on 02/12/2026 was cancelled.');
@@ -166,6 +167,27 @@ describe('event registry', () => {
     const { definition, data } = render('LOAN_APPROVED', { loanId: 77, requesterEmployeeId: 2, submittedAt: DEC_2 });
     assert.equal(definition.dedupeKey(data), 'LOAN_APPROVED:loan:77');
     assert.deepEqual(definition.entity(data), { type: 'loan', id: '77' });
+  });
+
+  it('accepts UUID training request IDs and uses them in entity and dedupe keys', () => {
+    const definition = getNotificationEvent('TRAINING_APPROVED');
+    assert.ok(definition);
+    const data = definition.schema.parse({
+      trainingRequestId: TRAINING_REQUEST_ID,
+      requesterEmployeeId: 2,
+      submittedAt: DEC_2,
+    });
+
+    assert.deepEqual(definition.entity(data), { type: 'training_request', id: TRAINING_REQUEST_ID });
+    assert.equal(definition.dedupeKey(data), `TRAINING_APPROVED:training_request:${TRAINING_REQUEST_ID}`);
+    assert.equal(
+      definition.schema.safeParse({ trainingRequestId: 'not-a-uuid', requesterEmployeeId: 2, submittedAt: DEC_2 }).success,
+      false,
+    );
+    assert.equal(
+      definition.schema.safeParse({ trainingRequestId: 1, requesterEmployeeId: 2, submittedAt: DEC_2 }).success,
+      false,
+    );
   });
 
   it('rejects payloads with missing or unknown fields', () => {

@@ -6,6 +6,7 @@ import { Employee } from '../employee/employee.model';
 import { LeaveBalance } from './leave-balance.model';
 import { LeaveType } from './leave-type.model';
 import { Leave } from './leave.model';
+import { NotificationService } from '../notifications/notification.service';
 import { calculateWorkingDays, validateLeaveDates } from './leave.utils';
 
 export class LeaveController {
@@ -80,6 +81,13 @@ export class LeaveController {
       supporting_documents: supportingDocs.length > 0 ? JSON.stringify(supportingDocs) : null,
       handover_documents: handoverDocs.length > 0 ? JSON.stringify(handoverDocs) : null,
       status: 'pending',
+    });
+
+    await NotificationService.notify('LEAVE_APPLIED', {
+      leaveId: leave.id,
+      requesterEmployeeId: employee.id,
+      submittedAt: leave.createdAt,
+      actorUserId: user.id,
     });
 
     const createdLeave = await Leave.findByPk(leave.id, {
@@ -318,15 +326,46 @@ export class LeaveController {
         'You are no authorised to approve leave for this employee. Kindly contact the employee to approve.',
       );
     }
-    const updateData: any = { status: action };
-    if (action.toLowerCase() === 'rejected' && rejection_reason) {
+    const finalAction = action.toLowerCase();
+    const updateData: any = { status: finalAction };
+    if (finalAction === 'rejected' && rejection_reason) {
       updateData.rejection_reason = rejection_reason;
     }
 
     await db.transaction(async (transaction) => {
-      await leave.update(updateData, { transaction });
-      if (action.toLowerCase() === 'approved') {
+      const [updated] = await Leave.update(updateData, {
+        where: { id: leave.id, status: 'pending' },
+        transaction,
+      });
+      if (updated !== 1) {
+        throw ApiError.conflict('Leave request has already been processed');
+      }
+
+      if (finalAction === 'approved') {
         await Employee.update({ status: 'ON_LEAVE' }, { where: { id: leave.employeeId }, transaction });
+      }
+
+      const requesterPayload = {
+        leaveId: leave.id,
+        requesterEmployeeId: leave.employeeId,
+        submittedAt: leave.createdAt,
+        actorUserId: req.user?.id,
+      };
+      if (finalAction === 'approved') {
+        NotificationService.notifyAfterCommit(transaction, 'LEAVE_APPROVED', requesterPayload);
+
+        if (leave.covering_employee_id) {
+          NotificationService.notifyAfterCommit(transaction, 'RELIEVER_ASSIGNED', {
+            leaveId: leave.id,
+            relieverEmployeeId: leave.covering_employee_id,
+            onLeaveEmployeeName: `${employeeRecord?.firstName ?? ''} ${employeeRecord?.lastName ?? ''}`.trim(),
+            startDate: leave.startDate,
+            endDate: leave.endDate,
+            actorUserId: req.user?.id,
+          });
+        }
+      } else {
+        NotificationService.notifyAfterCommit(transaction, 'LEAVE_REJECTED', requesterPayload);
       }
     });
 
@@ -356,6 +395,13 @@ export class LeaveController {
     }
 
     await leave.destroy();
+
+    await NotificationService.notify('LEAVE_CANCELLED', {
+      leaveId: leave.id,
+      requesterEmployeeId: leave.employeeId,
+      submittedAt: leave.createdAt,
+      actorUserId: req.user?.id,
+    });
 
     res.json(ApiResponse({ data: {}, message: 'Leave request cancelled successfully' }));
   }

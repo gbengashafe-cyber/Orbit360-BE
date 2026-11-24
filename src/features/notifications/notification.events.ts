@@ -53,7 +53,8 @@ const optionalActor = id.nullable().optional();
 const reason = z.string().trim().max(1000).nullable().optional();
 
 const iso = (date: Date) => date.toISOString();
-const keyFor = (eventType: string, entity: NotificationEntityType, entityId: number) => `${eventType}:${entity}:${entityId}`;
+const keyFor = (eventType: string, entity: NotificationEntityType, entityId: number | string) =>
+  `${eventType}:${entity}:${entityId}`;
 const requester = (employeeId: number): RecipientRef[] => [{ kind: 'employee', employeeId }];
 
 // ─── Leave ──────────────────────────────────────────────────────────────────
@@ -118,7 +119,7 @@ const loanEvent = (
 
 // ─── Training ───────────────────────────────────────────────────────────────
 const trainingPayload = z.strictObject({
-  trainingRequestId: id,
+  trainingRequestId: z.uuidv4(),
   requesterEmployeeId: id,
   submittedAt: timestamp,
   actorUserId: optionalActor,

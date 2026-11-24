@@ -3,6 +3,7 @@ import { AuditLog } from '../../audit-log/audit-log.model';
 import { db } from '../../db';
 import { ApiError } from '../../utils/api-error';
 import { Employee } from '../employee/employee.model';
+import { NotificationService } from '../notifications/notification.service';
 import { Complaint, ComplaintStatus } from './complaint.model';
 import { ComplaintRepository } from './complaint.repository';
 import { toOwnerView, toReviewerView } from './complaint.serializer';
@@ -127,6 +128,13 @@ export class ComplaintService {
         { transaction },
       );
 
+      NotificationService.notifyAfterCommit(transaction, 'COMPLAINT_SUBMITTED', {
+        complaintId: created.id,
+        ownerEmployeeId: created.employeeId,
+        reference,
+        submittedAt: created.reportedDate,
+      });
+
       return created;
     });
 
@@ -229,6 +237,15 @@ export class ComplaintService {
         },
         { transaction },
       );
+
+      if (decision === 'REJECT' && complaint.reference) {
+        NotificationService.notifyAfterCommit(transaction, 'COMPLAINT_REJECTED', {
+          complaintId: complaint.id,
+          ownerEmployeeId: complaint.employeeId,
+          reference: complaint.reference,
+          submittedAt: complaint.reportedDate,
+        });
+      }
     });
 
     return ComplaintService.getById(user, id);
@@ -284,6 +301,15 @@ export class ComplaintService {
         },
         { transaction },
       );
+
+      if (complaint.reference) {
+        NotificationService.notifyAfterCommit(transaction, decision === 'APPROVE' ? 'COMPLAINT_APPROVED' : 'COMPLAINT_REJECTED', {
+          complaintId: complaint.id,
+          ownerEmployeeId: complaint.employeeId,
+          reference: complaint.reference,
+          submittedAt: complaint.reportedDate,
+        });
+      }
     });
 
     return ComplaintService.getById(user, id);

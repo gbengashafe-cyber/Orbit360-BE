@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
 import { after, afterEach, before, describe, it, mock } from 'node:test';
 import { Employee } from '../../employee/employee.model';
 import { db } from '../../../db';
@@ -202,7 +203,7 @@ describe('NotificationService.notify: idempotency', () => {
   });
 
   it('creates exactly one row under concurrent attempts (database-enforced)', async () => {
-    const payload = { trainingRequestId: fakeEntityId(), requesterEmployeeId: alice.employeeId, submittedAt: SUBMITTED_AT };
+    const payload = { trainingRequestId: randomUUID(), requesterEmployeeId: alice.employeeId, submittedAt: SUBMITTED_AT };
     const outcomes = await Promise.all(
       Array.from({ length: 10 }, () => NotificationService.notify('TRAINING_APPROVED', payload)),
     );

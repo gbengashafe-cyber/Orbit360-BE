@@ -1,6 +1,6 @@
 # ORBIT 360 Notification Center
 
-This document describes the Phase 2 Notification Center foundation and the permanent standard for integrating future business workflows. It distinguishes implemented behavior from approved product decisions and recommended practices; the presence of an event definition does not mean a workflow currently dispatches that event.
+This document describes the Phase 2 Notification Center foundation and the Phase 3 employee-facing workflow integrations currently implemented. It distinguishes implemented behavior from approved product decisions and recommended practices; event definitions alone do not imply that a workflow dispatches an event.
 
 ## Purpose and architecture
 
@@ -32,7 +32,7 @@ The notification feature is mounted at `/api/v1/notifications` from `src/app.ts`
 
 Callers use `NotificationService.notify(eventType, payload)` and event types/payloads from `notification.events.ts`. Event definitions own the event's schema, category, audience, recipient resolver input, copy, entity reference, metadata, actor, and dedupe key. Payload schemas are strict so unknown fields are rejected.
 
-Current employee-facing event definitions are listed below. They are registered in Phase 2; workflow dispatch is not automatically wired by registering them.
+The event definitions below were established in Phase 2. The workflow table that follows records which of them are now dispatched by Phase 3 business workflows.
 
 | Category | Event types |
 | --- | --- |
@@ -43,7 +43,33 @@ Current employee-facing event definitions are listed below. They are registered 
 | `COMPLAINT` | `COMPLAINT_SUBMITTED`, `COMPLAINT_APPROVED`, `COMPLAINT_REJECTED` |
 | `GENERAL` | `GENERAL_NOTIFICATION` |
 
-The six categories are `LEAVE`, `LOAN`, `TRAINING`, `RELIEVER`, `COMPLAINT`, and `GENERAL`. `COMPLAINT` is intentionally the sixth category (D3). Audiences represented in the model include `REQUESTER`, `RELIEVER`, `DIRECT`, `ACTOR_QUEUE`, and `BROADCAST`; the latter two are not Phase 2 delivery integrations.
+The six categories are `LEAVE`, `LOAN`, `TRAINING`, `RELIEVER`, `COMPLAINT`, and `GENERAL`. `COMPLAINT` is intentionally the sixth category (D3). Audiences represented in the model include `REQUESTER`, `RELIEVER`, `DIRECT`, `ACTOR_QUEUE`, and `BROADCAST`; `ACTOR_QUEUE` and `BROADCAST` have no Phase 3 workflow delivery integrations.
+
+## Implemented Phase 3 workflow integrations
+
+The business integrations below are implemented in the named backend workflows. Every event uses the central event registry and recipient resolver. Employee recipient references are resolved through the existing employee-to-user email relationship; missing accounts are skipped rather than guessed.
+
+| Workflow transition | Event/category | Recipient | Dispatch timing and behavior |
+| --- | --- | --- | --- |
+| Leave created | `LEAVE_APPLIED` / `LEAVE` | Leave requester | After `Leave.create` succeeds (the submission path is non-transactional). |
+| Leave approved | `LEAVE_APPROVED` / `LEAVE` | Employee taking leave | Registered with `notifyAfterCommit` in the approval transaction. |
+| Leave approved with `covering_employee_id` | `RELIEVER_ASSIGNED` / `RELIEVER` | Assigned covering employee | Registered in the same approval transaction. Names the employee taking leave; copy: “You are covering for {employee going on leave} starting DD/MM/YYYY.” No reliever event is registered without an assigned covering employee. |
+| Leave rejected | `LEAVE_REJECTED` / `LEAVE` | Leave requester | Registered with `notifyAfterCommit` after the conditional pending-to-rejected update in the transaction. |
+| Leave cancelled | `LEAVE_CANCELLED` / `LEAVE` | Leave requester | Payload is captured before the existing delete; `notify` runs only after deletion succeeds. |
+| Loan created | `LOAN_APPLIED` / `LOAN` | Requesting employee | Registered with `notifyAfterCommit` in the existing creation/audit transaction. |
+| Final loan approval reaches `PENDING_DISBURSEMENT` | `LOAN_APPROVED` / `LOAN` | Requesting employee | Registered with `notifyAfterCommit` in the approval/audit transaction. Copy says approved, not paid or disbursed (D5). |
+| Final loan decision reaches `REJECTED` | `LOAN_REJECTED` / `LOAN` | Requesting employee | Registered after the successful conditional update and audit in the transaction. Intermediate reviewer rejection and the approver path returning the loan to `PENDING_REVIEW` do not notify. |
+| Eligible loan cancellation succeeds | `LOAN_CANCELLED` / `LOAN` | Requesting employee | `notify` runs after the conditional status update succeeds. |
+| Training request created | `TRAINING_APPLIED` / `TRAINING` | Original submitter | `notify` runs after creation. For `requestScope: TEAM`, other team members are not recipients (D6). Training IDs are UUIDs and the event schema validates UUIDs. |
+| Supervisor or HR Officer rejects training | `TRAINING_REJECTED` / `TRAINING` | Original submitter | `notify` runs after the conditional status update succeeds. |
+| HR Manager makes final training decision | `TRAINING_APPROVED` or `TRAINING_REJECTED` / `TRAINING` | Original submitter | `notify` runs after the conditional status update succeeds. Intermediate supervisor approval and HR review approval do not notify. |
+| Complaint submitted | `COMPLAINT_SUBMITTED` / `COMPLAINT` | Complaint owner | Registered with `notifyAfterCommit` in the submission transaction, after the reference and audit record are written. |
+| HR Officer rejects complaint | `COMPLAINT_REJECTED` / `COMPLAINT` | Complaint owner | Registered with `notifyAfterCommit` after the conditional transition and audit in the transaction. HR Officer approval to `PENDING_APPROVAL` is intermediate and does not notify. |
+| HR Manager makes final complaint decision | `COMPLAINT_APPROVED` or `COMPLAINT_REJECTED` / `COMPLAINT` | Complaint owner | Registered with `notifyAfterCommit` after the conditional transition and audit in the transaction. |
+
+Leave approval, loan review/authorization, and complaint transitions use conditional status updates so a stale decision that loses the transition cannot register an outcome notification. Training transitions use conditional status updates for the same reason. Repeated dispatches for an event and record are protected by the stable event/entity dedupe key and unique recipient/dedupe database constraint. These safeguards are limited to notification-relevant transitions; they do not constitute a broad concurrency redesign.
+
+No Phase 3 integration sends notifications to supervisors or HR recipients (D4). Training's existing helper methods that log placeholder “queued” messages are not Notification Center dispatches or recipient fan-out.
 
 ### Recipient resolution
 
@@ -152,6 +178,6 @@ Keep tests isolated from unrelated user data. Use the existing notification test
 
 ## Current implementation notes and known alignment checks
 
-The Phase 2 code defines the event types above but does not itself wire all business workflow transitions to them. In particular, agents must inspect the current workflow before claiming any event is dispatched. Current event payloads expect numeric leave/loan/complaint IDs and a numeric `trainingRequestId`; the training model uses UUID IDs, so this mismatch must be resolved before dispatching training events. This is an application/event-schema alignment issue, not a reason to change the notification table schema.
+The workflow table above describes current Phase 3 integrations, not merely proposed behavior. Notification Preferences and Exit Management workflow integration are future work; neither is implemented by the current Notification Center or Phase 3 workflows. Do not document them as available behavior or add them without a separately approved scope.
 
-The approved decisions D5–D7 govern future integrations. They are not claims that loan approval integration, team-request routing behavior, or concurrency safeguards have already been implemented in business workflows.
+The training event schema now accepts UUID-backed request IDs, matching the `TrainingRequest` model. The approved decisions D1–D7 remain authoritative: D1 dates, D2 reliever recipient and wording, D3 complaint category position, D4 deferred supervisor/HR delivery, D5 loan approval at `PENDING_DISBURSEMENT`, D6 requester-only TEAM training, and D7 minimal safeguards against misleading concurrent outcomes.

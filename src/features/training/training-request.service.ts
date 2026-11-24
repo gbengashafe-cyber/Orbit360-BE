@@ -2,8 +2,10 @@ import { ApiError } from '../../utils/api-error';
 import { logger } from '../../utils/logger';
 import { Employee } from '../employee/employee.model';
 import { DEFAULT_EMPLOYEE_INCLUDE_FIELDS, EmployeeRepository } from '../employee/employee.repository';
+import { NotificationService } from '../notifications/notification.service';
 import { TrainingRequest } from './training-request.model';
 import { TrainingRequestSchema } from './training-request.validation';
+import { Attributes } from 'sequelize';
 
 export class TrainingRequestService {
   static async createRequest(data: any, employeeId: number) {
@@ -14,6 +16,7 @@ export class TrainingRequestService {
       employeeId,
     });
 
+    await NotificationService.notify('TRAINING_APPLIED', this.notificationPayload(request));
     this.sendSubmissionNotifications(request, employeeId);
 
     return request;
@@ -75,10 +78,11 @@ export class TrainingRequestService {
     }
 
     if (approved) {
-      request.status = 'PENDING_HR_REVIEW';
-      request.supervisorApprovedAt = new Date();
-      request.supervisorApprovedBy = supervisorId;
-      await request.save();
+      await this.persistTransition(request, 'PENDING_SUPERVISOR_APPROVAL', {
+        status: 'PENDING_HR_REVIEW',
+        supervisorApprovedAt: new Date(),
+        supervisorApprovedBy: supervisorId,
+      });
 
       this.sendApprovalNotifications(request, 'supervisor_approved');
     } else {
@@ -86,11 +90,13 @@ export class TrainingRequestService {
         throw ApiError.badRequest('Rejection reason is required');
       }
 
-      request.status = 'SUPERVISOR_REJECTED';
-      request.supervisorNote = supervisorNote;
-      request.supervisorApprovedBy = supervisorId;
-      await request.save();
+      await this.persistTransition(request, 'PENDING_SUPERVISOR_APPROVAL', {
+        status: 'SUPERVISOR_REJECTED',
+        supervisorNote,
+        supervisorApprovedBy: supervisorId,
+      });
 
+      await NotificationService.notify('TRAINING_REJECTED', this.notificationPayload(request, supervisorId));
       this.sendRejectionNotifications(request, 'supervisor_rejected', supervisorNote);
     }
 
@@ -105,10 +111,11 @@ export class TrainingRequestService {
     }
 
     if (approved === 'APPROVE') {
-      request.status = 'PENDING_HR_APPROVAL';
-      request.hrReviewedAt = new Date();
-      request.hrReviewedBy = hrOfficerId;
-      await request.save();
+      await this.persistTransition(request, request.status, {
+        status: 'PENDING_HR_APPROVAL',
+        hrReviewedAt: new Date(),
+        hrReviewedBy: hrOfficerId,
+      });
 
       this.sendApprovalNotifications(request, 'PENDING_HR_APPROVAL');
     } else {
@@ -116,11 +123,13 @@ export class TrainingRequestService {
         throw ApiError.badRequest('Rejection reason is required');
       }
 
-      request.status = 'HR_REJECTED';
-      request.hrReviewerNote = rejectionReason;
-      request.hrReviewedBy = hrOfficerId;
-      await request.save();
+      await this.persistTransition(request, request.status, {
+        status: 'HR_REJECTED',
+        hrReviewerNote: rejectionReason,
+        hrReviewedBy: hrOfficerId,
+      });
 
+      await NotificationService.notify('TRAINING_REJECTED', this.notificationPayload(request, hrOfficerId));
       this.sendRejectionNotifications(request, 'hr_rejected', rejectionReason);
     }
 
@@ -135,22 +144,26 @@ export class TrainingRequestService {
     }
 
     if (approved) {
-      request.status = 'APPROVED';
-      request.finalApprovedAt = new Date();
-      request.finalApprovedBy = hrManagerId;
-      await request.save();
+      await this.persistTransition(request, 'PENDING_HR_APPROVAL', {
+        status: 'APPROVED',
+        finalApprovedAt: new Date(),
+        finalApprovedBy: hrManagerId,
+      });
 
+      await NotificationService.notify('TRAINING_APPROVED', this.notificationPayload(request, hrManagerId));
       await this.sendFinalApprovalNotification(request);
     } else {
       if (!rejectionReason || rejectionReason.trim() === '') {
         throw ApiError.badRequest('Rejection reason is required');
       }
 
-      request.status = 'REJECTED';
-      request.finalNote = rejectionReason;
-      request.finalApprovedBy = hrManagerId;
-      await request.save();
+      await this.persistTransition(request, 'PENDING_HR_APPROVAL', {
+        status: 'REJECTED',
+        finalNote: rejectionReason,
+        finalApprovedBy: hrManagerId,
+      });
 
+      await NotificationService.notify('TRAINING_REJECTED', this.notificationPayload(request, hrManagerId));
       this.sendFinalRejectionNotification(request, rejectionReason);
     }
 
@@ -170,6 +183,23 @@ export class TrainingRequestService {
 
     return request.destroy();
   }
+
+  private static readonly persistTransition = async (
+    request: TrainingRequest,
+    expectedStatus: Attributes<TrainingRequest>['status'],
+    values: Partial<Attributes<TrainingRequest>>,
+  ) => {
+    const [updated] = await TrainingRequest.update(values, { where: { id: request.id, status: expectedStatus } });
+    if (updated !== 1) throw ApiError.conflict('Training request has already been processed.');
+    request.set(values);
+  };
+
+  private static readonly notificationPayload = (request: TrainingRequest, actorUserId?: number) => ({
+    trainingRequestId: request.id,
+    requesterEmployeeId: request.employeeId,
+    submittedAt: request.createdAt,
+    ...(actorUserId ? { actorUserId } : {}),
+  });
 
   // Notification helpers
   private static async sendSubmissionNotifications(request: TrainingRequest, requesterId: number) {
