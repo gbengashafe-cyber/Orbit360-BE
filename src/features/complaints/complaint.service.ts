@@ -1,4 +1,4 @@
-import { Op, WhereOptions } from 'sequelize';
+import { col, fn, Op, where as sqlWhere, WhereOptions } from 'sequelize';
 import { AuditLog } from '../../audit-log/audit-log.model';
 import { db } from '../../db';
 import { ApiError } from '../../utils/api-error';
@@ -9,13 +9,63 @@ import { toOwnerView, toReviewerView } from './complaint.serializer';
 
 type SessionUser = { id: number; email: string; permissions?: string[] };
 type Pagination = { page: number; rows: number };
+export type ReviewerFilters = {
+  status?: ComplaintStatus;
+  severity?: string;
+  search?: string;
+  dateFrom?: string; // YYYY-MM-DD, inclusive (submission date)
+  dateTo?: string; // YYYY-MM-DD, inclusive (submission date)
+};
+
+const escapeLike = (value: string) => value.replace(/[\\%_]/g, (match) => `\\${match}`);
+
+const buildReviewerWhere = ({ status, severity, search, dateFrom, dateTo }: ReviewerFilters) => {
+  const conditions: WhereOptions<Complaint>[] = [];
+
+  if (status) conditions.push({ status });
+  if (severity) conditions.push({ severity: severity as Complaint['severity'] });
+
+  if (dateFrom || dateTo) {
+    conditions.push({
+      reportedDate: {
+        ...(dateFrom ? { [Op.gte]: new Date(`${dateFrom}T00:00:00`) } : {}),
+        ...(dateTo ? { [Op.lte]: new Date(`${dateTo}T23:59:59.999`) } : {}),
+      },
+    });
+  }
+
+  if (search) {
+    const term = `%${escapeLike(search)}%`;
+    conditions.push({
+      [Op.or]: [
+        { reference: { [Op.like]: term } },
+        { title: { [Op.like]: term } },
+        // Staff name / staff ID only match NON-anonymous complaints, so a search can't reveal who filed an anonymous one.
+        {
+          [Op.and]: [
+            { isAnonymous: false },
+            {
+              [Op.or]: [
+                sqlWhere(fn('CONCAT', col('employee.first_name'), ' ', col('employee.last_name')), { [Op.like]: term }),
+                sqlWhere(col('employee.staff_id'), { [Op.like]: term }),
+              ],
+            },
+          ],
+        },
+      ],
+    } as WhereOptions<Complaint>);
+  }
+
+  // An empty AND matches every row.
+  return { [Op.and]: conditions };
+};
 
 const REVIEW_PERMISSIONS = ['MANAGE_COMPLAINTS', 'APPROVE_COMPLAINTS'];
 
 // Same message whether the complaint is missing or belongs to someone else, so IDs can't be probed.
 const notFound = () => ApiError.notFound('Complaint not found');
 const alreadyProcessed = () => ApiError.conflict('This complaint has already been processed.');
-// Generic on purpose: it must not reveal that an anonymous complaint belongs to the reviewer.
+// Generic on purpose. (Reviewers learn a complaint is theirs only via `isOwnComplaint`, which only they receive.)
 const cannotActOnComplaint = () => ApiError.forbidden('You cannot act on this complaint.');
 
 const buildReference = (id: number, date: Date) => `CMP-${date.getFullYear()}-${String(id).padStart(6, '0')}`;
@@ -94,10 +144,23 @@ export class ComplaintService {
     return { data: rows.map(toOwnerView), pagination: pagination(count, page) };
   };
 
-  static readonly listForReviewers = async ({ status }: { status?: ComplaintStatus }, page: Pagination) => {
-    const where: WhereOptions<Complaint> = status ? { status } : {};
-    const { count, rows } = await ComplaintRepository.findForReviewers({ ...page, where });
-    return { data: rows.map(toReviewerView), pagination: pagination(count, page) };
+  static readonly listForReviewers = async (user: SessionUser, filters: ReviewerFilters, page: Pagination) => {
+    const viewerEmployeeId = await findOwnEmployeeId(user);
+    const { count, rows } = await ComplaintRepository.findForReviewers({ ...page, where: buildReviewerWhere(filters) });
+    return {
+      data: rows.map((complaint) => toReviewerView(complaint, { viewerEmployeeId })),
+      pagination: pagination(count, page),
+    };
+  };
+
+  // Per-tab totals for the HR page, using the same search/urgency/date filters (status comes from the tab).
+  static readonly countsForReviewers = async (filters: Omit<ReviewerFilters, 'status'>) => {
+    const [pendingReview, pendingApproval, all] = await Promise.all([
+      ComplaintRepository.countForReviewers(buildReviewerWhere({ ...filters, status: 'PENDING_REVIEW' })),
+      ComplaintRepository.countForReviewers(buildReviewerWhere({ ...filters, status: 'PENDING_APPROVAL' })),
+      ComplaintRepository.countForReviewers(buildReviewerWhere(filters)),
+    ]);
+    return { PENDING_REVIEW: pendingReview, PENDING_APPROVAL: pendingApproval, all };
   };
 
   static readonly getById = async (user: SessionUser, id: number) => {
@@ -114,7 +177,7 @@ export class ComplaintService {
     }
 
     if (canReview(user)) {
-      return toReviewerView(complaint);
+      return toReviewerView(complaint, { viewerEmployeeId: employeeId });
     }
 
     throw notFound();

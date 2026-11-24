@@ -54,9 +54,20 @@ const complaintIdParamSchema = z.object({
   id: z.coerce.number().int().positive('Complaint ID must be a positive number'),
 });
 
-const listComplaintsQuerySchema = z.object({
-  status: z.enum(COMPLAINT_STATUS).optional(),
-});
+const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Dates must be in YYYY-MM-DD format');
+
+const listComplaintsQuerySchema = z
+  .object({
+    status: z.enum(COMPLAINT_STATUS).optional(),
+    severity: z.enum(COMPLAINT_URGENCY).optional(),
+    search: z.string().trim().max(100, 'Search must be at most 100 characters').optional(),
+    dateFrom: isoDate.optional(),
+    dateTo: isoDate.optional(),
+  })
+  .refine((value) => !value.dateFrom || !value.dateTo || value.dateFrom <= value.dateTo, {
+    message: 'Start date must be on or before end date',
+    path: ['dateFrom'],
+  });
 
 const validateBody = (schema: z.ZodType) => (req: Request, _res: Response, next: NextFunction) => {
   req.validatedBody = schema.parse(req.body ?? {}) as Record<string, any>;
@@ -69,7 +80,14 @@ const validateComplaintIdParam = (req: Request, _res: Response, next: NextFuncti
 };
 
 const validateListComplaintsQuery = (req: Request, _res: Response, next: NextFunction) => {
-  listComplaintsQuerySchema.parse({ status: req.query.status || undefined });
+  const query = req.query as Record<string, unknown>;
+  listComplaintsQuerySchema.parse({
+    status: query.status || undefined,
+    severity: query.severity || undefined,
+    search: query.search || undefined,
+    dateFrom: query.dateFrom || undefined,
+    dateTo: query.dateTo || undefined,
+  });
   next();
 };
 

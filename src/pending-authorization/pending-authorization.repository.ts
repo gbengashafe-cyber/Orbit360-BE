@@ -295,7 +295,7 @@ export class AuthorizationRepository {
           rows,
           where: ComplaintService.pendingApprovalWhere(userId, userEmployeeId),
         });
-        return { count: result.count, rows: result.rows.map(toReviewerView) };
+        return { count: result.count, rows: result.rows.map((complaint) => toReviewerView(complaint)) };
       }
 
       default:

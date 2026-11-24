@@ -33,11 +33,14 @@ export const toOwnerView = (complaint: Complaint) => ({
 });
 
 // For HR Officers / HR Managers.
-export const toReviewerView = (complaint: Complaint) => {
+// `viewerEmployeeId` lets the response say whether the VIEWER filed this complaint (so the UI can explain why they
+// can't review it). It never says who else filed it.
+export const toReviewerView = (complaint: Complaint, { viewerEmployeeId }: { viewerEmployeeId?: number | null } = {}) => {
   const employee = complaint.employee as any;
 
   return {
     ...baseFields(complaint),
+    isOwnComplaint: !!viewerEmployeeId && complaint.employeeId === viewerEmployeeId,
     submittedBy:
       complaint.isAnonymous || !employee
         ? null

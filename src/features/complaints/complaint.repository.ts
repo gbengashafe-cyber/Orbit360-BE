@@ -58,6 +58,17 @@ export class ComplaintRepository {
     });
   };
 
+  // Joins the employee (without selecting any columns) so staff-name search conditions work in counts too.
+  static readonly countForReviewers = (where: WhereOptions<Complaint>) => {
+    return Complaint.count({
+      where,
+      include: [{ model: Employee, as: 'employee', attributes: [] }],
+      distinct: true,
+      col: 'id',
+      ...NO_LOGGING,
+    });
+  };
+
   /**
    * Moves a complaint between statuses only if it is still in `fromStatus`.
    * Returns the number of rows changed: 0 means someone else already processed it.

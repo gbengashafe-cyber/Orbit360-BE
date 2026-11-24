@@ -27,6 +27,13 @@ router.get(
   ComplaintController.getAll,
 );
 
+router.get(
+  '/counts',
+  hasAnyRequiredPermission(['MANAGE_COMPLAINTS', 'APPROVE_COMPLAINTS']),
+  validateListComplaintsQuery,
+  ComplaintController.getCounts,
+);
+
 // Owner or HR (checked in the service)
 router.get('/:id', validateComplaintIdParam, ComplaintController.getById);
 

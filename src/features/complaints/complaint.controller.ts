@@ -1,7 +1,18 @@
 import { Request, Response } from 'express';
 import { ApiResponse } from '../../utils/api-response';
 import { ComplaintStatus } from './complaint.model';
-import { ComplaintService } from './complaint.service';
+import { ComplaintService, ReviewerFilters } from './complaint.service';
+
+const readReviewerFilters = (req: Request): ReviewerFilters => {
+  const query = req.query as Record<string, string | undefined>;
+  return {
+    status: (query.status as ComplaintStatus) || undefined,
+    severity: query.severity || undefined,
+    search: query.search?.trim() || undefined,
+    dateFrom: query.dateFrom || undefined,
+    dateTo: query.dateTo || undefined,
+  };
+};
 
 const sessionUser = (req: Request) => req.user as { id: number; email: string; permissions?: string[] };
 
@@ -19,9 +30,15 @@ export class ComplaintController {
 
   static readonly getAll = async (req: Request, res: Response) => {
     const { page, rows } = req.pagination;
-    const status = (req.query.status as ComplaintStatus) || undefined;
-    const result = await ComplaintService.listForReviewers({ status }, { page, rows });
+    const result = await ComplaintService.listForReviewers(sessionUser(req), readReviewerFilters(req), { page, rows });
     res.json(ApiResponse({ ...result, message: 'Complaints fetched successfully' }));
+  };
+
+  static readonly getCounts = async (req: Request, res: Response) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { status, ...filters } = readReviewerFilters(req);
+    const data = await ComplaintService.countsForReviewers(filters);
+    res.json(ApiResponse({ data, message: 'Complaint counts fetched successfully' }));
   };
 
   static readonly getById = async (req: Request, res: Response) => {
