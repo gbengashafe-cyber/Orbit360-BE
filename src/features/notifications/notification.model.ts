@@ -10,7 +10,7 @@ import {
 import { db } from '../../db';
 import { User } from '../users/user.model';
 
-export const NOTIFICATION_CATEGORIES = ['LEAVE', 'LOAN', 'TRAINING', 'RELIEVER', 'COMPLAINT', 'GENERAL'] as const;
+export const NOTIFICATION_CATEGORIES = ['LEAVE', 'LOAN', 'TRAINING', 'RELIEVER', 'COMPLAINT', 'GENERAL', 'EXIT'] as const;
 export type NotificationCategory = (typeof NOTIFICATION_CATEGORIES)[number];
 
 /**
@@ -25,7 +25,7 @@ export type NotificationCategory = (typeof NOTIFICATION_CATEGORIES)[number];
 export const NOTIFICATION_AUDIENCES = ['REQUESTER', 'RELIEVER', 'DIRECT', 'ACTOR_QUEUE', 'BROADCAST'] as const;
 export type NotificationAudience = (typeof NOTIFICATION_AUDIENCES)[number];
 
-export const NOTIFICATION_ENTITY_TYPES = ['leave', 'loan', 'training_request', 'complaint'] as const;
+export const NOTIFICATION_ENTITY_TYPES = ['leave', 'loan', 'training_request', 'complaint', 'exit'] as const;
 export type NotificationEntityType = (typeof NOTIFICATION_ENTITY_TYPES)[number];
 
 export class Notification extends Model<InferAttributes<Notification>, InferCreationAttributes<Notification>> {
@@ -41,6 +41,9 @@ export class Notification extends Model<InferAttributes<Notification>, InferCrea
   declare actorUserId: CreationOptional<ForeignKey<User['id']> | null>;
   declare metadata: CreationOptional<Record<string, unknown> | null>;
   declare dedupeKey: string;
+  declare inAppEnabled: CreationOptional<boolean>;
+  declare realtimeEnabled: CreationOptional<boolean>;
+  declare realtimeAcknowledgedAt: CreationOptional<Date | null>;
   declare readAt: CreationOptional<Date | null>;
   declare createdAt: CreationOptional<Date>;
   declare updatedAt: CreationOptional<Date>;
@@ -67,6 +70,9 @@ Notification.init(
     actorUserId: { type: DataTypes.INTEGER, allowNull: true },
     metadata: { type: DataTypes.JSON, allowNull: true },
     dedupeKey: { type: DataTypes.STRING(191), allowNull: false, validate: { notEmpty: true } },
+    inAppEnabled: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
+    realtimeEnabled: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
+    realtimeAcknowledgedAt: { type: DataTypes.DATE, allowNull: true },
     readAt: { type: DataTypes.DATE, allowNull: true },
     createdAt: DataTypes.DATE,
     updatedAt: DataTypes.DATE,

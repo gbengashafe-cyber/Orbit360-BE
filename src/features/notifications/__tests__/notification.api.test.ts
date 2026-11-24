@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { after, afterEach, before, describe, it } from 'node:test';
 import { db } from '../../../db';
 import { Notification, NotificationCategory } from '../notification.model';
+import { NotificationPreference } from '../notification-preference.model';
 import { NotificationRepository } from '../notification.repository';
 import {
   assertNoExistingNotifications,
@@ -21,10 +22,11 @@ let server: Awaited<ReturnType<typeof startServer>>;
 
 type Json = { success: boolean; message: string; data: any; pagination?: any };
 
-const call = async (method: string, path: string, user?: TestUser, headers: Record<string, string> = {}) => {
+const call = async (method: string, path: string, user?: TestUser, headers: Record<string, string> = {}, body?: string) => {
   const response = await fetch(`${server.baseUrl}${path}`, {
     method,
     headers: { ...(user ? authHeadersFor(user.userId) : {}), ...headers },
+    body,
   });
   return { status: response.status, body: (await response.json()) as Json };
 };
@@ -32,7 +34,19 @@ const call = async (method: string, path: string, user?: TestUser, headers: Reco
 /** Inserts a notification directly (the internal path is covered by the service tests). */
 const insert = async (
   user: TestUser,
-  { category = 'GENERAL', createdAt, read = false }: { category?: NotificationCategory; createdAt?: Date; read?: boolean } = {},
+  {
+    category = 'GENERAL',
+    createdAt,
+    read = false,
+    inAppEnabled = true,
+    realtimeEnabled = false,
+  }: {
+    category?: NotificationCategory;
+    createdAt?: Date;
+    read?: boolean;
+    inAppEnabled?: boolean;
+    realtimeEnabled?: boolean;
+  } = {},
 ) => {
   const row = await NotificationRepository.create({
     recipientUserId: user.userId,
@@ -43,6 +57,9 @@ const insert = async (
     message: 'Test notification',
     dedupeKey: uniqueKey('api'),
     readAt: read ? new Date() : null,
+    inAppEnabled,
+    realtimeEnabled,
+    realtimeAcknowledgedAt: null,
   });
   track(row.id);
   if (createdAt) await setCreatedAt(Number(row.id), createdAt);
@@ -87,6 +104,10 @@ describe('authentication', () => {
     ['PATCH', '/read-all'],
     ['PATCH', '/1/read'],
     ['PATCH', '/1/unread'],
+    ['GET', '/preferences'],
+    ['PATCH', '/preferences'],
+    ['GET', '/realtime'],
+    ['POST', '/realtime/acknowledge'],
   ];
 
   for (const [method, path] of routes) {
@@ -113,6 +134,103 @@ describe('authentication', () => {
   it('there is no endpoint to create notifications', async () => {
     const { status } = await call('POST', '', alice);
     assert.equal(status, 404);
+  });
+});
+
+describe('notification channels and preferences API', () => {
+  it('keeps real-time-only alerts out of history and acknowledges them only for their recipient', async () => {
+    const alertId = await insert(alice, { inAppEnabled: false, realtimeEnabled: true });
+
+    const history = await call('GET', '', alice);
+    assert.equal(history.status, 200);
+    assert.ok(!history.body.data.some((notification: { id: number }) => notification.id === alertId));
+
+    const pending = await call('GET', '/realtime', alice);
+    assert.equal(pending.status, 200);
+    assert.deepEqual(
+      pending.body.data.map((notification: { id: number }) => notification.id),
+      [alertId],
+    );
+
+    const bobPending = await call('GET', '/realtime', bob);
+    assert.equal(bobPending.status, 200);
+    assert.deepEqual(bobPending.body.data, []);
+    const wrongRecipientAck = await call(
+      'POST',
+      '/realtime/acknowledge',
+      bob,
+      { 'content-type': 'application/json' },
+      JSON.stringify({ ids: [alertId] }),
+    );
+    assert.equal(wrongRecipientAck.status, 200);
+    assert.equal(wrongRecipientAck.body.data.acknowledged, 0);
+    assert.deepEqual(
+      (await call('GET', '/realtime', alice)).body.data.map((n: { id: number }) => n.id),
+      [alertId],
+    );
+    const ownerAck = await call(
+      'POST',
+      '/realtime/acknowledge',
+      alice,
+      { 'content-type': 'application/json' },
+      JSON.stringify({ ids: [alertId] }),
+    );
+    assert.equal(ownerAck.status, 200);
+    assert.equal(ownerAck.body.data.acknowledged, 1);
+
+    const repeatedAck = await call(
+      'POST',
+      '/realtime/acknowledge',
+      alice,
+      { 'content-type': 'application/json' },
+      JSON.stringify({ ids: [alertId] }),
+    );
+    assert.equal(repeatedAck.status, 200);
+    assert.equal(repeatedAck.body.data.acknowledged, 0);
+    const afterAck = await call('GET', '/realtime', alice);
+    assert.ok(!afterAck.body.data.some((notification: { id: number }) => notification.id === alertId));
+  });
+
+  it('binds preference reads and updates to the authenticated user', async () => {
+    const previousAlice = await NotificationPreference.findOne({ where: { userId: alice.userId, category: 'GENERAL' } });
+    const previousBob = await NotificationPreference.findOne({ where: { userId: bob.userId, category: 'GENERAL' } });
+    try {
+      const initialAlice = await call('GET', '/preferences', alice);
+      const initialBob = await call('GET', '/preferences', bob);
+      assert.equal(initialAlice.status, 200);
+      assert.equal(initialBob.status, 200);
+      assert.equal(initialAlice.body.data.find((item: any) => item.category === 'GENERAL').inAppEnabled, true);
+      assert.equal(initialBob.body.data.find((item: any) => item.category === 'GENERAL').inAppEnabled, true);
+
+      const updateAlice = await call(
+        'PATCH',
+        '/preferences',
+        alice,
+        { 'content-type': 'application/json' },
+        JSON.stringify({ category: 'GENERAL', inAppEnabled: false }),
+      );
+      assert.equal(updateAlice.status, 200, updateAlice.body.message);
+      assert.equal(updateAlice.body.data.inAppEnabled, false);
+      assert.equal(updateAlice.body.data.realtimeEnabled, true);
+
+      const updatedBob = await call('GET', '/preferences', bob);
+      assert.equal(updatedBob.body.data.find((item: any) => item.category === 'GENERAL').inAppEnabled, true);
+      const forged = await call(
+        'PATCH',
+        '/preferences',
+        bob,
+        { 'content-type': 'application/json' },
+        JSON.stringify({ userId: alice.userId, category: 'GENERAL', realtimeEnabled: false }),
+      );
+      assert.equal(forged.status, 400);
+    } finally {
+      if (previousAlice)
+        await previousAlice.update({ inAppEnabled: previousAlice.inAppEnabled, realtimeEnabled: previousAlice.realtimeEnabled });
+      else await NotificationPreference.destroy({ where: { userId: alice.userId, category: 'GENERAL' } });
+      if (previousBob)
+        await previousBob.update({ inAppEnabled: previousBob.inAppEnabled, realtimeEnabled: previousBob.realtimeEnabled });
+      else await NotificationPreference.destroy({ where: { userId: bob.userId, category: 'GENERAL' } });
+    }
   });
 });
 
@@ -248,7 +366,7 @@ describe('unread count', () => {
     assert.equal(status, 200);
     assert.deepEqual(body.data, {
       total: 0,
-      byCategory: { LEAVE: 0, LOAN: 0, TRAINING: 0, RELIEVER: 0, COMPLAINT: 0, GENERAL: 0 },
+      byCategory: { LEAVE: 0, LOAN: 0, TRAINING: 0, RELIEVER: 0, COMPLAINT: 0, GENERAL: 0, EXIT: 0 },
     });
   });
 

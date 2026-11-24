@@ -4,11 +4,39 @@ import { ApiResponse } from '../../utils/api-response';
 import { emailService } from '../../utils/email.service';
 import { logger } from '../../utils/logger';
 import { Employee } from '../employee/employee.model';
+import { NotificationService } from '../notifications/notification.service';
 import { User } from '../users/user.model';
 import { Exit } from './exit.model';
 import { exitIdParamSchema } from './exit.validators';
 
 export class ExitController {
+  private static readonly notifyTerminalTransition = async (
+    exit: Exit,
+    previousStatus: Exit['status'],
+    previousFinalApprovalStatus: Exit['finalApprovalStatus'],
+    actorUserId?: number,
+  ) => {
+    const statusChanged = previousStatus !== exit.status;
+    const approvalChanged = previousFinalApprovalStatus !== exit.finalApprovalStatus;
+    let eventType: 'EXIT_APPROVED' | 'EXIT_REJECTED' | 'EXIT_COMPLETED' | null = null;
+
+    if (statusChanged && exit.status === 'completed') eventType = 'EXIT_COMPLETED';
+    else if ((statusChanged && exit.status === 'approved') || (approvalChanged && exit.finalApprovalStatus === 'approved')) {
+      eventType = 'EXIT_APPROVED';
+    } else if ((statusChanged && exit.status === 'rejected') || (approvalChanged && exit.finalApprovalStatus === 'rejected')) {
+      eventType = 'EXIT_REJECTED';
+    }
+
+    if (eventType) {
+      await NotificationService.notify(eventType, {
+        exitId: exit.id,
+        requesterEmployeeId: exit.employeeId,
+        lastWorkingDate: exit.lastWorkingDate,
+        actorUserId,
+      });
+    }
+  };
+
   static async create(req: Request, res: Response, next: NextFunction) {
     try {
       const exitData = {
@@ -17,6 +45,15 @@ export class ExitController {
       };
 
       const exit = await Exit.create(exitData);
+
+      if (exit.status === 'submitted') {
+        await NotificationService.notify('EXIT_APPLIED', {
+          exitId: exit.id,
+          requesterEmployeeId: exit.employeeId,
+          lastWorkingDate: exit.lastWorkingDate,
+          actorUserId: req.user?.id,
+        });
+      }
 
       // Send notification emails (non-blocking)
       setImmediate(async () => {
@@ -136,7 +173,10 @@ export class ExitController {
         throw ApiError.notFound('Exit request not found');
       }
 
+      const previousStatus = exit.status;
+      const previousFinalApprovalStatus = exit.finalApprovalStatus;
       await exit.update(req.body);
+      await this.notifyTerminalTransition(exit, previousStatus, previousFinalApprovalStatus, req.user?.id);
       const updatedExit = await Exit.findByPk(id);
 
       res.json({
@@ -179,12 +219,16 @@ export class ExitController {
       throw ApiError.notFound('Exit request not found');
     }
 
+    const previousStatus = exit.status;
+    const previousFinalApprovalStatus = exit.finalApprovalStatus;
+
     await exit.update({
       status: action === 'approved' ? 'approved' : 'rejected',
       finalApprovalStatus: action === 'approved' ? 'approved' : 'rejected',
       finalApprovalDate: new Date(),
       finalApprovalBy: String(req.user?.id || 'system'),
     });
+    await this.notifyTerminalTransition(exit, previousStatus, previousFinalApprovalStatus, req.user?.id);
 
     const updatedExit = await Exit.findByPk(id, { include: [{ model: Employee, as: 'employee' }] });
 
@@ -225,11 +269,15 @@ export class ExitController {
       throw ApiError.notFound('Exit request not found');
     }
 
+    const previousStatus = exit.status;
+    const previousFinalApprovalStatus = exit.finalApprovalStatus;
+
     await exit.update({
       finalApprovalStatus: action === 'approved' ? 'cleared' : 'rejected',
       reviewerDate: new Date(),
       reviewerId: req.user?.id,
     });
+    await this.notifyTerminalTransition(exit, previousStatus, previousFinalApprovalStatus, req.user?.id);
 
     const updatedExit = await Exit.findByPk(id, { include: [{ model: Employee, as: 'employee' }] });
 

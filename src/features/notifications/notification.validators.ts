@@ -42,6 +42,33 @@ const feedQuerySchema = z
 
 const readAllQuerySchema = z.object({ category: category.optional() });
 
+const preferenceUpdateSchema = z
+  .strictObject({
+    category,
+    inAppEnabled: z.boolean().optional(),
+    realtimeEnabled: z.boolean().optional(),
+  })
+  .refine((value) => value.inAppEnabled !== undefined || value.realtimeEnabled !== undefined, {
+    message: 'At least one preference value is required',
+  });
+
+const realtimePollQuerySchema = z.object({
+  rows: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(DEFAULT_FEED_ROWS)
+    .transform((value) => Math.min(value, MAX_FEED_ROWS)),
+});
+
+const realtimeAcknowledgeSchema = z.strictObject({
+  ids: z
+    .array(z.coerce.number().int().positive())
+    .min(1)
+    .max(100)
+    .transform((ids) => [...new Set(ids)]),
+});
+
 const idParamSchema = z.object({
   id: z.coerce.number().int('Notification ID must be a positive number').positive('Notification ID must be a positive number'),
 });
@@ -70,9 +97,31 @@ const validateReadAllQuery = (req: Request, res: Response, next: NextFunction) =
   next();
 };
 
+const validatePreferenceUpdate = (req: Request, res: Response, next: NextFunction) => {
+  res.locals.preferenceUpdate = preferenceUpdateSchema.parse(req.body);
+  next();
+};
+
+const validateRealtimePollQuery = (req: Request, res: Response, next: NextFunction) => {
+  res.locals.realtimePollQuery = realtimePollQuerySchema.parse(pick(req.query as Record<string, unknown>, ['rows']));
+  next();
+};
+
+const validateRealtimeAcknowledge = (req: Request, res: Response, next: NextFunction) => {
+  res.locals.realtimeAcknowledge = realtimeAcknowledgeSchema.parse(req.body);
+  next();
+};
+
 const validateNotificationIdParam = (req: Request, res: Response, next: NextFunction) => {
   res.locals.notificationId = idParamSchema.parse(req.params).id;
   next();
 };
 
-export { validateFeedQuery, validateNotificationIdParam, validateReadAllQuery };
+export {
+  validateFeedQuery,
+  validateNotificationIdParam,
+  validatePreferenceUpdate,
+  validateReadAllQuery,
+  validateRealtimeAcknowledge,
+  validateRealtimePollQuery,
+};

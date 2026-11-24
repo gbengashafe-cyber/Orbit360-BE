@@ -81,13 +81,17 @@ describe('notification cursor', () => {
 });
 
 describe('event registry', () => {
-  it('defines exactly the Phase 2 employee-facing events', () => {
+  it('defines the employee-facing Phase 2, Phase 3, and Exit events', () => {
     assert.deepEqual(
       [...NOTIFICATION_EVENT_TYPES].sort((a, b) => a.localeCompare(b)),
       [
         'COMPLAINT_APPROVED',
         'COMPLAINT_REJECTED',
         'COMPLAINT_SUBMITTED',
+        'EXIT_APPLIED',
+        'EXIT_APPROVED',
+        'EXIT_COMPLETED',
+        'EXIT_REJECTED',
         'GENERAL_NOTIFICATION',
         'LEAVE_APPLIED',
         'LEAVE_APPROVED',
@@ -105,7 +109,7 @@ describe('event registry', () => {
     );
   });
 
-  it('has no approver (ACTOR_QUEUE) or broadcast deliveries in Phase 2 (D4)', () => {
+  it('has no approver (ACTOR_QUEUE) or broadcast deliveries (D4)', () => {
     for (const definition of Object.values(NOTIFICATION_EVENTS)) {
       assert.ok(['REQUESTER', 'RELIEVER', 'DIRECT'].includes(definition.audience));
     }
@@ -156,6 +160,20 @@ describe('event registry', () => {
     );
     assert.equal(render('COMPLAINT_APPROVED', complaint).message, 'Your complaint submitted on 02/12/2026 has been approved.');
     assert.equal(render('COMPLAINT_REJECTED', complaint).message, 'Your complaint submitted on 02/12/2026 was rejected.');
+
+    const exit = { exitId: TRAINING_REQUEST_ID, requesterEmployeeId: 2, lastWorkingDate: DEC_2 };
+    assert.equal(render('EXIT_APPLIED', exit).message, 'Your exit request with last working date 02/12/2026 has been submitted.');
+    assert.equal(render('EXIT_APPROVED', exit).message, 'Your exit request with last working date 02/12/2026 has been approved.');
+    assert.equal(render('EXIT_REJECTED', exit).message, 'Your exit request with last working date 02/12/2026 was rejected.');
+    assert.equal(
+      render('EXIT_COMPLETED', exit).message,
+      'Your exit clearance for last working date 02/12/2026 has been completed.',
+    );
+    const exitApplied = render('EXIT_APPLIED', exit);
+    assert.equal(exitApplied.definition.category, 'EXIT');
+    assert.deepEqual(exitApplied.definition.recipients(exitApplied.data), [{ kind: 'employee', employeeId: 2 }]);
+    assert.deepEqual(exitApplied.definition.entity(exitApplied.data), { type: 'exit', id: TRAINING_REQUEST_ID });
+    assert.equal(exitApplied.definition.dedupeKey(exitApplied.data), `EXIT_APPLIED:exit:${TRAINING_REQUEST_ID}`);
   });
 
   it('stores timestamps (ISO, UTC) in metadata, not formatted strings', () => {

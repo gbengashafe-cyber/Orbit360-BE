@@ -19,7 +19,7 @@ export type NotificationFeedFilters = {
 export type NotificationFeedCursor = { createdAt: Date; id: number };
 
 const buildFilterWhere = (recipientUserId: number, filters: Omit<NotificationFeedFilters, 'sort'>) => {
-  const conditions: WhereOptions<Notification>[] = [{ recipientUserId }];
+  const conditions: WhereOptions<Notification>[] = [{ recipientUserId }, { inAppEnabled: true }];
 
   if (filters.category) conditions.push({ category: filters.category });
   if (filters.status === 'unread') conditions.push({ readAt: { [Op.is]: null } });
@@ -68,10 +68,22 @@ export class NotificationRepository {
     });
   };
 
+  /** Pending real-time alerts are returned oldest-first and remain pending until the caller acknowledges them. */
+  static readonly findRealtimePending = (recipientUserId: number, limit: number) =>
+    Notification.findAll({
+      where: { recipientUserId, realtimeEnabled: true, realtimeAcknowledgedAt: { [Op.is]: null } },
+      order: [
+        ['createdAt', 'ASC'],
+        ['id', 'ASC'],
+      ],
+      limit: limit + 1,
+      ...NO_LOGGING,
+    });
+
   static readonly countUnreadByCategory = async (recipientUserId: number) => {
     const rows = (await Notification.findAll({
       attributes: ['category', [fn('COUNT', col('id')), 'count']],
-      where: { recipientUserId, readAt: { [Op.is]: null } },
+      where: { recipientUserId, inAppEnabled: true, readAt: { [Op.is]: null } },
       group: ['category'],
       raw: true,
       ...NO_LOGGING,
@@ -82,7 +94,7 @@ export class NotificationRepository {
 
   /** A notification only if it belongs to the recipient. */
   static readonly findOwn = (recipientUserId: number, id: number) => {
-    return Notification.findOne({ where: { id, recipientUserId }, ...NO_LOGGING });
+    return Notification.findOne({ where: { id, recipientUserId, inAppEnabled: true }, ...NO_LOGGING });
   };
 
   static readonly setReadAt = async (recipientUserId: number, id: number, readAt: Date | null) => {
@@ -92,6 +104,7 @@ export class NotificationRepository {
         where: {
           id,
           recipientUserId,
+          inAppEnabled: true,
           // Only touch rows whose state actually changes, so read_at keeps the first time it was read.
           readAt: readAt ? { [Op.is]: null } : { [Op.not]: null },
         },
@@ -105,7 +118,24 @@ export class NotificationRepository {
     const [affected] = await Notification.update(
       { readAt: new Date() },
       {
-        where: { recipientUserId, readAt: { [Op.is]: null }, ...(category ? { category } : {}) },
+        where: { recipientUserId, inAppEnabled: true, readAt: { [Op.is]: null }, ...(category ? { category } : {}) },
+        ...NO_LOGGING,
+      },
+    );
+    return affected;
+  };
+
+  /** Acknowledgements are recipient-scoped, channel-scoped, and idempotent. */
+  static readonly acknowledgeRealtime = async (recipientUserId: number, ids: number[]) => {
+    const [affected] = await Notification.update(
+      { realtimeAcknowledgedAt: new Date() },
+      {
+        where: {
+          recipientUserId,
+          id: { [Op.in]: ids },
+          realtimeEnabled: true,
+          realtimeAcknowledgedAt: { [Op.is]: null },
+        },
         ...NO_LOGGING,
       },
     );

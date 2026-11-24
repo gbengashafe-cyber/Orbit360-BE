@@ -147,6 +147,29 @@ const trainingEvent = (
     dedupeKey: (p) => keyFor(eventType, 'training_request', p.trainingRequestId),
   });
 
+// ─── Exit Management ────────────────────────────────────────────────────────
+const exitPayload = z.strictObject({
+  exitId: z.uuidv4(),
+  requesterEmployeeId: id,
+  lastWorkingDate: timestamp,
+  actorUserId: optionalActor,
+});
+
+const exitEvent = (eventType: string, title: string, message: (lastWorkingDate: string) => string, status: string) =>
+  defineEvent({
+    category: 'EXIT',
+    audience: 'REQUESTER',
+    schema: exitPayload,
+    maxRecipients: 1,
+    recipients: (p) => requester(p.requesterEmployeeId),
+    title: () => title,
+    message: (p) => message(formatNotificationDate(p.lastWorkingDate)),
+    entity: (p) => ({ type: 'exit', id: p.exitId }),
+    actorUserId: (p) => p.actorUserId ?? null,
+    metadata: (p) => ({ status, lastWorkingDate: iso(p.lastWorkingDate) }),
+    dedupeKey: (p) => keyFor(eventType, 'exit', p.exitId),
+  });
+
 // ─── Reliever ───────────────────────────────────────────────────────────────
 // Sent only when the leave is approved (D2). The name is the employee going on leave.
 const relieverPayload = z.strictObject({
@@ -287,6 +310,31 @@ export const NOTIFICATION_EVENTS = {
     (date) => `Your training request submitted on ${date} was rejected.`,
     'REJECTED',
     trainingRejectedPayload,
+  ),
+
+  EXIT_APPLIED: exitEvent(
+    'EXIT_APPLIED',
+    'Exit request submitted',
+    (date) => `Your exit request with last working date ${date} has been submitted.`,
+    'SUBMITTED',
+  ),
+  EXIT_APPROVED: exitEvent(
+    'EXIT_APPROVED',
+    'Exit request approved',
+    (date) => `Your exit request with last working date ${date} has been approved.`,
+    'APPROVED',
+  ),
+  EXIT_REJECTED: exitEvent(
+    'EXIT_REJECTED',
+    'Exit request rejected',
+    (date) => `Your exit request with last working date ${date} was rejected.`,
+    'REJECTED',
+  ),
+  EXIT_COMPLETED: exitEvent(
+    'EXIT_COMPLETED',
+    'Exit clearance completed',
+    (date) => `Your exit clearance for last working date ${date} has been completed.`,
+    'COMPLETED',
   ),
 
   RELIEVER_ASSIGNED: defineEvent({

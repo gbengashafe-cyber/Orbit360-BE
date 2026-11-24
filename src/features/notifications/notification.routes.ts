@@ -1,7 +1,15 @@
 import { Router } from 'express';
 import { validateAuthToken } from '../authentication/auth.middleware';
 import { NotificationController } from './notification.controller';
-import { validateFeedQuery, validateNotificationIdParam, validateReadAllQuery } from './notification.validators';
+import { NotificationPreferenceController } from './notification-preference.controller';
+import {
+  validateFeedQuery,
+  validateNotificationIdParam,
+  validatePreferenceUpdate,
+  validateReadAllQuery,
+  validateRealtimeAcknowledge,
+  validateRealtimePollQuery,
+} from './notification.validators';
 
 const router = Router();
 
@@ -9,6 +17,10 @@ const router = Router();
 // notifications are created only by NotificationService inside the backend.
 router.use(validateAuthToken);
 
+router.get('/preferences', NotificationPreferenceController.getPreferences);
+router.patch('/preferences', validatePreferenceUpdate, NotificationPreferenceController.updatePreference);
+router.get('/realtime', validateRealtimePollQuery, NotificationPreferenceController.getRealtimePending);
+router.post('/realtime/acknowledge', validateRealtimeAcknowledge, NotificationPreferenceController.acknowledgeRealtime);
 router.get('/', validateFeedQuery, NotificationController.getFeed);
 router.get('/unread-count', NotificationController.getUnreadCount);
 router.patch('/read-all', validateReadAllQuery, NotificationController.markAllRead);

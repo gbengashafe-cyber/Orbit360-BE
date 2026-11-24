@@ -11,8 +11,9 @@ import {
 import { Notification, NOTIFICATION_AUDIENCES, NOTIFICATION_CATEGORIES } from './notification.model';
 import { NotificationRecipients } from './notification.recipients';
 import { NotificationRepository } from './notification.repository';
+import { NotificationPreference } from './notification-preference.model';
 
-export type DeliveryStatus = 'created' | 'duplicate' | 'failed';
+export type DeliveryStatus = 'created' | 'duplicate' | 'failed' | 'skipped';
 export type NotifyStatus = 'delivered' | 'duplicate' | 'partial' | 'skipped' | 'failed';
 
 export type NotifyOutcome = {
@@ -44,6 +45,9 @@ const recordSchema = z.object({
   actorUserId: z.number().int().positive().nullable(),
   metadata: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])).nullable(),
   dedupeKey: z.string().min(1).max(191),
+  inAppEnabled: z.boolean(),
+  realtimeEnabled: z.boolean(),
+  realtimeAcknowledgedAt: z.date().nullable(),
 });
 
 type NotificationRecord = z.infer<typeof recordSchema>;
@@ -53,10 +57,11 @@ const failed = (eventType: string, reason: string): NotifyOutcome => ({ eventTyp
 const summarise = (eventType: string, deliveries: NotifyOutcome['deliveries']): NotifyOutcome => {
   const created = deliveries.filter((d) => d.status === 'created').length;
   const duplicates = deliveries.filter((d) => d.status === 'duplicate').length;
-  const failures = deliveries.length - created - duplicates;
+  const failures = deliveries.filter((delivery) => delivery.status === 'failed').length;
 
   let status: NotifyStatus = 'delivered';
-  if (failures === deliveries.length) status = 'failed';
+  if (created + duplicates === 0 && failures === 0) status = 'skipped';
+  else if (failures === deliveries.length) status = 'failed';
   else if (failures > 0) status = 'partial';
   else if (duplicates === deliveries.length) status = 'duplicate';
 
@@ -121,6 +126,13 @@ export class NotificationService {
         return failed(eventType, 'too_many_recipients');
       }
 
+      const preferences = await NotificationPreference.findAll({
+        where: { userId: userIds, category: definition.category },
+        attributes: ['userId', 'inAppEnabled', 'realtimeEnabled'],
+        logging: false,
+      });
+      const preferencesByUser = new Map(preferences.map((preference) => [preference.userId, preference]));
+
       const entity = definition.entity(data);
       const metadata = definition.metadata(data);
       if (metadata && Buffer.byteLength(JSON.stringify(metadata)) > MAX_METADATA_BYTES) {
@@ -143,7 +155,19 @@ export class NotificationService {
 
       const deliveries: NotifyOutcome['deliveries'] = [];
       for (const recipientUserId of userIds) {
-        deliveries.push(await this.createOne(applyComplaintPrivacy({ ...base, recipientUserId })));
+        const preference = preferencesByUser.get(recipientUserId);
+        const inAppEnabled = preference?.inAppEnabled ?? true;
+        const realtimeEnabled = preference?.realtimeEnabled ?? true;
+        if (!inAppEnabled && !realtimeEnabled) {
+          deliveries.push({ recipientUserId, status: 'skipped' });
+          continue;
+        }
+
+        deliveries.push(
+          await this.createOne(
+            applyComplaintPrivacy({ ...base, recipientUserId, inAppEnabled, realtimeEnabled, realtimeAcknowledgedAt: null }),
+          ),
+        );
       }
 
       const outcome = summarise(eventType, deliveries);
