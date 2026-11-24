@@ -31,6 +31,19 @@ const hasRequiredPermission = (permission: Permission, { allowAdmin = false }: {
   };
 };
 
+// Passes when the user has at least one of the listed permissions.
+const hasAnyRequiredPermission = (permissions: Permission[]) => {
+  return async (req: Request, _res: Response, next: NextFunction) => {
+    const userPermissions = (req.user?.permissions ?? []).map((permission: string) => permission.toUpperCase());
+
+    if (!permissions.some((permission) => userPermissions.includes(permission.toUpperCase()))) {
+      throw ApiError.forbidden('You are not authorized to perform this action');
+    }
+
+    return next();
+  };
+};
+
 const isInAllowedDepartment = (requiredDepartment: string[], { allowAdmin = false } = { allowAdmin: false }) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     logger.debug(`Checking required department: RequestId: ${req.requestId}: Required Department(s): ${requiredDepartment}`);
@@ -69,4 +82,4 @@ const isAdmin = (req: Request, _res: Response, next: NextFunction) => {
   return next();
 };
 
-export { hasRequiredPermission, isAdmin, isInAllowedDepartment };
+export { hasAnyRequiredPermission, hasRequiredPermission, isAdmin, isInAllowedDepartment };

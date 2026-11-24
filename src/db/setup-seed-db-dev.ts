@@ -183,6 +183,7 @@ const setupSystemConfiguration = async () => {
       { permission: 'LIST_EMPLOYEES', jobRoleId: roles.hrOperations.id },
       { permission: 'LIST_PAYROLLS', jobRoleId: roles.hrOperations.id },
       { permission: 'LIST_TRAINING_REQUESTS', jobRoleId: roles.hrOperations.id },
+      { permission: 'MANAGE_COMPLAINTS', jobRoleId: roles.hrOperations.id },
 
       // HR Manager permissions
       { permission: 'APPROVE_LOANS', jobRoleId: roles.hrManager.id },
@@ -199,6 +200,7 @@ const setupSystemConfiguration = async () => {
       { permission: 'LIST_TRAINING_REQUESTS', jobRoleId: roles.hrManager.id },
       { permission: 'MANAGE_DOCUMENTS', jobRoleId: roles.hrManager.id },
       { permission: 'MANAGE_RECRUITMENT', jobRoleId: roles.hrManager.id },
+      { permission: 'APPROVE_COMPLAINTS', jobRoleId: roles.hrManager.id },
 
       // MD permissions
       { permission: 'APPROVE_PAYROLL_OVERRIDE', jobRoleId: roles.md.id },

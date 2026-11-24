@@ -15,6 +15,10 @@ import { TrainingRequest } from '../features/training/training-request.model';
 import { User } from '../features/users/user.model';
 import { PendingModuleItemsProps } from './pending-authorization.service';
 import { Company } from '../features/company/company.model';
+import { Complaint } from '../features/complaints/complaint.model';
+import { ComplaintRepository } from '../features/complaints/complaint.repository';
+import { toReviewerView } from '../features/complaints/complaint.serializer';
+import { ComplaintService } from '../features/complaints/complaint.service';
 
 export class AuthorizationRepository {
   static readonly getPendingLoans = async (limit: number) => {
@@ -149,6 +153,14 @@ export class AuthorizationRepository {
         })),
       );
     }
+    if (modules.includes('COMPLAINTS')) {
+      tasks.push(
+        Complaint.count({ where: ComplaintService.pendingApprovalWhere(userId, userEmployeeId), logging: false }).then((c) => ({
+          key: 'complaints',
+          count: c,
+        })),
+      );
+    }
 
     return Promise.all(tasks);
   };
@@ -275,6 +287,15 @@ export class AuthorizationRepository {
           ],
           order: [['createdAt', 'DESC']],
         });
+      }
+      case 'COMPLAINTS': {
+        // Rows go through the reviewer serializer so anonymous complaints never expose the employee.
+        const result = await ComplaintRepository.findForReviewers({
+          page,
+          rows,
+          where: ComplaintService.pendingApprovalWhere(userId, userEmployeeId),
+        });
+        return { count: result.count, rows: result.rows.map(toReviewerView) };
       }
 
       default:

@@ -1,136 +1,58 @@
-import { Request, Response, NextFunction } from 'express';
-import { Complaint } from './complaint.model';
-import { ApiError } from '../../utils/api-error';
-import { logger } from '../../utils/logger';
+import { Request, Response } from 'express';
+import { ApiResponse } from '../../utils/api-response';
+import { ComplaintStatus } from './complaint.model';
+import { ComplaintService } from './complaint.service';
+
+const sessionUser = (req: Request) => req.user as { id: number; email: string; permissions?: string[] };
 
 export class ComplaintController {
-  static async getAll(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { page = 1, rows = 10 } = req.pagination || {};
-      const offset = ((page as number) - 1) * (rows as number);
-      const { status, severity, complaint_type, employee_id } = req.query;
+  static readonly create = async (req: Request, res: Response) => {
+    const data = await ComplaintService.submit(sessionUser(req), req.validatedBody);
+    res.status(201).json(ApiResponse({ data, message: 'Complaint submitted successfully' }));
+  };
 
-      const whereClause: any = {};
-      if (status) whereClause.status = status;
-      if (severity) whereClause.severity = severity;
-      if (complaint_type) whereClause.complaint_type = complaint_type;
-      if (employee_id) whereClause.employee_id = employee_id;
+  static readonly getMine = async (req: Request, res: Response) => {
+    const { page, rows } = req.pagination;
+    const result = await ComplaintService.listOwn(sessionUser(req), { page, rows });
+    res.json(ApiResponse({ ...result, message: 'Complaints fetched successfully' }));
+  };
 
-      const { count, rows: complaints } = await Complaint.findAndCountAll({
-        where: whereClause,
-        limit: rows as number,
-        offset,
-        order: [['reported_date', 'DESC']],
-      });
+  static readonly getAll = async (req: Request, res: Response) => {
+    const { page, rows } = req.pagination;
+    const status = (req.query.status as ComplaintStatus) || undefined;
+    const result = await ComplaintService.listForReviewers({ status }, { page, rows });
+    res.json(ApiResponse({ ...result, message: 'Complaints fetched successfully' }));
+  };
 
-      res.json({
-        data: complaints,
-        pagination: { total: count, page, rows, pages: Math.ceil(count / (rows as number)) },
-      });
-    } catch (error) {
-      logger.error(`Error fetching complaints: ${error}`);
-      next(error);
-    }
-  }
+  static readonly getById = async (req: Request, res: Response) => {
+    const data = await ComplaintService.getById(sessionUser(req), Number(req.params.id));
+    res.json(ApiResponse({ data, message: 'Complaint fetched successfully' }));
+  };
 
-  static async getById(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-      const complaint = await Complaint.findByPk(id);
+  static readonly review = async (req: Request, res: Response) => {
+    const { decision, note } = req.validatedBody;
+    const data = await ComplaintService.review(sessionUser(req), Number(req.params.id), { decision, note });
+    res.json(
+      ApiResponse({
+        data,
+        message: decision === 'APPROVE' ? 'Complaint sent for HR Manager authorization' : 'Complaint rejected',
+      }),
+    );
+  };
 
-      if (!complaint) throw ApiError.notFound('Complaint not found');
-      res.json({ data: complaint });
-    } catch (error) {
-      logger.error(`Error fetching complaint: ${error}`);
-      next(error);
-    }
-  }
+  static readonly approve = async (req: Request, res: Response) => {
+    const data = await ComplaintService.decide(sessionUser(req), Number(req.params.id), {
+      decision: 'APPROVE',
+      note: req.validatedBody?.note,
+    });
+    res.json(ApiResponse({ data, message: 'Complaint approved' }));
+  };
 
-  static async create(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { employee_id, complaint_type, title, description, severity, reported_to } = req.body;
-
-      const complaint = await Complaint.create({
-        employee_id,
-        complaint_type,
-        title,
-        description,
-        severity: severity || 'medium',
-        reported_date: new Date(),
-        reported_to,
-        status: 'open',
-      });
-
-      res.status(201).json({ data: complaint, message: 'Complaint created successfully' });
-    } catch (error) {
-      logger.error(`Error creating complaint: ${error}`);
-      next(error);
-    }
-  }
-
-  static async update(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-      const complaint = await Complaint.findByPk(id);
-
-      if (!complaint) throw ApiError.notFound('Complaint not found');
-
-      await complaint.update(req.body);
-      res.json({ data: complaint, message: 'Complaint updated successfully' });
-    } catch (error) {
-      logger.error(`Error updating complaint: ${error}`);
-      next(error);
-    }
-  }
-
-  static async resolve(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-      const { resolution_notes } = req.body;
-      const complaint = await Complaint.findByPk(id);
-
-      if (!complaint) throw ApiError.notFound('Complaint not found');
-
-      await complaint.update({
-        status: 'resolved',
-        resolution_notes,
-        resolved_date: new Date(),
-      });
-
-      res.json({ data: complaint, message: 'Complaint resolved successfully' });
-    } catch (error) {
-      logger.error(`Error resolving complaint: ${error}`);
-      next(error);
-    }
-  }
-
-  static async close(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-      const complaint = await Complaint.findByPk(id);
-
-      if (!complaint) throw ApiError.notFound('Complaint not found');
-
-      await complaint.update({ status: 'closed' });
-      res.json({ data: complaint, message: 'Complaint closed successfully' });
-    } catch (error) {
-      logger.error(`Error closing complaint: ${error}`);
-      next(error);
-    }
-  }
-
-  static async delete(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-      const complaint = await Complaint.findByPk(id);
-
-      if (!complaint) throw ApiError.notFound('Complaint not found');
-
-      await complaint.destroy();
-      res.json({ message: 'Complaint deleted successfully' });
-    } catch (error) {
-      logger.error(`Error deleting complaint: ${error}`);
-      next(error);
-    }
-  }
+  static readonly reject = async (req: Request, res: Response) => {
+    const data = await ComplaintService.decide(sessionUser(req), Number(req.params.id), {
+      decision: 'REJECT',
+      note: req.validatedBody?.note,
+    });
+    res.json(ApiResponse({ data, message: 'Complaint rejected' }));
+  };
 }
