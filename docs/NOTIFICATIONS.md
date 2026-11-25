@@ -165,7 +165,7 @@ These approved decisions remain authoritative for the implementation and future 
 - **D1 — Dates:** Display notification dates as `DD/MM/YYYY`. Store timestamps in UTC and format display dates in `Africa/Lagos`.
 - **D2 — Reliever:** Notify the reliever when leave is approved. The named employee is the person going on leave; the reliever is the recipient. The current message is “You are covering for {employee going on leave} starting {date}.”
 - **D3 — Complaints:** Complaints is the sixth notification category, `COMPLAINT`.
-- **D4 — Approvers:** Defer supervisor and HR notification delivery until Employee Hub is signed off. Do not add approver fan-out during employee-facing integrations.
+- **D4 — Approvers:** Supervisor and HR notification delivery was deferred until Employee Hub was signed off. Employee Hub sign-off is now complete, so that deferred scope may be addressed as Phase 6 work. This milestone does not mean role notifications are already implemented; identify actual responsible recipients per workflow and do not fan out indiscriminately. Existing Phase 3/4 implementations remain as documented.
 - **D5 — Loan approval:** Notify when loan status reaches `PENDING_DISBURSEMENT`. The notification says the loan was approved; it must not say paid or disbursed.
 - **D6 — TEAM training:** Notify only the original training request submitter, including requests with `requestScope: TEAM`.
 - **D7 — Concurrent decisions:** Apply minimal safeguards against misleading notifications from stale or competing workflow decisions. Do not perform a broad concurrency refactor without approval.
@@ -178,7 +178,7 @@ These approved decisions remain authoritative for the implementation and future 
 - Complaint notifications always have a null actor and metadata restricted to the allow-list (`reference`, `status`, `submittedAt`). The service applies this as defense in depth.
 - Exit notifications go only to the employee referenced by the persisted Exit record. Their message contains the last working date and outcome; do not include reviewer names, reviewer notes, clearance comments, or other Exit form details.
 - Do not log notification message text, complaint content, secrets, names, or email addresses. Follow the feature's existing ID-only logging patterns.
-- Do not add supervisor or HR Notification Center recipients in Phase 3 or Phase 4 (D4). Existing non-Notification-Center workflow email behavior is separate and remains unchanged.
+- No supervisor or HR Notification Center recipients were added in Phases 3 or 4 (D4). With Employee Hub now signed off, any future role notification work must still use actual workflow responsibility and be approved per event. Existing non-Notification-Center workflow email behavior is separate and remains unchanged.
 
 ## Permanent Notification Integration Standard
 
@@ -239,8 +239,8 @@ Keep tests isolated from unrelated user data. Use the existing notification test
 
 ## Current implementation notes and known alignment checks
 
-The workflow tables above describe current Phase 3 and Phase 4 integrations, not merely proposed behavior. Notification Preferences and Exit Management integration are implemented as described above. Frontend preference controls, the polling client, and background/offline push delivery are not implemented.
+The workflow tables above describe current Phase 3 and Phase 4 integrations, not merely proposed behavior. Notification Preferences and Exit Management integration are implemented as described above. The Phase 5 frontend in `orbit360-FE` includes notification history/preferences UI and the polling client. Background/offline push delivery is not implemented. Consult `docs/NOTIFICATION-WORKFLOW-MAP.md` for a cross-feature discovery of additional approval workflows and proposed recipient gaps; those Phase 6 integrations are not implemented.
 
 The existing Exit controller does not use transactions or conditional status updates. Notifications follow successful writes and the central unique event/recipient key prevents repeated copies of the same event, but competing terminal Exit updates can still produce conflicting outcome events. Fixing the underlying Exit workflow concurrency behavior is outside the approved Phase 4 scope and requires separate approval.
 
-The training event schema accepts UUID-backed request IDs, matching the `TrainingRequest` model. The approved decisions D1–D7 remain authoritative: D1 dates, D2 reliever recipient and wording, D3 complaint category decision, D4 deferred supervisor/HR delivery, D5 loan approval at `PENDING_DISBURSEMENT`, D6 requester-only TEAM training, and D7 minimal safeguards against misleading concurrent outcomes.
+The training event schema accepts UUID-backed request IDs, matching the `TrainingRequest` model. The approved decisions D1–D7 remain authoritative: D1 dates, D2 reliever recipient and wording, D3 complaint category decision, D4 supervisor/HR delivery deferred until Employee Hub sign-off (milestone now complete; implementation remains future Phase 6 work), D5 loan approval at `PENDING_DISBURSEMENT`, D6 requester-only TEAM training, and D7 minimal safeguards against misleading concurrent outcomes.

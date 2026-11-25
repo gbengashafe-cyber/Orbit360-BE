@@ -190,4 +190,19 @@ describe('training notification integration', () => {
     );
     assert.equal(notifications.length, 0);
   });
+
+  it('lets the owner delete only a request that is still awaiting supervisor approval', async () => {
+    const request = trainingRequest();
+    const destroy = mock.method(request, 'destroy', async () => undefined as any);
+    mock.method(TrainingRequest, 'findByPk', async () => request as any);
+
+    await TrainingRequestService.deleteRequest({ employeeId: 21, requestId: REQUEST_ID });
+    assert.equal(destroy.mock.calls.length, 1);
+
+    mock.restoreAll();
+    const reviewedRequest = trainingRequest({ status: 'PENDING_HR_REVIEW' });
+    mock.method(TrainingRequest, 'findByPk', async () => reviewedRequest as any);
+
+    await assert.rejects(TrainingRequestService.deleteRequest({ employeeId: 21, requestId: REQUEST_ID }), { code: 400 });
+  });
 });

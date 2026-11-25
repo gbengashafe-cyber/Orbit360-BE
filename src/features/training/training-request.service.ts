@@ -177,8 +177,8 @@ export class TrainingRequestService {
       throw ApiError.forbidden('You can only delete your own requests');
     }
 
-    if (request.status !== 'PENDING') {
-      throw ApiError.badRequest('Can only delete pending requests');
+    if (request.status !== 'PENDING_SUPERVISOR_APPROVAL') {
+      throw ApiError.badRequest('Can only delete requests awaiting supervisor approval');
     }
 
     return request.destroy();
