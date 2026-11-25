@@ -1,5 +1,7 @@
 # ORBIT 360 Notification Workflow Map
 
+**Implementation update:** the product owner approved sequential training approval. HR review now requires `PENDING_HR_REVIEW` and the HR form no longer enables review while supervisor approval is pending. Historical observations below describing the HR bypass are superseded. Reviewer/approver delivery remains unimplemented; see [role-based plan](ROLE-BASED-NOTIFICATIONS-PLAN.md). The early duplicate-toast discovery remains historical and is superseded by the later documented frontend suppression.
+
 **Discovery snapshot:** 24 November 2026  
 **Scope:** Existing backend and frontend workflow code, with a targeted investigation of the duplicate training toast. This is a discovery report, not an implementation plan approved for every candidate event. Notification event registration alone does not prove that a workflow dispatches it.
 

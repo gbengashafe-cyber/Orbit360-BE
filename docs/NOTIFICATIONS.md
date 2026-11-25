@@ -1,5 +1,7 @@
 # ORBIT 360 Notification Center
 
+**Role-based expansion status:** the product owner approved sequential training review, eligible reviewer queues, confidential complaint reviewer alerts, workflow-specific categories and occurrence-aware best-effort deduplication. These new decisions are separate from the existing D1–D7 below. Only the training HR-stage correction has been implemented in this partial pass; role-based events, categories and queue delivery remain unimplemented. See [role-based plan](ROLE-BASED-NOTIFICATIONS-PLAN.md) for current status and blockers.
+
 This document describes the Phase 2 Notification Center foundation, Phase 3 employee-facing workflow integrations, and the Phase 4 Exit Management and preference integrations currently implemented. It distinguishes implemented behavior from approved product decisions and recommended practices; event definitions alone do not imply that a workflow dispatches an event.
 
 ## Purpose and architecture

@@ -6,7 +6,9 @@ Statuses: **Completed**, **Partially implemented**, **Pending**, **Blocked**, **
 
 ## Notification Center and workflow recipients
 
-**Status:** Partially implemented. **Priority:** High. **Dependencies:** confirmed workflow transitions, recipient assignments, Employee Hub sign-off and event-specific product approval. **Documentation:** [NOTIFICATIONS.md](NOTIFICATIONS.md), [workflow map](NOTIFICATION-WORKFLOW-MAP.md).
+**Status:** Partially implemented. **Priority:** High. **Dependencies:** confirmed workflow transitions, recipient eligibility, authorization and occurrence identification. **Documentation:** [NOTIFICATIONS.md](NOTIFICATIONS.md), [workflow map](NOTIFICATION-WORKFLOW-MAP.md), [role-based notifications plan](ROLE-BASED-NOTIFICATIONS-PLAN.md).
+
+Product has approved the new role-notification D1–D5 in the implementation brief. Training HR-stage enforcement is implemented with focused tests; reviewer event delivery, new categories, and cross-role verification remain outstanding. The plan records implementation blockers and security findings; do not treat the approved policies as evidence that events have shipped.
 
 Implemented: central registry, service and recipient resolution; owner-facing leave, loan, training, complaint and exit events; reliever on approved leave; channel preferences, polling and acknowledgement. Frontend has notification history, preferences and central self-toast suppression. These are implementation observations, not a new acceptance test.
 
@@ -101,11 +103,11 @@ Implemented: admin-gated backend list/create/update/get routes and frontend list
 
 ## Existing workflow improvements
 
-**Status:** Requires product decision. **Priority:** High. **Dependencies:** workflow owners and regression tests. **Documentation:** [workflow map](NOTIFICATION-WORKFLOW-MAP.md), `src/features/training/training-request.service.ts`.
+**Status:** Partially implemented. **Priority:** High. **Dependencies:** workflow owners and regression tests. **Documentation:** [workflow map](NOTIFICATION-WORKFLOW-MAP.md), `src/features/training/training-request.service.ts`.
 
-Confirmed: HR training review accepts `PENDING_SUPERVISOR_APPROVAL` as well as `PENDING_HR_REVIEW`, permitting HR review before supervisor approval. Training deletion now checks initial `PENDING_SUPERVISOR_APPROVAL` rather than unreachable `PENDING`; verify current behavior with tests. Loan approver rejection can return to `PENDING_REVIEW` and must not become a final employee rejection. The workflow map documents document-deletion decision/side-effect separation.
+Training HR review now requires `PENDING_HR_REVIEW`, enforcing the approved supervisor-first policy. Training deletion checks initial `PENDING_SUPERVISOR_APPROVAL` rather than unreachable `PENDING`. Focused tests cover these gates. Loan approver rejection can return to `PENDING_REVIEW` and must not become a final employee rejection. The workflow map documents document-deletion decision/side-effect separation.
 
-- [ ] Obtain a decision on whether HR may bypass supervisor approval; preserve the current sequence until then.
+- [x] Enforce the approved supervisor-first training review policy in the service and HR review form; focused tests passed.
 - [ ] Review other approval transitions, assignment, permissions and notification timing against actual code; assess document-deletion consistency separately.
 - [ ] Verify training deletion and other current workflows with focused regression tests.
 

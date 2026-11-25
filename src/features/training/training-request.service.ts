@@ -106,12 +106,12 @@ export class TrainingRequestService {
   static async hrReview(requestId: string, hrOfficerId: number, approved: 'APPROVE' | 'REJECT', rejectionReason?: string) {
     const request = await this.getRequestById(requestId);
 
-    if (!['PENDING_HR_REVIEW', 'PENDING_SUPERVISOR_APPROVAL'].includes(request.status)) {
+    if (request.status !== 'PENDING_HR_REVIEW') {
       throw ApiError.badRequest(`Request cannot be reviewed in ${request.status} status`);
     }
 
     if (approved === 'APPROVE') {
-      await this.persistTransition(request, request.status, {
+      await this.persistTransition(request, 'PENDING_HR_REVIEW', {
         status: 'PENDING_HR_APPROVAL',
         hrReviewedAt: new Date(),
         hrReviewedBy: hrOfficerId,
@@ -123,7 +123,7 @@ export class TrainingRequestService {
         throw ApiError.badRequest('Rejection reason is required');
       }
 
-      await this.persistTransition(request, request.status, {
+      await this.persistTransition(request, 'PENDING_HR_REVIEW', {
         status: 'HR_REJECTED',
         hrReviewerNote: rejectionReason,
         hrReviewedBy: hrOfficerId,

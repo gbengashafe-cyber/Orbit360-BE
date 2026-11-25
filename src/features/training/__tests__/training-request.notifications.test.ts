@@ -52,6 +52,26 @@ const mockNotification = (status = 'delivered') =>
   });
 
 describe('training notification integration', () => {
+  it('rejects HR review before supervisor approval without writing or notifying', async () => {
+    mock.method(TrainingRequest, 'findByPk', async () => trainingRequest() as any);
+    const update = mock.method(TrainingRequest, 'update', async () => [1] as any);
+    mockNotification();
+
+    await assert.rejects(TrainingRequestService.hrReview(REQUEST_ID, 92, 'APPROVE'), { code: 400 });
+    await assert.rejects(TrainingRequestService.hrReview(REQUEST_ID, 92, 'REJECT', 'Reason'), { code: 400 });
+    assert.equal(update.mock.calls.length, 0);
+    assert.equal(notifications.length, 0);
+  });
+
+  it('rejects final approval before HR review without writing or notifying', async () => {
+    mock.method(TrainingRequest, 'findByPk', async () => trainingRequest({ status: 'PENDING_HR_REVIEW' }) as any);
+    const update = mock.method(TrainingRequest, 'update', async () => [1] as any);
+    mockNotification();
+
+    await assert.rejects(TrainingRequestService.finalApproval(REQUEST_ID, 93, true), { code: 400 });
+    assert.equal(update.mock.calls.length, 0);
+    assert.equal(notifications.length, 0);
+  });
   it('accepts the UUID-backed request and notifies only the original TEAM requester', async () => {
     const created = trainingRequest({ id: randomUUID() });
     mock.method(TrainingRequest, 'create', async () => created as any);
