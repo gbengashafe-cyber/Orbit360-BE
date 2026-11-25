@@ -2,6 +2,8 @@
 
 **Role-based expansion status:** the product owner approved sequential training review, eligible reviewer queues, confidential complaint reviewer alerts, workflow-specific categories and occurrence-aware best-effort deduplication. These new decisions are separate from the existing D1–D7 below. Only the training HR-stage correction has been implemented in this partial pass; role-based events, categories and queue delivery remain unimplemented. See [role-based plan](ROLE-BASED-NOTIFICATIONS-PLAN.md) for current status and blockers.
 
+Performance and appraisal notifications remain deferred. A focused local check found no global or route-level authentication before the performance router, and an unauthenticated request reached a mocked goal lookup. See the plan for the verification limitation and separate remediation item.
+
 This document describes the Phase 2 Notification Center foundation, Phase 3 employee-facing workflow integrations, and the Phase 4 Exit Management and preference integrations currently implemented. It distinguishes implemented behavior from approved product decisions and recommended practices; event definitions alone do not imply that a workflow dispatches an event.
 
 ## Purpose and architecture

@@ -53,6 +53,7 @@ Implemented: backend goal CRUD/progress and dashboard routes; frontend goal and 
 - [ ] Verify goals/OKRs and feedback persistence, routes and permissions end to end.
 - [ ] Specify and implement check-ins, recognition and performance reports; do not count placeholders as functionality.
 - [ ] Audit access and ownership enforcement for performance endpoints before exposure; workflow map notes routes lack local authentication middleware, and app-level protection must be checked.
+- [ ] High priority: secure performance routes and enforce record-level ownership/permissions. Local code inspection found no global or route authentication; an unauthenticated HTTP request reached a mocked goal lookup and returned 200. The probe hit a Windows libuv shutdown assertion after its assertion passed, so repeat it in a stable test environment and verify deployment controls. Do not expose performance/appraisal notifications before remediation.
 
 **Product decisions:** goal/OKR ownership, visibility, feedback privacy, review and reporting audiences.
 
