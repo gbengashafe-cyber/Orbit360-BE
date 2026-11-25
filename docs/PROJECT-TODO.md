@@ -1,0 +1,147 @@
+# ORBIT 360 project backlog
+
+Canonical backlog for both repositories. Evidence is a source-code/documentation review, not proof of end-to-end operation. Update status, tasks, dependencies, blockers, decisions and verification as work proceeds. Do not mark a feature complete without appropriate verification. Read the relevant feature specification before planning; where none exists, identify the missing specification and obtain decisions before implementing.
+
+Statuses: **Completed**, **Partially implemented**, **Pending**, **Blocked**, **Requires product decision**, **Requires verification**. Priorities below are proposed sequencing, not approved scope. Product decisions and permissions remain unchanged.
+
+## Notification Center and workflow recipients
+
+**Status:** Partially implemented. **Priority:** High. **Dependencies:** confirmed workflow transitions, recipient assignments, Employee Hub sign-off and event-specific product approval. **Documentation:** [NOTIFICATIONS.md](NOTIFICATIONS.md), [workflow map](NOTIFICATION-WORKFLOW-MAP.md).
+
+Implemented: central registry, service and recipient resolution; owner-facing leave, loan, training, complaint and exit events; reliever on approved leave; channel preferences, polling and acknowledgement. Frontend has notification history, preferences and central self-toast suppression. These are implementation observations, not a new acceptance test.
+
+- [ ] Specify supervisor/team lead, HR Officer/Manager and assigned reviewer/approver events and the business reason for each recipient.
+- [ ] Resolve recipients per workflow from persisted assignments; approve an explicit queue policy where no individual is assigned. Never guess or fan out solely from a permission.
+- [ ] Preserve after-commit dispatch, deduplication, independent preferences, polling acknowledgement, self-toast suppression, complaint privacy and owner-only complaint policy.
+- [ ] Verify cross-role delivery, missing accounts, retries, preference combinations and privacy end to end.
+- [ ] Reconcile historical duplicate-toast descriptions in the workflow map with the later implemented suppression; its earlier summary and later training section conflict.
+
+**Product decisions:** event-by-event scope, assignment or permission-holder policy, category and copy; any complaint-recipient exception requires explicit approval. D4 deferral is not itself approval for broad fan-out. No durable notification outbox is documented; reliability changes need separate approval.
+
+## Employee dashboard
+
+**Status:** Partially implemented. **Priority:** High. **Dependencies:** owner-scoped APIs, agreed dashboard metrics and notification feed. **Documentation:** frontend `src/pages/employee-portal/dashboard/Dashboard.jsx`, `DESIGN.md`; [NOTIFICATIONS.md](NOTIFICATIONS.md).
+
+Implemented: welcome, job role, staff ID, supervisor, department, SBU and leave/loan shortcuts. API coverage and data freshness for additional summaries are **unverified**.
+
+- [ ] Define and implement owner-only activity summaries and consolidated My Requests using verified existing APIs or propose missing endpoints.
+- [ ] Add approved quick actions, recent notifications and relevant personal employment information.
+- [ ] Verify loading, empty, error, access control and responsive states; exclude company-wide HR analytics and other employees' private information.
+
+**Product decisions:** which activities, request statuses, counts, actions, personal fields and notification limits provide value; no inferred policy.
+
+## KPI management
+
+**Status:** Pending. **Priority:** Medium. **Dependencies:** approved KPI specification, ownership/permissions and performance model. **Documentation:** `src/features/performance`, frontend `src/components/performance`.
+
+Implemented: no dedicated KPI library or assignment workflow was identified in the inspected feature inventory; goals exist, but are not evidence of a KPI product.
+
+- [ ] Define KPI library, creation, management, assignment, tracking and reporting.
+- [ ] Establish the data model and integration with goals/appraisals; verify any existing reusable capability.
+- [ ] Implement and verify only after an approved specification and plan.
+
+**Product decisions:** ownership, measures, targets, scoring, review periods, access and approval rules.
+
+## Performance management
+
+**Status:** Partially implemented. **Priority:** Medium. **Dependencies:** security review and KPI/appraisal decisions. **Documentation:** `src/features/performance/performance.routes.ts`, frontend `src/components/performance`, [workflow map](NOTIFICATION-WORKFLOW-MAP.md).
+
+Implemented: backend goal CRUD/progress and dashboard routes; frontend goal and feedback components exist. Check-in, recognition, analytics and development-planning components include coming-soon placeholders. Dedicated performance routing and functional integration require verification.
+
+- [ ] Verify goals/OKRs and feedback persistence, routes and permissions end to end.
+- [ ] Specify and implement check-ins, recognition and performance reports; do not count placeholders as functionality.
+- [ ] Audit access and ownership enforcement for performance endpoints before exposure; workflow map notes routes lack local authentication middleware, and app-level protection must be checked.
+
+**Product decisions:** goal/OKR ownership, visibility, feedback privacy, review and reporting audiences.
+
+## Appraisal management
+
+**Status:** Partially implemented. **Priority:** Medium. **Dependencies:** performance security, manager identity mapping and approved cycle policy. **Documentation:** `src/features/performance/performance.routes.ts`, `appraisal.model.ts`, [workflow map](NOTIFICATION-WORKFLOW-MAP.md).
+
+Implemented: backend cycle and appraisal create/update/submit/review routes. Employee UI, quarterly rules and reporting are not established by route existence.
+
+- [ ] Verify cycle lifecycle and appraisal permissions/end-to-end behavior, including employee and manager identity mapping.
+- [ ] Specify quarterly cycles, employee/manager goal agreements, employee appraisal screens, review and reporting.
+- [ ] Assess approval, return and notification requirements against real transitions.
+
+**Product decisions:** cycle cadence, agreement and review sequence, scoring, manager identity, confidentiality and reporting access.
+
+## Staff movement
+
+**Status:** Pending. **Priority:** Medium. **Dependencies:** approved specification, employee/position data, approver assignment and notification policy. **Documentation:** [workflow map](NOTIFICATION-WORKFLOW-MAP.md) (inventory).
+
+Implemented: no dedicated staff-movement feature was found in the inspected inventory.
+
+- [ ] Specify deployment and new staff requests, redeployment, approval and employee concurrence.
+- [ ] Define notification events and recipients; build and verify only after approval.
+
+**Product decisions:** initiator, approvers, concurrence meaning, transition rules and employee privacy.
+
+## Disciplinary action
+
+**Status:** Pending. **Priority:** Medium. **Dependencies:** approved policy, confidentiality and access-control design. **Documentation:** [workflow map](NOTIFICATION-WORKFLOW-MAP.md) (inventory).
+
+Implemented: no dedicated disciplinary feature was found in the inspected inventory.
+
+- [ ] Specify case creation, investigation, review, verdicts and case history.
+- [ ] Define retention, audit, access and notification requirements; implement and verify after approval.
+
+**Product decisions:** sensitive-case visibility, participant roles, process, appeals and retention.
+
+## User management
+
+**Status:** Partially implemented. **Priority:** High. **Dependencies:** authorization/security review and approved account-lifecycle policy. **Documentation:** `src/features/users/user.router.ts`, frontend `src/pages/UserManagement.jsx`.
+
+Implemented: admin-gated backend list/create/update/get routes and frontend listing/create/update controls for access level, job role and status. Job-role permissions are represented in the interface. Existing status controls are not proof that every suspension requirement works end to end; no user-delete route appears in the inspected router.
+
+- [ ] Verify listing, role/job-role changes, permission enforcement, account suspension and self-protection end to end.
+- [ ] Define deletion/deactivation and permission administration; implement only approved missing capabilities.
+
+**Product decisions:** deletion vs retention/deactivation, role assignment authority, permission editing and recovery.
+
+## Existing workflow improvements
+
+**Status:** Requires product decision. **Priority:** High. **Dependencies:** workflow owners and regression tests. **Documentation:** [workflow map](NOTIFICATION-WORKFLOW-MAP.md), `src/features/training/training-request.service.ts`.
+
+Confirmed: HR training review accepts `PENDING_SUPERVISOR_APPROVAL` as well as `PENDING_HR_REVIEW`, permitting HR review before supervisor approval. Training deletion now checks initial `PENDING_SUPERVISOR_APPROVAL` rather than unreachable `PENDING`; verify current behavior with tests. Loan approver rejection can return to `PENDING_REVIEW` and must not become a final employee rejection. The workflow map documents document-deletion decision/side-effect separation.
+
+- [ ] Obtain a decision on whether HR may bypass supervisor approval; preserve the current sequence until then.
+- [ ] Review other approval transitions, assignment, permissions and notification timing against actual code; assess document-deletion consistency separately.
+- [ ] Verify training deletion and other current workflows with focused regression tests.
+
+**Product decisions:** HR bypass and any exceptions; intended approval, cancellation and reviewer assignment policies wherever unspecified.
+
+## Technical debt and QA
+
+**Status:** Requires verification. **Priority:** High. **Dependencies:** test environments and scope-specific owners. **Documentation:** frontend `package.json`, `DESIGN.md`, [workflow map](NOTIFICATION-WORKFLOW-MAP.md).
+
+Known prior results: frontend focused lint reported existing unused imports/variables, hook warnings and an undefined `error` reference in Document Management; production build reported stale Browserslist data and large chunks. These were not re-run for this documentation task. Frontend has a notification presentation test file but no `test` script in `package.json`; this does not establish broader test coverage.
+
+- [ ] Reproduce and triage existing lint issues and the Document Management error reference; distinguish existing from new failures.
+- [ ] Establish automated frontend test commands and meaningful component/workflow coverage; preserve notification tests.
+- [ ] Run responsive, keyboard, accessibility and interaction regression checks across roles and workflows.
+- [ ] Assess build warnings, dependencies and bundle size without changing them as part of unrelated work.
+- [ ] Verify backend test/type-check and integration coverage in a suitable environment; record results and blockers.
+
+**Product decisions:** prioritize any scope-changing security, reliability or workflow fixes separately.
+
+## Design system compliance
+
+**Status:** Completed for product designer's visual sign-off on Steps 1–4; **Requires verification** for automated and comprehensive browser testing. **Priority:** Ongoing. **Dependencies:** frontend `DESIGN.md` and shared components. **Documentation:** frontend `DESIGN.md`, `AGENTS.md`.
+
+Implemented: tokens, shared patterns and documented designer sign-off. Sign-off is not evidence that every interaction has been automated or browser-tested.
+
+- [ ] Follow `DESIGN.md` for every future frontend feature; reuse tokens, components and formatting.
+- [ ] Create a Markdown implementation plan before each new feature or significant UX improvement; include design-system compliance in verification.
+- [ ] Document reusable pattern additions centrally and verify responsive and role-specific behavior.
+
+**Product decisions:** approve new patterns or departures where requirements are unclear.
+
+## Proposed sequence
+
+1. Triage security/QA and resolve the training bypass decision; establish reliable regression coverage.
+2. Define notification recipient/assignment policies and implement approved role delivery with privacy and preference tests.
+3. Plan the personal dashboard using verified owner-scoped APIs.
+4. Establish KPI and performance/appraisal specifications and access rules before integrating their lifecycles.
+5. Define staff movement and disciplinary policy, workflows and notification requirements before implementation.
+6. Continue user-management lifecycle work and remaining workflow improvements as their policy and security dependencies are resolved.

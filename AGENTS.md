@@ -26,6 +26,12 @@ These instructions apply to the entire backend repository.
 - Run the focused tests, then `npm test` and `npx.cmd tsc --noEmit` for backend changes when the local environment supports them. Report environmental failures separately from code failures.
 - Do not modify tests or fixtures to conceal a failing behavior.
 
+## Project backlog and feature planning
+
+- Before feature development, read the canonical [project backlog](docs/PROJECT-TODO.md) and the relevant feature specification. If no specification exists, record the gap and resolve unclear product decisions before implementing.
+- Create a Markdown implementation plan before building a new feature. Update the canonical backlog after completing or partially completing work, including blockers and unresolved product decisions.
+- Never mark a feature complete without appropriate verification and recorded results. Do not create a duplicate project backlog.
+
 ## Notification assessment is mandatory
 
 For every new feature or workflow change, assess its meaningful business events and whether they warrant employee notifications. Identify state transitions, recipients and why they should receive a notification, dispatch timing, message content, category, privacy needs, idempotency, and tests. Report events deliberately excluded and why. Do not invent recipients or product rules; ask for approval when they are unclear.
