@@ -1,3 +1,4 @@
+import { NotificationService } from '../notifications/notification.service';
 import { NextFunction, Request, Response } from 'express';
 import { ApiError } from '../../utils/api-error';
 import { ApiResponse } from '../../utils/api-response';
@@ -20,6 +21,12 @@ export class OnboardingController {
         submittedAt: new Date(),
       });
 
+      await NotificationService.notify('ONBOARDING_REVIEW', {
+        recordId: onboarding.id,
+        employeeId: onboarding.employeeId,
+        userId: req.user?.id,
+        occurrence: 'initial',
+      });
       const createdOnboarding = await Onboarding.findByPk(onboarding.id, {
         include: [{ model: Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'email'] }],
       });
@@ -129,7 +136,24 @@ export class OnboardingController {
         updateData.reviewedAt = new Date();
       }
 
-      await onboarding.update(updateData);
+      if (status && status !== onboarding.status) {
+        const occurrence = onboarding.decisionVersion + 1;
+        const [updated] = await Onboarding.update(
+          { ...updateData, decisionVersion: occurrence },
+          {
+            where: { id: onboarding.id, status: onboarding.status, decisionVersion: onboarding.decisionVersion },
+          },
+        );
+        if (!updated) throw ApiError.conflict('Document review already changed.');
+        const payload = { recordId: onboarding.id, employeeId: onboarding.employeeId, occurrence };
+        if (status === 'submitted') await NotificationService.notify('ONBOARDING_REVIEW', { ...payload, userId: req.user?.id });
+        if (status === 'approved') await NotificationService.notify('ONBOARDING_APPROVED', payload);
+        if (status === 'rejected') await NotificationService.notify('ONBOARDING_REJECTED', payload);
+      } else {
+        // Editing notes or the file must not overwrite a concurrent decision.
+        delete updateData.status;
+        await onboarding.update(updateData);
+      }
 
       const updatedOnboarding = await Onboarding.findByPk(id, {
         include: [{ model: Employee, as: 'employee', attributes: ['id', 'firstName', 'lastName', 'email'] }],

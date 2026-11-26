@@ -38,6 +38,7 @@ export const findUsersWithEmployees = async (count: number): Promise<TestUser[]>
     `SELECT u.id AS userId, e.id AS employeeId, e.first_name AS firstName, e.last_name AS lastName, u.email AS email
        FROM users u JOIN employees e ON e.email = u.email
       WHERE u.deleted_at IS NULL
+        AND NOT EXISTS (SELECT 1 FROM notifications n WHERE n.recipient_user_id = u.id)
       ORDER BY u.id
       LIMIT :count`,
     { replacements: { count }, type: QueryTypes.SELECT, logging: false },

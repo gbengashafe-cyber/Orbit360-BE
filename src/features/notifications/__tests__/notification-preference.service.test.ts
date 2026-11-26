@@ -15,7 +15,7 @@ describe('NotificationPreferenceService', () => {
     const categories = await NotificationPreferenceService.list({ id: 101, email: 'employee@example.test', permissions: [] });
     assert.deepEqual(
       categories.map(({ category }) => category),
-      ['LEAVE', 'LOAN', 'TRAINING', 'RELIEVER', 'COMPLAINT', 'GENERAL', 'EXIT'],
+      ['LEAVE', 'LOAN', 'TRAINING', 'RELIEVER', 'COMPLAINT', 'GENERAL', 'EXIT', 'ONBOARDING'],
     );
     assert.ok(categories.every(({ inAppEnabled, realtimeEnabled }) => inAppEnabled && realtimeEnabled));
   });

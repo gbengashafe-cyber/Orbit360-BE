@@ -89,6 +89,7 @@ export class LeaveController {
       submittedAt: leave.createdAt,
       actorUserId: user.id,
     });
+    await NotificationService.notify('LEAVE_REVIEW', { recordId: leave.id, employeeId: employee.id });
 
     const createdLeave = await Leave.findByPk(leave.id, {
       include: [

@@ -83,7 +83,9 @@ describe('notification cursor', () => {
 describe('event registry', () => {
   it('defines the employee-facing Phase 2, Phase 3, and Exit events', () => {
     assert.deepEqual(
-      [...NOTIFICATION_EVENT_TYPES].sort((a, b) => a.localeCompare(b)),
+      NOTIFICATION_EVENT_TYPES.filter((event) => !('recordId' in NOTIFICATION_EVENTS[event].schema.shape)).sort((a, b) =>
+        a.localeCompare(b),
+      ),
       [
         'COMPLAINT_APPROVED',
         'COMPLAINT_REJECTED',
@@ -109,9 +111,9 @@ describe('event registry', () => {
     );
   });
 
-  it('has no approver (ACTOR_QUEUE) or broadcast deliveries (D4)', () => {
+  it('supports scoped reviewer queues without broadcast delivery', () => {
     for (const definition of Object.values(NOTIFICATION_EVENTS)) {
-      assert.ok(['REQUESTER', 'RELIEVER', 'DIRECT'].includes(definition.audience));
+      assert.ok(['REQUESTER', 'RELIEVER', 'DIRECT', 'ACTOR_QUEUE'].includes(definition.audience));
     }
   });
 

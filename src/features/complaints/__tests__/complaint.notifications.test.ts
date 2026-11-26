@@ -55,7 +55,8 @@ describe('complaint notification integration', () => {
       },
     );
 
-    assert.equal(notification.mock.calls.length, 1);
+    assert.equal(notification.mock.calls.length, 2);
+    assert.deepEqual(notification.mock.calls[1].arguments, [tx, 'COMPLAINT_REVIEW', { recordId: 44, employeeId: 7, userId: 7 }]);
     const [transaction, event, payload] = notification.mock.calls[0].arguments as any[];
     assert.equal(transaction, tx);
     assert.equal(event, 'COMPLAINT_SUBMITTED');
@@ -84,7 +85,10 @@ describe('complaint notification integration', () => {
     mock.method(ComplaintRepository, 'findById', async () => makeComplaint());
     mock.method(ComplaintRepository, 'transition', async () => 1);
     await ComplaintService.review(user, 44, { decision: 'APPROVE' });
-    assert.equal(noNotification.mock.calls.length, 0);
+    assert.deepEqual(
+      noNotification.mock.calls.map((call) => call.arguments),
+      [[tx, 'COMPLAINT_AUTHORIZATION', { recordId: 44, employeeId: 7, userId: 90 }]],
+    );
   });
 
   it('notifies the owner after HR Manager final approval or rejection only', async () => {

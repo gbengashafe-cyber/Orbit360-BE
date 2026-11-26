@@ -135,6 +135,11 @@ export class ComplaintService {
         submittedAt: created.reportedDate,
       });
 
+      NotificationService.notifyAfterCommit(transaction, 'COMPLAINT_REVIEW', {
+        recordId: created.id,
+        employeeId,
+        userId: user.id,
+      });
       return created;
     });
 
@@ -238,6 +243,13 @@ export class ComplaintService {
         { transaction },
       );
 
+      if (decision === 'APPROVE') {
+        NotificationService.notifyAfterCommit(transaction, 'COMPLAINT_AUTHORIZATION', {
+          recordId: complaint.id,
+          employeeId: complaint.employeeId,
+          userId: user.id,
+        });
+      }
       if (decision === 'REJECT' && complaint.reference) {
         NotificationService.notifyAfterCommit(transaction, 'COMPLAINT_REJECTED', {
           complaintId: complaint.id,

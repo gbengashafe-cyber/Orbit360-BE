@@ -26,7 +26,7 @@ export class AuthorizationController {
     const { page, rows } = req.pagination;
     const userId = req.user?.id as number;
     const userEmployeeId = req.user?.employeeRecord?.id as number;
-    const supervisorId = req.user?.employeeRecord?.supervisorId as number;
+    const supervisorId = userEmployeeId;
 
     if (!['LEAVES', 'TRAINING REQUESTS'].includes(moduleName.toLocaleUpperCase())) {
       hasModuleApprovalPermission({ moduleName, req });
@@ -39,6 +39,7 @@ export class AuthorizationController {
       userId,
       userEmployeeId,
       supervisorId,
+      canApproveTraining: req.user?.permissions?.includes('APPROVE_TRAINING_REQUESTS') ?? false,
     });
 
     return res.json(

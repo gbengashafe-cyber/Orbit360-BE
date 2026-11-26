@@ -1,6 +1,6 @@
 # ORBIT 360 Notification Center
 
-**Role-based expansion status:** the product owner approved sequential training review, eligible reviewer queues, confidential complaint reviewer alerts, workflow-specific categories and occurrence-aware best-effort deduplication. These new decisions are separate from the existing D1–D7 below. Only the training HR-stage correction has been implemented in this partial pass; role-based events, categories and queue delivery remain unimplemented. See [role-based plan](ROLE-BASED-NOTIFICATIONS-PLAN.md) for current status and blockers.
+**Role-based expansion status:** the approved reviewer expansion is implemented. Workflow task notifications now address the requester’s persisted supervisor when there is one, otherwise active employee-linked accounts with the existing required permission. Missing, inactive, suspended, ambiguous, out-of-scope, and maker/checker-ineligible recipients are skipped. The system uses best-effort after-commit delivery where the workflow has a transaction. See [role-based plan](ROLE-BASED-NOTIFICATIONS-PLAN.md) for the coverage and remaining verification limits.
 
 Performance and appraisal notifications remain deferred. A focused local check found no global or route-level authentication before the performance router, and an unauthenticated request reached a mocked goal lookup. See the plan for the verification limitation and separate remediation item.
 
@@ -21,7 +21,7 @@ There is no event bus, durable outbox, push service, WebSocket, SSE, or module-s
 | `notification-preference.model.ts` | Per-user, per-category in-app and real-time preference persistence. |
 | `notification-preference.service.ts` | Current-permission category availability, enabled-by-default values, and authenticated user's preference updates. |
 | `notification-preference.controller.ts` | Preference APIs and pending real-time alert polling/acknowledgement. |
-| `notification.recipients.ts` | Resolves explicit user references and employee references to existing user accounts. |
+| `notification.recipients.ts` | Resolves explicit users, employee-to-user mappings, persisted supervisors, assigned users/employees, and eligible permission queues to active accounts. |
 | `notification.model.ts` | Sequelize notification model and supported category/audience/entity values. |
 | `notification.repository.ts` | Recipient-scoped feed, unread count, and read-state persistence operations. |
 | `notification.controller.ts` | API request handling and safe notification response view. |
@@ -31,6 +31,8 @@ There is no event bus, durable outbox, push service, WebSocket, SSE, or module-s
 | `notification.dates.ts` | Africa/Lagos display formatting and local calendar date boundaries. |
 | `migrations/20261124120000-create-notifications.cjs` | Additive migration for the notification table and its indexes/constraints. |
 | `migrations/20261125120000-add-notification-preferences-and-polling.cjs` | Adds the `EXIT` category, per-channel notification fields, polling acknowledgement, and user preference table. |
+| `migrations/20261126120000-extend-workflow-notification-categories.cjs` | Adds the approved Employee Management, Recruitment, Payroll, Documents, and Onboarding categories. Applied to local development only. |
+| `migrations/20261126120100-onboarding-decision-version.cjs` | Adds a version counter for safe onboarding decision occurrence keys. Applied to local development only. |
 
 The notification feature is mounted at `/api/v1/notifications` from `src/app.ts`.
 
@@ -49,10 +51,15 @@ The original event definitions were established in Phase 2; Phase 4 adds Exit ev
 | `LOAN` | `LOAN_APPLIED`, `LOAN_APPROVED`, `LOAN_REJECTED`, `LOAN_CANCELLED` |
 | `TRAINING` | `TRAINING_APPLIED`, `TRAINING_APPROVED`, `TRAINING_REJECTED` |
 | `COMPLAINT` | `COMPLAINT_SUBMITTED`, `COMPLAINT_APPROVED`, `COMPLAINT_REJECTED` |
-| `EXIT` | `EXIT_APPLIED`, `EXIT_APPROVED`, `EXIT_REJECTED`, `EXIT_COMPLETED` |
+| `EXIT` | `EXIT_APPLIED`, `EXIT_APPROVED`, `EXIT_REJECTED`, `EXIT_COMPLETED`, reviewer and authorization tasks |
+| `EMPLOYEE_MANAGEMENT` | Employee maintenance authorization and maker outcomes |
+| `RECRUITMENT` | Job-posting authorization and creator outcomes |
+| `PAYROLL` | Batch/override authorization and maker outcomes |
+| `DOCUMENTS` | Document or folder deletion authorization and requester outcomes |
+| `ONBOARDING` | Onboarding review and employee outcomes |
 | `GENERAL` | `GENERAL_NOTIFICATION` |
 
-The Phase 2 categories remain `LEAVE`, `LOAN`, `TRAINING`, `RELIEVER`, `COMPLAINT`, and `GENERAL`; `COMPLAINT` retains its approved identity and category decision (D3). Phase 4 adds `EXIT` without renaming or removing any existing category. Audiences represented in the model include `REQUESTER`, `RELIEVER`, `DIRECT`, `ACTOR_QUEUE`, and `BROADCAST`; `ACTOR_QUEUE` and `BROADCAST` have no Phase 3 or Phase 4 Notification Center delivery integrations.
+The Phase 2 categories remain intact. `COMPLAINT` retains its approved identity and category decision (D3). The expansion adds workflow-specific categories without renaming or removing existing values. `ACTOR_QUEUE` now represents bounded, eligible reviewer recipients. `BROADCAST` remains unavailable.
 
 ## Implemented Phase 3 workflow integrations
 
@@ -78,11 +85,11 @@ The business integrations below are implemented in the named backend workflows. 
 
 Leave approval, loan review/authorization, and complaint transitions use conditional status updates so a stale decision that loses the transition cannot register an outcome notification. Training transitions use conditional status updates for the same reason. Repeated dispatches for an event and record are protected by the stable event/entity dedupe key and unique recipient/dedupe database constraint. These safeguards are limited to notification-relevant transitions; they do not constitute a broad concurrency redesign.
 
-No Phase 3 integration sends notifications to supervisors or HR recipients (D4). Training's existing helper methods that log placeholder “queued” messages are not Notification Center dispatches or recipient fan-out.
+Role-based workflow task delivery is now active. Training submission notifies the persisted supervisor, supervisor approval notifies eligible HR Officers, and HR review notifies eligible final approvers. The existing placeholder helper logs were removed from this path.
 
 ## Implemented Phase 4 Exit Management integration
 
-Exit events use the `EXIT` category and are sent only to the employee who owns the persisted Exit record. No new Exit notification is sent to a reviewer, approver, supervisor, or HR group (D4). The existing Exit controller's email side effects are pre-existing workflow behavior and are not Notification Center recipient fan-out added by Phase 4.
+Exit owner events remain unchanged. A submitted exit creates an eligible `MANAGE_EXITS` review task, and a successful reviewer clearance creates an eligible `APPROVE_EXITS` authorization task. These messages omit the exit reason, reviewer comments and internal clearance data.
 
 | Workflow transition | Event | Recipient | Behavior |
 | --- | --- | --- | --- |
@@ -103,9 +110,9 @@ Preferences are stored by authenticated `users.id` and category in `notification
 
 On each preferences request, the backend uses the current permissions loaded by authentication and checks for an employee record matching the user's email:
 
-- A user with an employee record can manage the employee-facing categories `LEAVE`, `LOAN`, `TRAINING`, `RELIEVER`, `COMPLAINT`, and `EXIT`.
+- A user with an employee record can manage the employee-facing categories `LEAVE`, `LOAN`, `TRAINING`, `RELIEVER`, `COMPLAINT`, `EXIT`, and `ONBOARDING`.
 - `GENERAL` is available to every authenticated user.
-- A non-employee staff account can manage feature categories when its current permission set includes that feature's existing permissions: `LIST_LOANS` / `MANAGE_LOANS` / `APPROVE_LOANS`; `LIST_TRAINING_REQUESTS` / `MANAGE_TRAINING_REQUESTS` / `APPROVE_TRAINING_REQUESTS`; `MANAGE_COMPLAINTS` / `APPROVE_COMPLAINTS`; or `MANAGE_EXITS` / `APPROVE_EXITS`.
+- A staff account can manage workflow categories only when its current permission set allows that feature. This includes Employee Management, Recruitment, Payroll, Documents, Onboarding, Loans, Training, Complaints, and Exit Management.
 - Leave and reliever have no corresponding feature permissions in the current permission registry, so those preferences are available through an employee record.
 
 The API derives the available set on every request. Clients cannot submit an arbitrary category or a user ID. Losing a permission hides the corresponding saved preference and blocks updates but does not delete the stored preference; it becomes visible again if access is restored. Current employee-facing categories remain available to employees as approved, even if the user lacks the staff review/approval permissions.
@@ -169,7 +176,7 @@ These approved decisions remain authoritative for the implementation and future 
 - **D1 — Dates:** Display notification dates as `DD/MM/YYYY`. Store timestamps in UTC and format display dates in `Africa/Lagos`.
 - **D2 — Reliever:** Notify the reliever when leave is approved. The named employee is the person going on leave; the reliever is the recipient. The current message is “You are covering for {employee going on leave} starting {date}.”
 - **D3 — Complaints:** Complaints is the sixth notification category, `COMPLAINT`.
-- **D4 — Approvers:** Supervisor and HR notification delivery was deferred until Employee Hub was signed off. Employee Hub sign-off is now complete, so that deferred scope may be addressed as Phase 6 work. This milestone does not mean role notifications are already implemented; identify actual responsible recipients per workflow and do not fan out indiscriminately. Existing Phase 3/4 implementations remain as documented.
+- **D4 — Approvers:** The deferral ended with Employee Hub sign-off. Reviewer notifications use the actual persisted supervisor or a bounded queue of active accounts holding the required existing permission. They do not fall back to arbitrary administrators.
 - **D5 — Loan approval:** Notify when loan status reaches `PENDING_DISBURSEMENT`. The notification says the loan was approved; it must not say paid or disbursed.
 - **D6 — TEAM training:** Notify only the original training request submitter, including requests with `requestScope: TEAM`.
 - **D7 — Concurrent decisions:** Apply minimal safeguards against misleading notifications from stale or competing workflow decisions. Do not perform a broad concurrency refactor without approval.
@@ -178,11 +185,11 @@ These approved decisions remain authoritative for the implementation and future 
 
 - Never accept the recipient from an untrusted request field. Determine the business owner/recipient from authenticated context or the persisted record, then use the central resolver.
 - Keep every feed/read operation scoped to the authenticated user. Do not expose internal recipient, actor, or dedupe fields.
-- Complaint notifications go only to the complaint owner. Their strict payload contains only complaint ID, owner employee ID for recipient resolution, public reference, and submitted timestamp. Do not include complainant identity, complaint title/content, witnesses, anonymity flag, reviewer/approver notes, or other sensitive data.
+- Complaint owner events retain their strict payload. Reviewer and authorizer tasks are generic and confidential. They contain no complaint entity reference, metadata, actor, complainant identity, subject, content, witnesses, anonymity flag, attachments, or reviewer/approver notes.
 - Complaint notifications always have a null actor and metadata restricted to the allow-list (`reference`, `status`, `submittedAt`). The service applies this as defense in depth.
 - Exit notifications go only to the employee referenced by the persisted Exit record. Their message contains the last working date and outcome; do not include reviewer names, reviewer notes, clearance comments, or other Exit form details.
 - Do not log notification message text, complaint content, secrets, names, or email addresses. Follow the feature's existing ID-only logging patterns.
-- No supervisor or HR Notification Center recipients were added in Phases 3 or 4 (D4). With Employee Hub now signed off, any future role notification work must still use actual workflow responsibility and be approved per event. Existing non-Notification-Center workflow email behavior is separate and remains unchanged.
+- Every queue recipient must still have the present-time workflow permission. Notifications remain snapshots and never grant record access or bypass route authorization.
 
 ## Permanent Notification Integration Standard
 
@@ -236,15 +243,15 @@ Notification integration tests should cover, as applicable:
 - `notifyAfterCommit` delivery after commit and no delivery after rollback;
 - notification failure does not reverse or falsely fail a successful business action;
 - duplicate/retried dispatch creates one notification per recipient/event/entity;
-- requester ownership, reliever mapping, and no supervisor/HR fan-out under D4;
-- complaint owner-only delivery and absence of identity/content/actor leakage.
+- requester ownership, reliever mapping, supervisor and permission-queue eligibility, and maker/checker exclusions;
+- confidential complaint reviewer delivery and absence of identity/content/actor/entity leakage.
 
 Keep tests isolated from unrelated user data. Use the existing notification test helpers and local development database conventions. Run focused tests, the full `npm test` suite, and `npx.cmd tsc --noEmit` for backend changes when available; report any required local database or migration setup.
 
 ## Current implementation notes and known alignment checks
 
-The workflow tables above describe current Phase 3 and Phase 4 integrations, not merely proposed behavior. Notification Preferences and Exit Management integration are implemented as described above. The Phase 5 frontend in `orbit360-FE` includes notification history/preferences UI and the polling client. Background/offline push delivery is not implemented. Consult `docs/NOTIFICATION-WORKFLOW-MAP.md` for a cross-feature discovery of additional approval workflows and proposed recipient gaps; those Phase 6 integrations are not implemented.
+The workflow tables above describe current Phase 3, Phase 4 and role-based integrations. Notification Preferences and Exit Management integration are implemented as described above. The frontend includes notification history/preferences, polling, duplicate-toast suppression, and safe queue destinations. Background/offline push delivery is not implemented.
 
-The existing Exit controller does not use transactions or conditional status updates. Notifications follow successful writes and the central unique event/recipient key prevents repeated copies of the same event, but competing terminal Exit updates can still produce conflicting outcome events. Fixing the underlying Exit workflow concurrency behavior is outside the approved Phase 4 scope and requires separate approval.
+Exit reviewer and final decisions now use conditional updates before notification dispatch. Existing update endpoints outside the approval transitions remain unchanged.
 
-The training event schema accepts UUID-backed request IDs, matching the `TrainingRequest` model. The approved decisions D1–D7 remain authoritative: D1 dates, D2 reliever recipient and wording, D3 complaint category decision, D4 supervisor/HR delivery deferred until Employee Hub sign-off (milestone now complete; implementation remains future Phase 6 work), D5 loan approval at `PENDING_DISBURSEMENT`, D6 requester-only TEAM training, and D7 minimal safeguards against misleading concurrent outcomes.
+The training event schema accepts UUID-backed request IDs, matching the `TrainingRequest` model. The approved decisions D1–D7 remain authoritative. D5 stays at `PENDING_DISBURSEMENT`, D6 keeps TEAM requests with the original submitter only, and D7 is applied through conditional workflow updates and per-recipient occurrence keys.

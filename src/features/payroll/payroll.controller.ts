@@ -1,3 +1,4 @@
+import { NotificationService } from '../notifications/notification.service';
 import { NextFunction, Request, Response } from 'express';
 import z from 'zod';
 import { AuditLog } from '../../audit-log/audit-log.model';
@@ -230,10 +231,18 @@ export class PayrollController {
     }
 
     await db.transaction(async (t) => {
-      await payrollBatch.update({ status: 'PENDING_OVERRIDE_APPROVAL' }, { transaction: t });
+      if (payrollBatch.status === 'PENDING_OVERRIDE_APPROVAL') return;
+      const [updated] = await PayrollBatch.update(
+        { status: 'PENDING_OVERRIDE_APPROVAL' },
+        {
+          where: { id, status: payrollBatch.status },
+          transaction: t,
+        },
+      );
+      if (!updated) throw ApiError.conflict('Payroll batch status changed.');
 
       const requesterId = req.user?.id as number;
-      await AuditLog.create(
+      const audit = await AuditLog.create(
         {
           userId: requesterId,
           action: 'UPDATE',
@@ -243,6 +252,11 @@ export class PayrollController {
         },
         { transaction: t },
       );
+      NotificationService.notifyAfterCommit(t, 'PAYROLL_OVERRIDE_AUTHORIZATION', {
+        recordId: id,
+        userId: requesterId,
+        occurrence: audit.id,
+      });
     });
 
     res.json(ApiResponse({ data: {}, message: 'Payroll queued for override approval' }));
@@ -257,7 +271,20 @@ export class PayrollController {
     }
 
     await db.transaction(async (t) => {
-      await payrollBatch.update({ status: 'OVERRIDE_APPROVED' }, { transaction: t });
+      if (payrollBatch.status !== 'PENDING_OVERRIDE_APPROVAL') throw ApiError.conflict('No override is pending.');
+      const [updated] = await PayrollBatch.update(
+        { status: 'OVERRIDE_APPROVED' },
+        {
+          where: { id, status: 'PENDING_OVERRIDE_APPROVAL' },
+          transaction: t,
+        },
+      );
+      if (!updated) throw ApiError.conflict('Payroll override already processed.');
+      const submission = await AuditLog.findOne({
+        where: { entity: 'Payroll', entityId: String(id), description: 'Sent payroll for override' },
+        order: [['id', 'DESC']],
+        transaction: t,
+      });
 
       const requesterId = req.user?.id as number;
       await AuditLog.create(
@@ -270,6 +297,12 @@ export class PayrollController {
         },
         { transaction: t },
       );
+      if (submission?.userId)
+        NotificationService.notifyAfterCommit(t, 'PAYROLL_OVERRIDE_APPROVED', {
+          recordId: id,
+          userId: submission.userId,
+          occurrence: submission.id,
+        });
     });
 
     res.json(ApiResponse({ data: {}, message: 'Payroll override approved' }));

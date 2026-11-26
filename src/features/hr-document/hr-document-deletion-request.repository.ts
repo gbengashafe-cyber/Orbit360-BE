@@ -1,3 +1,4 @@
+import { NotificationService } from '../notifications/notification.service';
 import { HRDocumentDeletionRequest } from './hr-document-deletion-request.model';
 
 export class HRDocumentDeletionRequestRepository {
@@ -8,7 +9,9 @@ export class HRDocumentDeletionRequestRepository {
     requestedBy: number;
     requesterComment?: string;
   }) {
-    return HRDocumentDeletionRequest.create(data);
+    const request = await HRDocumentDeletionRequest.create(data);
+    await NotificationService.notify('DOCUMENTS_AUTHORIZATION', { recordId: request.id, userId: request.requestedBy });
+    return request;
   }
 
   static async findById(id: number) {
@@ -48,12 +51,15 @@ export class HRDocumentDeletionRequestRepository {
       return null;
     }
 
-    await deletion.update({
+    const changes = {
       status: 'APPROVED',
       reviewedBy,
       reviewerComment,
       reviewedDate: new Date(),
-    });
+    } as const;
+    const [updated] = await HRDocumentDeletionRequest.update(changes, { where: { id, status: 'PENDING_APPROVAL' } });
+    if (!updated) return null;
+    deletion.set(changes);
 
     return deletion;
   }
@@ -64,12 +70,15 @@ export class HRDocumentDeletionRequestRepository {
       return null;
     }
 
-    await deletion.update({
+    const changes = {
       status: 'REJECTED',
       reviewedBy,
       reviewerComment,
       reviewedDate: new Date(),
-    });
+    } as const;
+    const [updated] = await HRDocumentDeletionRequest.update(changes, { where: { id, status: 'PENDING_APPROVAL' } });
+    if (!updated) return null;
+    deletion.set(changes);
 
     return deletion;
   }

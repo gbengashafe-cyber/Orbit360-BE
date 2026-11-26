@@ -64,6 +64,11 @@ export class EmployeeService {
         { transaction: t },
       );
 
+      NotificationService.notifyAfterCommit(t, 'EMPLOYEE_MANAGEMENT_AUTHORIZATION', {
+        recordId: request.id,
+        employeeId: request.employeeId,
+        userId: makerId,
+      });
       return request.id;
     });
   };
@@ -125,6 +130,11 @@ export class EmployeeService {
         { transaction: t },
       );
 
+      NotificationService.notifyAfterCommit(t, 'EMPLOYEE_MANAGEMENT_AUTHORIZATION', {
+        recordId: request.id,
+        employeeId: request.employeeId,
+        userId: makerId,
+      });
       return request;
     });
   };
@@ -154,14 +164,19 @@ export class EmployeeService {
         throw ApiError.internalServerError('Unable to process the request. Kindly contact the system administrator');
       }
 
-      await request.update(
+      const [updated] = await EmployeeChangeRequest.update(
         {
           status: 'APPROVED',
           reviewedBy: checkerId,
           reviewerComment: reason || 'Approved by checker',
         },
-        { transaction: t },
+        { where: { id: requestId, status: 'PENDING_APPROVAL' }, transaction: t },
       );
+      if (updated !== 1) throw ApiError.conflict('Employee request already processed.');
+      NotificationService.notifyAfterCommit(t, 'EMPLOYEE_MANAGEMENT_APPROVED', {
+        recordId: requestId,
+        userId: request.requestedBy,
+      });
 
       employeeEmail = draft.email;
 
@@ -240,14 +255,19 @@ export class EmployeeService {
     }
 
     return await db.transaction(async (t) => {
-      await request.update(
+      const [updated] = await EmployeeChangeRequest.update(
         {
           status: 'REJECTED',
           reviewedBy: checkerId,
           reviewerComment: reason || 'Rejected by checker',
         },
-        { transaction: t },
+        { where: { id: requestId, status: 'PENDING_APPROVAL' }, transaction: t },
       );
+      if (updated !== 1) throw ApiError.conflict('Employee request already processed.');
+      NotificationService.notifyAfterCommit(t, 'EMPLOYEE_MANAGEMENT_REJECTED', {
+        recordId: requestId,
+        userId: request.requestedBy,
+      });
 
       const draft = await EmployeeDraft.findOne({ where: { requestId }, transaction: t });
 
@@ -316,6 +336,7 @@ export class EmployeeService {
         submittedAt: loanRecord.createdAt,
         actorUserId: userId,
       });
+      NotificationService.notifyAfterCommit(transaction, 'LOAN_REVIEW', { recordId: loanRecord.id, employeeId, userId });
 
       return loanRecord;
     });

@@ -55,7 +55,7 @@ describe('loan notification integration', () => {
     mock.method(EmployeeRepository, 'readById', async () => employee);
     mock.method(LoanType, 'findByPk', async () => ({ id: 4, interestRate: 2, maxTenureMonths: 12, name: 'Standard' }) as any);
     mock.method(LoanRepository, 'create', async () => created as any);
-    mock.method(AuditLog, 'create', async () => ({}) as any);
+    mock.method(AuditLog, 'create', async () => ({ id: 321 }) as any);
 
     await EmployeeService.createLoanRequest({
       employeeId: 21,
@@ -75,6 +75,7 @@ describe('loan notification integration', () => {
         eventType: 'LOAN_APPLIED',
         payload: { loanId: 611, requesterEmployeeId: 21, submittedAt: SUBMITTED_AT, actorUserId: 91 },
       },
+      { transaction: TX, eventType: 'LOAN_REVIEW', payload: { recordId: 611, employeeId: 21, userId: 91 } },
     ]);
   });
 
@@ -89,7 +90,7 @@ describe('loan notification integration', () => {
       assert.deepEqual(options.where, { id: 611, status: 'PENDING_REVIEW' });
       return [1] as any;
     });
-    mock.method(AuditLog, 'create', async () => ({}) as any);
+    mock.method(AuditLog, 'create', async () => ({ id: 321 }) as any);
 
     await LoanService.reviewLoanRequest({
       employeeId: 8,
@@ -100,7 +101,13 @@ describe('loan notification integration', () => {
 
     assert.equal(values.status, 'PENDING_APPROVAL');
     assert.equal(values.nextStep, 'REJECTED');
-    assert.equal(afterCommitCalls.length, 0);
+    assert.deepEqual(afterCommitCalls, [
+      {
+        transaction: TX,
+        eventType: 'LOAN_AUTHORIZATION',
+        payload: { recordId: 611, employeeId: 21, userId: 44, occurrence: 321 },
+      },
+    ]);
   });
 
   it('sends LOAN_APPROVED only when final approval reaches PENDING_DISBURSEMENT', async () => {
@@ -113,7 +120,7 @@ describe('loan notification integration', () => {
       assert.deepEqual(options.where, { id: 611, status: 'PENDING_APPROVAL' });
       return [1] as any;
     });
-    mock.method(AuditLog, 'create', async () => ({}) as any);
+    mock.method(AuditLog, 'create', async () => ({ id: 321 }) as any);
 
     await LoanService.approveLoanReview({ loanId: 611, approverId: 91, userEmployeeId: 8, approverNote: '' });
 
@@ -138,7 +145,7 @@ describe('loan notification integration', () => {
       assert.equal(values.status, 'REJECTED');
       return [1] as any;
     });
-    mock.method(AuditLog, 'create', async () => ({}) as any);
+    mock.method(AuditLog, 'create', async () => ({ id: 321 }) as any);
 
     await LoanService.approveLoanReview({ loanId: 611, approverId: 91, userEmployeeId: 8, approverNote: '' });
 
@@ -158,11 +165,13 @@ describe('loan notification integration', () => {
       assert.deepEqual(options.where, { id: 611, status: 'PENDING_APPROVAL' });
       return [1] as any;
     });
-    mock.method(AuditLog, 'create', async () => ({}) as any);
+    mock.method(AuditLog, 'create', async () => ({ id: 321 }) as any);
 
     await LoanService.rejectLoanReview({ loanId: 611, approverId: 91, userEmployeeId: 8, approverNote: 'Re-review' });
 
-    assert.equal(afterCommitCalls.length, 0);
+    assert.deepEqual(afterCommitCalls, [
+      { transaction: TX, eventType: 'LOAN_REVIEW', payload: { recordId: 611, employeeId: 21, occurrence: 321 } },
+    ]);
   });
 
   it('does not dispatch an outcome when a stale final approval loses its conditional update', async () => {

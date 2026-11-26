@@ -1,3 +1,4 @@
+import { NotificationService } from '../notifications/notification.service';
 import { NextFunction, Request, Response } from 'express';
 import { ApiError } from '../../utils/api-error';
 import { ApiResponse } from '../../utils/api-response';
@@ -65,6 +66,7 @@ export class JobPostingController {
       created_by: req.user?.id,
     });
 
+    await NotificationService.notify('RECRUITMENT_AUTHORIZATION', { recordId: posting.id, userId: posting.created_by });
     res
       .status(201)
       .json(
@@ -104,11 +106,16 @@ export class JobPostingController {
         throw ApiError.badRequest(`Job posting cannot be approved when status is '${posting.status}'`);
       }
 
-      await posting.update({
+      const changes = {
         status: 'active',
         approved_by: req.user?.id,
         approved_date: new Date(),
-      });
+      } as const;
+      const [updated] = await JobPosting.update(changes, { where: { id, status: 'pending_approval' } });
+      if (!updated) throw ApiError.conflict('Job posting already processed.');
+      posting.set(changes);
+      if (posting.created_by)
+        await NotificationService.notify('RECRUITMENT_APPROVED', { recordId: posting.id, userId: posting.created_by });
 
       res.json(ApiResponse({ data: posting, message: `Job posting '${posting.title}' approved and is now active` }));
     } catch (error) {
@@ -127,7 +134,13 @@ export class JobPostingController {
         throw ApiError.badRequest(`Cannot reject job posting with status '${posting.status}'`);
       }
 
-      await posting.update({ status: 'rejected' });
+      if (posting.status !== 'rejected') {
+        const [updated] = await JobPosting.update({ status: 'rejected' }, { where: { id: posting.id, status: posting.status } });
+        if (!updated) throw ApiError.conflict('Job posting already processed.');
+        posting.set('status', 'rejected');
+        if (posting.created_by)
+          await NotificationService.notify('RECRUITMENT_REJECTED', { recordId: posting.id, userId: posting.created_by });
+      }
       res.json(ApiResponse({ data: posting, message: `Job posting '${posting.title}' rejected successfully` }));
     } catch (error) {
       logger.error(`Error rejecting job posting: ${error}`);

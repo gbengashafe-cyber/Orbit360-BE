@@ -334,7 +334,7 @@ describe('feed', () => {
   });
 
   const badQueries = [
-    '?category=PAYROLL',
+    '?category=NOT_A_CATEGORY',
     '?status=archived',
     '?sort=sideways',
     '?rows=0',
@@ -366,7 +366,20 @@ describe('unread count', () => {
     assert.equal(status, 200);
     assert.deepEqual(body.data, {
       total: 0,
-      byCategory: { LEAVE: 0, LOAN: 0, TRAINING: 0, RELIEVER: 0, COMPLAINT: 0, GENERAL: 0, EXIT: 0 },
+      byCategory: {
+        LEAVE: 0,
+        LOAN: 0,
+        TRAINING: 0,
+        RELIEVER: 0,
+        COMPLAINT: 0,
+        GENERAL: 0,
+        EXIT: 0,
+        EMPLOYEE_MANAGEMENT: 0,
+        RECRUITMENT: 0,
+        PAYROLL: 0,
+        DOCUMENTS: 0,
+        ONBOARDING: 0,
+      },
     });
   });
 

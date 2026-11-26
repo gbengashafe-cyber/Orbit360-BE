@@ -17,7 +17,7 @@ export class TrainingRequestService {
     });
 
     await NotificationService.notify('TRAINING_APPLIED', this.notificationPayload(request));
-    this.sendSubmissionNotifications(request, employeeId);
+    await NotificationService.notify('TRAINING_SUPERVISOR_REVIEW', { recordId: request.id, employeeId });
 
     return request;
   }
@@ -84,7 +84,11 @@ export class TrainingRequestService {
         supervisorApprovedBy: supervisorId,
       });
 
-      this.sendApprovalNotifications(request, 'supervisor_approved');
+      await NotificationService.notify('TRAINING_HR_REVIEW', {
+        recordId: request.id,
+        employeeId: request.employeeId,
+        userId: supervisorId,
+      });
     } else {
       if (!supervisorNote || supervisorNote.trim() === '') {
         throw ApiError.badRequest('Rejection reason is required');
@@ -117,7 +121,11 @@ export class TrainingRequestService {
         hrReviewedBy: hrOfficerId,
       });
 
-      this.sendApprovalNotifications(request, 'PENDING_HR_APPROVAL');
+      await NotificationService.notify('TRAINING_FINAL_APPROVAL', {
+        recordId: request.id,
+        employeeId: request.employeeId,
+        userId: hrOfficerId,
+      });
     } else {
       if (!rejectionReason || rejectionReason === '') {
         throw ApiError.badRequest('Rejection reason is required');
@@ -200,28 +208,6 @@ export class TrainingRequestService {
     submittedAt: request.createdAt,
     ...(actorUserId ? { actorUserId } : {}),
   });
-
-  // Notification helpers
-  private static async sendSubmissionNotifications(request: TrainingRequest, requesterId: number) {
-    try {
-      // TODO: Implement email service calls
-      // 1. Send to supervisor
-      // 2. Send to HR Officer
-      // 3. Send to HR Manager
-      logger.info(`[sendSubmissionNotifications] Notifications queued for request ${request.id}`);
-    } catch (error) {
-      logger.error(`Error sending submission notifications: ${error}`);
-    }
-  }
-
-  private static async sendApprovalNotifications(request: TrainingRequest, stage: string) {
-    try {
-      // TODO: Implement email service calls based on stage
-      logger.info(`[sendApprovalNotifications] Notifications queued for request ${request.id} at stage ${stage}`);
-    } catch (error) {
-      logger.error(`Error sending approval notifications: ${error}`);
-    }
-  }
 
   private static async sendRejectionNotifications(request: TrainingRequest, stage: string, reason: string) {
     try {

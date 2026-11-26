@@ -53,6 +53,7 @@ export class ExitController {
           lastWorkingDate: exit.lastWorkingDate,
           actorUserId: req.user?.id,
         });
+        await NotificationService.notify('EXIT_REVIEW', { recordId: exit.id, employeeId: exit.employeeId, userId: req.user?.id });
       }
 
       // Send notification emails (non-blocking)
@@ -176,7 +177,7 @@ export class ExitController {
       const previousStatus = exit.status;
       const previousFinalApprovalStatus = exit.finalApprovalStatus;
       await exit.update(req.body);
-      await this.notifyTerminalTransition(exit, previousStatus, previousFinalApprovalStatus, req.user?.id);
+      await ExitController.notifyTerminalTransition(exit, previousStatus, previousFinalApprovalStatus, req.user?.id);
       const updatedExit = await Exit.findByPk(id);
 
       res.json({
@@ -222,13 +223,18 @@ export class ExitController {
     const previousStatus = exit.status;
     const previousFinalApprovalStatus = exit.finalApprovalStatus;
 
-    await exit.update({
+    const decision = {
       status: action === 'approved' ? 'approved' : 'rejected',
       finalApprovalStatus: action === 'approved' ? 'approved' : 'rejected',
       finalApprovalDate: new Date(),
       finalApprovalBy: String(req.user?.id || 'system'),
+    } as const;
+    const [updated] = await Exit.update(decision, {
+      where: { id: exit.id, status: previousStatus, finalApprovalStatus: previousFinalApprovalStatus },
     });
-    await this.notifyTerminalTransition(exit, previousStatus, previousFinalApprovalStatus, req.user?.id);
+    if (!updated) throw ApiError.conflict('Exit decision already changed.');
+    exit.set(decision);
+    await ExitController.notifyTerminalTransition(exit, previousStatus, previousFinalApprovalStatus, req.user?.id);
 
     const updatedExit = await Exit.findByPk(id, { include: [{ model: Employee, as: 'employee' }] });
 
@@ -272,12 +278,21 @@ export class ExitController {
     const previousStatus = exit.status;
     const previousFinalApprovalStatus = exit.finalApprovalStatus;
 
-    await exit.update({
+    const changes = {
       finalApprovalStatus: action === 'approved' ? 'cleared' : 'rejected',
       reviewerDate: new Date(),
       reviewerId: req.user?.id,
-    });
-    await this.notifyTerminalTransition(exit, previousStatus, previousFinalApprovalStatus, req.user?.id);
+    } as const;
+    const [updated] = await Exit.update(changes, { where: { id, finalApprovalStatus: 'pending', status: previousStatus } });
+    if (updated !== 1) throw ApiError.conflict('Exit review already processed.');
+    exit.set(changes);
+    if (action === 'approved')
+      await NotificationService.notify('EXIT_AUTHORIZATION', {
+        recordId: exit.id,
+        employeeId: exit.employeeId,
+        userId: req.user?.id,
+      });
+    await ExitController.notifyTerminalTransition(exit, previousStatus, previousFinalApprovalStatus, req.user?.id);
 
     const updatedExit = await Exit.findByPk(id, { include: [{ model: Employee, as: 'employee' }] });
 

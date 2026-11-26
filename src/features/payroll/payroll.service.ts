@@ -1,3 +1,4 @@
+import { NotificationService } from '../notifications/notification.service';
 import config from 'config';
 import { CreationAttributes, Transaction } from 'sequelize';
 import { db } from '../../db';
@@ -155,6 +156,7 @@ export class PayrollService {
 
       await batch.update({ totalGross, totalNet, recordCount: payrollCounter }, { transaction });
 
+      NotificationService.notifyAfterCommit(transaction, 'PAYROLL_AUTHORIZATION', { recordId: batch.id, userId: makerId });
       return batch;
     });
   };
@@ -172,15 +174,17 @@ export class PayrollService {
     this.checkApproval(batch, checkerId);
 
     return await db.transaction(async (transaction) => {
-      await batch.update(
+      const [updated] = await PayrollBatch.update(
         {
           status: 'APPROVED',
           reviewedBy: checkerId,
           approvalDate: new Date(),
           approverNote,
         },
-        { transaction },
+        { where: { id, status: 'PENDING_APPROVAL' }, transaction },
       );
+      if (!updated) throw ApiError.conflict('Payroll batch already processed.');
+      NotificationService.notifyAfterCommit(transaction, 'PAYROLL_APPROVED', { recordId: id, userId: batch.createdBy });
       return Payroll.update({ status: 'APPROVED' }, { where: { batchId: batch.batchId }, transaction });
     });
   };
@@ -193,15 +197,17 @@ export class PayrollService {
     this.checkApproval(batch, checkerId);
 
     return await db.transaction(async (transaction) => {
-      await batch.update(
+      const [updated] = await PayrollBatch.update(
         {
           status: 'REJECTED',
           reviewedBy: checkerId,
           approvalDate: new Date(),
           approverNote,
         },
-        { transaction },
+        { where: { id, status: 'PENDING_APPROVAL' }, transaction },
       );
+      if (!updated) throw ApiError.conflict('Payroll batch already processed.');
+      NotificationService.notifyAfterCommit(transaction, 'PAYROLL_REJECTED', { recordId: id, userId: batch.createdBy });
       return Payroll.destroy({ where: { batchId: batch.batchId }, transaction });
     });
   };

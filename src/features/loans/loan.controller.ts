@@ -123,7 +123,7 @@ export class LoanController {
     return res.json(
       ApiResponse({
         data: { id: loanId },
-        message: 'Loan application has been rejected.',
+        message: 'Loan review returned for further review.',
       }),
     );
   };

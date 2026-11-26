@@ -4,6 +4,7 @@ import { Employee } from '../employee/employee.model';
 
 export interface OnboardingAttributes {
   id?: number;
+  decisionVersion?: number;
   employeeId: number;
   documentType: string;
   documentName: string;
@@ -17,6 +18,7 @@ export interface OnboardingAttributes {
 
 export class Onboarding extends Model<OnboardingAttributes> implements OnboardingAttributes {
   public id!: number;
+  declare decisionVersion: number;
   public employeeId!: number;
   public documentType!: string;
   public documentName!: string;
@@ -35,6 +37,7 @@ Onboarding.init(
       autoIncrement: true,
       primaryKey: true,
     },
+    decisionVersion: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false, defaultValue: 0, field: 'decision_version' },
     employeeId: {
       type: DataTypes.INTEGER,
       allowNull: false,

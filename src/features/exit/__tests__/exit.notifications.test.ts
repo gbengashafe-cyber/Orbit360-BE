@@ -14,6 +14,9 @@ const exitRow = (values: Record<string, unknown> = {}) =>
     status: 'submitted',
     finalApprovalStatus: 'pending',
     lastWorkingDate: LAST_WORKING_DATE,
+    set: function (updates: Record<string, unknown>) {
+      Object.assign(this, updates);
+    },
     update: async function (updates: Record<string, unknown>) {
       Object.assign(this, updates);
       return this;
@@ -54,7 +57,8 @@ describe('Exit Management notification integration', () => {
     await new Promise<void>((resolve) => setImmediate(resolve));
 
     assert.equal(res.result.statusCode, 201);
-    assert.equal(notify.mock.calls.length, 1);
+    assert.equal(notify.mock.calls.length, 2);
+    assert.equal(notify.mock.calls[1].arguments[0], 'EXIT_REVIEW');
     assert.deepEqual(notify.mock.calls[0].arguments, [
       'EXIT_APPLIED',
       { exitId: EXIT_ID, requesterEmployeeId: 17, lastWorkingDate: LAST_WORKING_DATE, actorUserId: 9 },
@@ -72,6 +76,7 @@ describe('Exit Management notification integration', () => {
       mock.method(Exit, 'findByPk', async () => row);
       const res = response();
 
+      mock.method(Exit, 'update', async () => [1] as any);
       await ExitController.approveExit({ params: { id: EXIT_ID }, body: { action }, user: { id: 9 } } as any, res);
 
       assert.equal(notify.mock.calls.length, 1);
@@ -91,6 +96,7 @@ describe('Exit Management notification integration', () => {
     mock.method(Exit, 'findByPk', async () => row);
     const res = response();
 
+    mock.method(Exit, 'update', async () => [1] as any);
     await ExitController.reviewExit({ params: { id: EXIT_ID }, body: { action: 'rejected' }, user: { id: 9 } } as any, res);
     assert.equal(row.finalApprovalStatus, 'rejected');
     assert.equal(notify.mock.calls.length, 1);
@@ -100,12 +106,14 @@ describe('Exit Management notification integration', () => {
     const cleared = exitRow();
     const noNotify = mock.method(NotificationService, 'notify', async () => ({ status: 'delivered' }) as any);
     mock.method(Exit, 'findByPk', async () => cleared);
+    mock.method(Exit, 'update', async () => [1] as any);
     await ExitController.reviewExit(
       { params: { id: EXIT_ID }, body: { action: 'approved' }, user: { id: 9 } } as any,
       response(),
     );
     assert.equal(cleared.finalApprovalStatus, 'cleared');
-    assert.equal(noNotify.mock.calls.length, 0);
+    assert.equal(noNotify.mock.calls.length, 1);
+    assert.equal(noNotify.mock.calls[0].arguments[0], 'EXIT_AUTHORIZATION');
   });
 
   it('does not notify when the exit record write fails', async () => {
@@ -117,6 +125,7 @@ describe('Exit Management notification integration', () => {
     const notify = mock.method(NotificationService, 'notify', async () => ({ status: 'delivered' }) as any);
     mock.method(Exit, 'findByPk', async () => row);
 
+    mock.method(Exit, 'update', async () => [0] as any);
     await assert.rejects(
       ExitController.approveExit({ params: { id: EXIT_ID }, body: { action: 'approved' }, user: { id: 9 } } as any, response()),
     );

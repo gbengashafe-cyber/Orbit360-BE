@@ -6,6 +6,7 @@ import {
   NotificationCategory,
   NotificationEntityType,
 } from './notification.model';
+import type { Permission } from '../permissions';
 import { RecipientRef } from './notification.recipients';
 
 /**
@@ -13,11 +14,9 @@ import { RecipientRef } from './notification.recipients';
  *
  * Each definition owns everything about one event: its category, audience, the payload it expects,
  * who receives it, its title and message copy, the record it points to, its metadata and its idempotency key.
- * Workflows will only ever call `NotificationService.notify(eventType, payload)` (wired up in Phase 3).
+ * Workflows dispatch after successful writes, using notifyAfterCommit for transactions.
  *
- * Phase 2 defines employee-facing events only (requester, reliever, direct). Approver audiences
- * (supervisor / HR Officer / HR Manager / Super Admin) are deferred (D4) and are added later as new
- * definitions with audience ACTOR_QUEUE, without changing this structure.
+ * Workflow review tasks address an assigned supervisor or an eligible action queue.
  *
  * Copy rules: approved UX copy is used verbatim; dates are payload timestamps formatted DD/MM/YYYY in Africa/Lagos.
  */
@@ -239,7 +238,259 @@ const generalPayload = z.strictObject({
 });
 
 // ─── Registry ───────────────────────────────────────────────────────────────
+const workflowPayload = z.strictObject({
+  recordId: z.union([id, z.string().min(1).max(40)]),
+  occurrence: z.union([id, z.string().min(1).max(64)]).optional(),
+  employeeId: id.optional(),
+  userId: id.optional(),
+});
+
+function workflowEvent(
+  event: string,
+  category: NotificationCategory,
+  entityType: NotificationEntityType,
+  policy: Permission | 'maker' | 'employee' | 'supervisor',
+  title: string,
+  message: string,
+) {
+  const direct = policy === 'maker' || policy === 'employee';
+  return defineEvent({
+    category,
+    audience: direct ? 'REQUESTER' : 'ACTOR_QUEUE',
+    schema: workflowPayload,
+    maxRecipients: direct || policy === 'supervisor' ? 1 : Number.MAX_SAFE_INTEGER,
+    recipients: (p) => {
+      if (policy === 'maker') return p.userId ? [{ kind: 'workflow', assignedUserId: p.userId }] : [];
+      if (policy === 'employee') return p.employeeId ? [{ kind: 'workflow', assignedEmployeeId: p.employeeId }] : [];
+      if (policy === 'supervisor') return p.employeeId ? [{ kind: 'workflow', supervisorOf: p.employeeId }] : [];
+      return [{ kind: 'workflow', permission: policy, excludeEmployeeId: p.employeeId, excludeUserId: p.userId }];
+    },
+    title: () => title,
+    message: () => message,
+    entity: (p) => (category === 'COMPLAINT' ? null : { type: entityType, id: String(p.recordId) }),
+    metadata: () => null,
+    actorUserId: () => null,
+    dedupeKey: (p) => keyFor(event, entityType, p.recordId) + (p.occurrence === undefined ? '' : ':' + p.occurrence),
+  });
+}
+
 export const NOTIFICATION_EVENTS = {
+  TRAINING_SUPERVISOR_REVIEW: workflowEvent(
+    'TRAINING_SUPERVISOR_REVIEW',
+    'TRAINING',
+    'training_request',
+    'supervisor',
+    'Training request to review',
+    'A training request is awaiting your review.',
+  ),
+  TRAINING_HR_REVIEW: workflowEvent(
+    'TRAINING_HR_REVIEW',
+    'TRAINING',
+    'training_request',
+    'MANAGE_TRAINING_REQUESTS',
+    'Training review required',
+    'A training request is awaiting HR review.',
+  ),
+  TRAINING_FINAL_APPROVAL: workflowEvent(
+    'TRAINING_FINAL_APPROVAL',
+    'TRAINING',
+    'training_request',
+    'APPROVE_TRAINING_REQUESTS',
+    'Training approval required',
+    'A training request is awaiting final approval.',
+  ),
+  LEAVE_REVIEW: workflowEvent(
+    'LEAVE_REVIEW',
+    'LEAVE',
+    'leave',
+    'supervisor',
+    'Leave request to review',
+    'A leave request is awaiting your approval.',
+  ),
+  LOAN_REVIEW: workflowEvent(
+    'LOAN_REVIEW',
+    'LOAN',
+    'loan',
+    'MANAGE_LOANS',
+    'Loan review required',
+    'A request is awaiting your review.',
+  ),
+  LOAN_AUTHORIZATION: workflowEvent(
+    'LOAN_AUTHORIZATION',
+    'LOAN',
+    'loan',
+    'APPROVE_LOANS',
+    'Loan approval required',
+    'A request is awaiting your approval.',
+  ),
+  COMPLAINT_REVIEW: workflowEvent(
+    'COMPLAINT_REVIEW',
+    'COMPLAINT',
+    'complaint',
+    'MANAGE_COMPLAINTS',
+    'Complaint review required',
+    'A request is awaiting your review.',
+  ),
+  COMPLAINT_AUTHORIZATION: workflowEvent(
+    'COMPLAINT_AUTHORIZATION',
+    'COMPLAINT',
+    'complaint',
+    'APPROVE_COMPLAINTS',
+    'Complaint authorization required',
+    'A request is awaiting your approval.',
+  ),
+  EXIT_REVIEW: workflowEvent(
+    'EXIT_REVIEW',
+    'EXIT',
+    'exit',
+    'MANAGE_EXITS',
+    'Exit review required',
+    'A request is awaiting your review.',
+  ),
+  EXIT_AUTHORIZATION: workflowEvent(
+    'EXIT_AUTHORIZATION',
+    'EXIT',
+    'exit',
+    'APPROVE_EXITS',
+    'Exit authorization required',
+    'A request is awaiting your approval.',
+  ),
+  EMPLOYEE_MANAGEMENT_AUTHORIZATION: workflowEvent(
+    'EMPLOYEE_MANAGEMENT_AUTHORIZATION',
+    'EMPLOYEE_MANAGEMENT',
+    'employee_request',
+    'APPROVE_EMPLOYEES',
+    'Employee record approval required',
+    'A request is awaiting your approval.',
+  ),
+  RECRUITMENT_AUTHORIZATION: workflowEvent(
+    'RECRUITMENT_AUTHORIZATION',
+    'RECRUITMENT',
+    'job_posting',
+    'APPROVE_JOB_POSTINGS',
+    'Job posting approval required',
+    'A request is awaiting your approval.',
+  ),
+  PAYROLL_AUTHORIZATION: workflowEvent(
+    'PAYROLL_AUTHORIZATION',
+    'PAYROLL',
+    'payroll_batch',
+    'APPROVE_PAYROLLS',
+    'Payroll batch approval required',
+    'A request is awaiting your approval.',
+  ),
+  PAYROLL_OVERRIDE_AUTHORIZATION: workflowEvent(
+    'PAYROLL_OVERRIDE_AUTHORIZATION',
+    'PAYROLL',
+    'payroll_batch',
+    'APPROVE_PAYROLL_OVERRIDE',
+    'Payroll override approval required',
+    'A request is awaiting your approval.',
+  ),
+  DOCUMENTS_AUTHORIZATION: workflowEvent(
+    'DOCUMENTS_AUTHORIZATION',
+    'DOCUMENTS',
+    'deletion_request',
+    'APPROVE_DOCUMENT_DELETION',
+    'Deletion request approval required',
+    'A request is awaiting your approval.',
+  ),
+  ONBOARDING_REVIEW: workflowEvent(
+    'ONBOARDING_REVIEW',
+    'ONBOARDING',
+    'onboarding',
+    'MANAGE_ONBOARDING',
+    'Onboarding document review required',
+    'A request is awaiting your review.',
+  ),
+  EMPLOYEE_MANAGEMENT_APPROVED: workflowEvent(
+    'EMPLOYEE_MANAGEMENT_APPROVED',
+    'EMPLOYEE_MANAGEMENT',
+    'employee_request',
+    'maker',
+    'Employee record request approved',
+    'Your employee record request was approved.',
+  ),
+  EMPLOYEE_MANAGEMENT_REJECTED: workflowEvent(
+    'EMPLOYEE_MANAGEMENT_REJECTED',
+    'EMPLOYEE_MANAGEMENT',
+    'employee_request',
+    'maker',
+    'Employee record request rejected',
+    'Your employee record request was rejected.',
+  ),
+  RECRUITMENT_APPROVED: workflowEvent(
+    'RECRUITMENT_APPROVED',
+    'RECRUITMENT',
+    'job_posting',
+    'maker',
+    'Job posting approved',
+    'Your job posting was approved.',
+  ),
+  RECRUITMENT_REJECTED: workflowEvent(
+    'RECRUITMENT_REJECTED',
+    'RECRUITMENT',
+    'job_posting',
+    'maker',
+    'Job posting rejected',
+    'Your job posting was rejected.',
+  ),
+  PAYROLL_APPROVED: workflowEvent(
+    'PAYROLL_APPROVED',
+    'PAYROLL',
+    'payroll_batch',
+    'maker',
+    'Payroll batch approved',
+    'Your payroll batch was approved.',
+  ),
+  PAYROLL_REJECTED: workflowEvent(
+    'PAYROLL_REJECTED',
+    'PAYROLL',
+    'payroll_batch',
+    'maker',
+    'Payroll batch rejected',
+    'Your payroll batch was rejected.',
+  ),
+  DOCUMENTS_APPROVED: workflowEvent(
+    'DOCUMENTS_APPROVED',
+    'DOCUMENTS',
+    'deletion_request',
+    'maker',
+    'Deletion request approved',
+    'Your deletion request was approved.',
+  ),
+  DOCUMENTS_REJECTED: workflowEvent(
+    'DOCUMENTS_REJECTED',
+    'DOCUMENTS',
+    'deletion_request',
+    'maker',
+    'Deletion request rejected',
+    'Your deletion request was rejected.',
+  ),
+  ONBOARDING_APPROVED: workflowEvent(
+    'ONBOARDING_APPROVED',
+    'ONBOARDING',
+    'onboarding',
+    'employee',
+    'Onboarding document approved',
+    'Your onboarding document was approved.',
+  ),
+  ONBOARDING_REJECTED: workflowEvent(
+    'ONBOARDING_REJECTED',
+    'ONBOARDING',
+    'onboarding',
+    'employee',
+    'Onboarding document rejected',
+    'Your onboarding document was rejected.',
+  ),
+  PAYROLL_OVERRIDE_APPROVED: workflowEvent(
+    'PAYROLL_OVERRIDE_APPROVED',
+    'PAYROLL',
+    'payroll_batch',
+    'maker',
+    'Payroll override approved',
+    'Your payroll override request was approved.',
+  ),
   LEAVE_APPLIED: leaveEvent(
     'LEAVE_APPLIED',
     'Leave request submitted',

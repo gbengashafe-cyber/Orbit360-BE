@@ -4,21 +4,27 @@ Canonical backlog for both repositories. Evidence is a source-code/documentation
 
 Statuses: **Completed**, **Partially implemented**, **Pending**, **Blocked**, **Requires product decision**, **Requires verification**. Priorities below are proposed sequencing, not approved scope. Product decisions and permissions remain unchanged.
 
+Full regression is tracked in [FULL-REGRESSION-TEST-PLAN.md](FULL-REGRESSION-TEST-PLAN.md); execution is incomplete. Security review additionally found `LeaveController.cancel` destroys a non-approved leave by ID without checking the caller's ownership or permissions. Confirm the authorized cancellation policy, fix and test cross-user access before release.
+
 ## Notification Center and workflow recipients
 
-**Status:** Partially implemented. **Priority:** High. **Dependencies:** confirmed workflow transitions, recipient eligibility, authorization and occurrence identification. **Documentation:** [NOTIFICATIONS.md](NOTIFICATIONS.md), [workflow map](NOTIFICATION-WORKFLOW-MAP.md), [role-based notifications plan](ROLE-BASED-NOTIFICATIONS-PLAN.md).
+**Status:** Partially implemented. **Priority:** High. **Dependencies:** representative role-browser verification and migration verification in other environments. **Documentation:** [NOTIFICATIONS.md](NOTIFICATIONS.md), [workflow map](NOTIFICATION-WORKFLOW-MAP.md), [role-based notifications plan](ROLE-BASED-NOTIFICATIONS-PLAN.md).
 
-Product has approved the new role-notification D1–D5 in the implementation brief. Training HR-stage enforcement is implemented with focused tests; reviewer event delivery, new categories, and cross-role verification remain outstanding. The plan records implementation blockers and security findings; do not treat the approved policies as evidence that events have shipped.
+Product has approved the role-notification D1–D5. Training HR-stage enforcement, reviewer event delivery, new categories, workflow occurrence dedupe, and focused tests are implemented. Cross-role browser verification remains outstanding. The performance authorization concern remains separately scoped and is not part of these notification integrations.
+
+Regression follow-up: the loan form now reads the newly selected loan type's tenure; the authorization view exposes pending supervisor decisions from the supervisor-scoped queue and selects an available initial tab. These corrections still require representative browser and database-backed workflow verification. Both migrations were applied to local `orbit360_dev` on 25 November 2026; other environments have not been verified.
+
+The backend suite passed 162 tests after selecting notification-free existing accounts for database-backed tests; existing notification rows were preserved. Authenticated local loan return cycles confirmed PENDING_REVIEW and occurrence-specific reviewer notifications; the misleading final-rejection response was corrected and retested. Frontend build, targeted lint and notification tests passed. Full role-based browser and cross-module workflow verification remain outstanding, as do the documented performance and leave-cancellation authorization issues.
 
 Implemented: central registry, service and recipient resolution; owner-facing leave, loan, training, complaint and exit events; reliever on approved leave; channel preferences, polling and acknowledgement. Frontend has notification history, preferences and central self-toast suppression. These are implementation observations, not a new acceptance test.
 
-- [ ] Specify supervisor/team lead, HR Officer/Manager and assigned reviewer/approver events and the business reason for each recipient.
-- [ ] Resolve recipients per workflow from persisted assignments; approve an explicit queue policy where no individual is assigned. Never guess or fan out solely from a permission.
-- [ ] Preserve after-commit dispatch, deduplication, independent preferences, polling acknowledgement, self-toast suppression, complaint privacy and owner-only complaint policy.
-- [ ] Verify cross-role delivery, missing accounts, retries, preference combinations and privacy end to end.
-- [ ] Reconcile historical duplicate-toast descriptions in the workflow map with the later implemented suppression; its earlier summary and later training section conflict.
+- [x] Deliver supervisor, HR Officer/Manager and eligible reviewer/approver workflow events through the central Notification Center.
+- [x] Resolve recipients from a persisted supervisor or active existing-permission queue, with maker/checker and account eligibility exclusions.
+- [x] Preserve after-commit dispatch, preferences, polling acknowledgement, self-toast suppression, and complaint confidentiality.
+- [x] Apply `20261126120000-extend-workflow-notification-categories.cjs` and `20261126120100-onboarding-decision-version.cjs` to local development with explicit approval.
+- [ ] Complete representative browser delivery checks with supervisor, HR Officer, HR Manager and requester accounts.
 
-**Product decisions:** event-by-event scope, assignment or permission-holder policy, category and copy; any complaint-recipient exception requires explicit approval. D4 deferral is not itself approval for broad fan-out. No durable notification outbox is documented; reliability changes need separate approval.
+**Product decisions:** no durable notification outbox is documented. Background/offline reliability work and any future category or recipient changes need separate approval.
 
 ## Employee dashboard
 
@@ -54,6 +60,7 @@ Implemented: backend goal CRUD/progress and dashboard routes; frontend goal and 
 - [ ] Specify and implement check-ins, recognition and performance reports; do not count placeholders as functionality.
 - [ ] Audit access and ownership enforcement for performance endpoints before exposure; workflow map notes routes lack local authentication middleware, and app-level protection must be checked.
 - [ ] High priority: secure performance routes and enforce record-level ownership/permissions. Local code inspection found no global or route authentication; an unauthenticated HTTP request reached a mocked goal lookup and returned 200. The probe hit a Windows libuv shutdown assertion after its assertion passed, so repeat it in a stable test environment and verify deployment controls. Do not expose performance/appraisal notifications before remediation.
+- [ ] Remediation proposal: authenticate the performance router, define explicit permissions for cycle administration and reporting, and enforce owner or assigned-manager checks on each goal and appraisal read and mutation. Confirm manager identity and approval policy before implementation; add unauthenticated, cross-employee, unauthorized-manager and permitted-role regression tests. Current controllers look up records by ID and mutate them without a requester ownership check, so authentication alone is insufficient.
 
 **Product decisions:** goal/OKR ownership, visibility, feedback privacy, review and reporting audiences.
 
@@ -142,9 +149,8 @@ Implemented: tokens, shared patterns and documented designer sign-off. Sign-off 
 
 ## Proposed sequence
 
-1. Triage security/QA and resolve the training bypass decision; establish reliable regression coverage.
-2. Define notification recipient/assignment policies and implement approved role delivery with privacy and preference tests.
-3. Plan the personal dashboard using verified owner-scoped APIs.
-4. Establish KPI and performance/appraisal specifications and access rules before integrating their lifecycles.
-5. Define staff movement and disciplinary policy, workflows and notification requirements before implementation.
+1. Complete cross-role browser acceptance checks and verify migration deployment separately for other environments.
+2. Implement the functional Employee Dashboard using verified owner-scoped APIs.
+3. Define and implement Staff Movement as the next major feature.
+4. Triage the separately scoped performance authorization remediation before performance/appraisal expansion.
 6. Continue user-management lifecycle work and remaining workflow improvements as their policy and security dependencies are resolved.

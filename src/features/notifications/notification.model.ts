@@ -10,7 +10,20 @@ import {
 import { db } from '../../db';
 import { User } from '../users/user.model';
 
-export const NOTIFICATION_CATEGORIES = ['LEAVE', 'LOAN', 'TRAINING', 'RELIEVER', 'COMPLAINT', 'GENERAL', 'EXIT'] as const;
+export const NOTIFICATION_CATEGORIES = [
+  'LEAVE',
+  'LOAN',
+  'TRAINING',
+  'RELIEVER',
+  'COMPLAINT',
+  'GENERAL',
+  'EXIT',
+  'EMPLOYEE_MANAGEMENT',
+  'RECRUITMENT',
+  'PAYROLL',
+  'DOCUMENTS',
+  'ONBOARDING',
+] as const;
 export type NotificationCategory = (typeof NOTIFICATION_CATEGORIES)[number];
 
 /**
@@ -19,13 +32,24 @@ export type NotificationCategory = (typeof NOTIFICATION_CATEGORIES)[number];
  * - REQUESTER:   the employee who submitted the request (Phase 2+)
  * - RELIEVER:    the employee assigned to cover someone's leave (Phase 2+)
  * - DIRECT:      explicitly listed user accounts (general notifications)
- * - ACTOR_QUEUE: approvers who must act (supervisor / HR). Deferred until the Employee Hub is signed off (D4).
+ * - ACTOR_QUEUE: assigned supervisors or eligible workflow reviewers and approvers.
  * - BROADCAST:   every active user (announcements). Deferred.
  */
 export const NOTIFICATION_AUDIENCES = ['REQUESTER', 'RELIEVER', 'DIRECT', 'ACTOR_QUEUE', 'BROADCAST'] as const;
 export type NotificationAudience = (typeof NOTIFICATION_AUDIENCES)[number];
 
-export const NOTIFICATION_ENTITY_TYPES = ['leave', 'loan', 'training_request', 'complaint', 'exit'] as const;
+export const NOTIFICATION_ENTITY_TYPES = [
+  'leave',
+  'loan',
+  'training_request',
+  'complaint',
+  'exit',
+  'employee_request',
+  'job_posting',
+  'payroll_batch',
+  'deletion_request',
+  'onboarding',
+] as const;
 export type NotificationEntityType = (typeof NOTIFICATION_ENTITY_TYPES)[number];
 
 export class Notification extends Model<InferAttributes<Notification>, InferCreationAttributes<Notification>> {

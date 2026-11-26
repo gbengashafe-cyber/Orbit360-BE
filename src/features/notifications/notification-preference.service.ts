@@ -4,9 +4,22 @@ import { Employee } from '../employee/employee.model';
 import { NotificationCategory, NOTIFICATION_CATEGORIES } from './notification.model';
 import { NotificationPreference } from './notification-preference.model';
 
-const EMPLOYEE_CATEGORIES: readonly NotificationCategory[] = ['LEAVE', 'LOAN', 'TRAINING', 'RELIEVER', 'COMPLAINT', 'EXIT'];
+const EMPLOYEE_CATEGORIES: readonly NotificationCategory[] = [
+  'LEAVE',
+  'LOAN',
+  'TRAINING',
+  'RELIEVER',
+  'COMPLAINT',
+  'EXIT',
+  'ONBOARDING',
+];
 
 const CATEGORY_PERMISSIONS: Partial<Record<NotificationCategory, readonly string[]>> = {
+  EMPLOYEE_MANAGEMENT: ['MANAGE_EMPLOYEES', 'APPROVE_EMPLOYEES'],
+  RECRUITMENT: ['MANAGE_JOB_POSTINGS', 'APPROVE_JOB_POSTINGS'],
+  PAYROLL: ['MANAGE_PAYROLLS', 'APPROVE_PAYROLLS', 'APPROVE_PAYROLL_OVERRIDE'],
+  DOCUMENTS: ['MANAGE_DOCUMENTS', 'APPROVE_DOCUMENT_DELETION'],
+  ONBOARDING: ['MANAGE_ONBOARDING'],
   LOAN: ['LIST_LOANS', 'MANAGE_LOANS', 'APPROVE_LOANS'],
   TRAINING: ['LIST_TRAINING_REQUESTS', 'MANAGE_TRAINING_REQUESTS', 'APPROVE_TRAINING_REQUESTS'],
   COMPLAINT: ['MANAGE_COMPLAINTS', 'APPROVE_COMPLAINTS'],

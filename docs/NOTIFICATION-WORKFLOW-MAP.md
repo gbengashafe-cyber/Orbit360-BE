@@ -1,6 +1,24 @@
 # ORBIT 360 Notification Workflow Map
 
-**Implementation update:** the product owner approved sequential training approval. HR review now requires `PENDING_HR_REVIEW` and the HR form no longer enables review while supervisor approval is pending. Historical observations below describing the HR bypass are superseded. Reviewer/approver delivery remains unimplemented; see [role-based plan](ROLE-BASED-NOTIFICATIONS-PLAN.md). The early duplicate-toast discovery remains historical and is superseded by the later documented frontend suppression.
+**Implementation update:** HR review requires `PENDING_HR_REVIEW` and the HR form no longer enables review while supervisor approval is pending. Role-based delivery is implemented through persisted-supervisor or bounded existing-permission resolution. The early duplicate-toast discovery remains historical and is superseded by the later frontend suppression.
+
+## Current role-based delivery
+
+| Workflow transition | Recipient policy | Event/category |
+| --- | --- | --- |
+| Leave submission | Requester's persisted supervisor | `LEAVE_REVIEW` / `LEAVE` |
+| Training submission | Requester's persisted supervisor | `TRAINING_SUPERVISOR_REVIEW` / `TRAINING` |
+| Training supervisor approval | Active `MANAGE_TRAINING_REQUESTS` holders, excluding the acting supervisor and requester | `TRAINING_HR_REVIEW` / `TRAINING` |
+| Training HR review | Active `APPROVE_TRAINING_REQUESTS` holders, excluding requester and reviewer | `TRAINING_FINAL_APPROVAL` / `TRAINING` |
+| Loan submission and return | Active `MANAGE_LOANS` holders excluding the maker | `LOAN_REVIEW` / `LOAN` |
+| Loan review | Active `APPROVE_LOANS` holders excluding requester and reviewer | `LOAN_AUTHORIZATION` / `LOAN` |
+| Employee change | Active `APPROVE_EMPLOYEES` holders excluding maker and affected employee | `EMPLOYEE_MANAGEMENT_AUTHORIZATION` |
+| Exit submission and reviewer clearance | Existing Exit permission queues | `EXIT_REVIEW`, `EXIT_AUTHORIZATION` / `EXIT` |
+| Job posting | Active `APPROVE_JOB_POSTINGS` holders and the persisted creator outcome | `RECRUITMENT_*` |
+| Complaint review/authorization | Active existing complaint permission queues, generic confidential copy only | `COMPLAINT_REVIEW`, `COMPLAINT_AUTHORIZATION` |
+| Payroll, document deletion, onboarding | Existing permission queues and persisted maker/employee outcomes | `PAYROLL_*`, `DOCUMENTS_*`, `ONBOARDING_*` |
+
+The remaining discovery content is historical. It must not be read as a statement that the current integration is absent.
 
 **Performance security update:** a local unauthenticated HTTP probe reached a mocked goal lookup and returned 200. No real performance record was read. Its test process then encountered a Windows libuv shutdown assertion; the finding and test limitation are recorded in the role-based plan. Performance notifications remain deferred pending separate security remediation.
 
@@ -13,7 +31,7 @@
 2. The creation payload is built by `notificationPayload(request)` without `actorUserId`, so the stored event has no initiator identity. Other training decisions pass `actorUserId`, but that field is deliberately omitted from the API view used by polling. The client therefore cannot distinguish an action confirmation from an alert for an action by somebody else.
 3. **Recommended reusable resolution:** make realtime presentation actor-aware centrally. Populate the authenticated initiating user ID for employee-originated events, then suppress only the realtime alert for the recipient account that initiated that same event; continue to store the notification with the recipient's independent in-app preference so history and unread behavior remain unchanged. Other recipients, such as a reliever or a designated reviewer, still receive realtime alerts. Implement the rule in the central notification delivery/polling path, not in the training form. Complaint events need a privacy-preserving internal actor comparison that does not persist or expose the complainant identity or relax the complaint actor-null rule. Cover both a self-recipient and a different recipient in tests, including all four preference combinations.
 4. Do not simply remove the training form's success toast: it is the immediate confirmation for the action, whereas a notification is also required for history. Do not suppress the notification row or alter user preferences to solve duplicate visual feedback.
-5. The backend has concrete approval workflows beyond the current employee-facing notifications. Some have an identified owner or reviewer; others expose only a permission-gated queue and do not assign a responsible user. Proposed Phase 6 recipients must use actual assignment/ownership; where no assignee exists, choose and approve a delivery policy before fan-out.
+5. The backend now sends a workflow task to the actual persisted supervisor where one exists, otherwise to active eligible users holding the workflow's existing required permission. No arbitrary administrator fallback exists.
 
 ## Repositories and instructions reviewed
 

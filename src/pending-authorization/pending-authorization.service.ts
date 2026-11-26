@@ -9,6 +9,7 @@ export type PendingModuleItemsProps = {
   userId: number;
   userEmployeeId: number;
   supervisorId: number;
+  canApproveTraining?: boolean;
 };
 
 export class AuthorizationService {
@@ -62,7 +63,7 @@ export class AuthorizationService {
       page: 1,
     });
 
-    if (supervisorSearch.count) {
+    if (userEmployeeId && supervisorSearch.count) {
       authorizedModules.push('LEAVES');
       authorizedModules.push('TRAINING REQUESTS');
     }
@@ -71,7 +72,12 @@ export class AuthorizationService {
       return { total: 0, breakdown: {} };
     }
 
-    const results = await AuthorizationRepository.getCountsByModules(authorizedModules, userId, userEmployeeId);
+    const results = await AuthorizationRepository.getCountsByModules(
+      authorizedModules,
+      userId,
+      userEmployeeId,
+      userPermissions.includes('APPROVE_TRAINING_REQUESTS'),
+    );
 
     const breakdown: Record<string, number> = {};
     let total = 0;
@@ -111,6 +117,7 @@ export class AuthorizationService {
     userId,
     userEmployeeId,
     supervisorId,
+    canApproveTraining,
   }: PendingModuleItemsProps) => {
     const result = await AuthorizationRepository.getPendingByModule({
       moduleName,
@@ -118,6 +125,7 @@ export class AuthorizationService {
       rows,
       userEmployeeId,
       supervisorId,
+      canApproveTraining,
       userId,
     });
 

@@ -58,12 +58,12 @@ export class LoanService {
 
     await db.transaction(async (transaction) => {
       const [updated] = await Loan.update(
-        { status: loanRecord.nextStep, nextStep: newNextStep, reviewedBy: reviewerId, ...payload },
+        { status: 'PENDING_APPROVAL', nextStep: newNextStep, reviewedBy: reviewerId, ...payload },
         { where: { id: loanRecord.id, status: 'PENDING_REVIEW' }, transaction },
       );
       if (updated !== 1) throw ApiError.conflict('This loan is no longer pending review.');
 
-      await AuditLog.create(
+      const audit = await AuditLog.create(
         {
           entity: 'Loan',
           entityId: String(loanRecord.id),
@@ -73,6 +73,12 @@ export class LoanService {
         },
         { transaction },
       );
+      NotificationService.notifyAfterCommit(transaction, 'LOAN_AUTHORIZATION', {
+        recordId: loanRecord.id,
+        employeeId: loanRecord.employeeId,
+        userId: reviewerId,
+        occurrence: audit.id,
+      });
     });
   };
 
@@ -149,6 +155,7 @@ export class LoanService {
       const [updated] = await Loan.update(
         {
           status: 'PENDING_REVIEW',
+          nextStep: 'PENDING_APPROVAL',
           approvedBy: approverId,
           approvedDate: new Date(),
           approverNote,
@@ -157,7 +164,7 @@ export class LoanService {
       );
       if (updated !== 1) throw ApiError.conflict('This loan is no longer pending approval.');
 
-      await AuditLog.create(
+      const audit = await AuditLog.create(
         {
           entity: 'Loan',
           entityId: String(loan.id),
@@ -167,6 +174,11 @@ export class LoanService {
         },
         { transaction },
       );
+      NotificationService.notifyAfterCommit(transaction, 'LOAN_REVIEW', {
+        recordId: loan.id,
+        employeeId: loan.employeeId,
+        occurrence: audit.id,
+      });
     });
   };
 

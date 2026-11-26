@@ -85,6 +85,7 @@ describe('leave notification integration', () => {
         eventType: 'LEAVE_APPLIED',
         payload: { leaveId: 501, requesterEmployeeId: 21, submittedAt: SUBMITTED_AT, actorUserId: 91 },
       },
+      { eventType: 'LEAVE_REVIEW', payload: { recordId: 501, employeeId: 21 } },
     ]);
   });
 

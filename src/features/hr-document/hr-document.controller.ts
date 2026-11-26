@@ -1,3 +1,4 @@
+import { NotificationService } from '../notifications/notification.service';
 import { NextFunction, Request, Response } from 'express';
 import { ApiError } from '../../utils/api-error';
 import { ApiResponse } from '../../utils/api-response';
@@ -453,6 +454,7 @@ export class HRDocumentController {
         await HRFolderService.deleteFolder(approved.documentOrFolderId);
       }
 
+      await NotificationService.notify('DOCUMENTS_APPROVED', { recordId: approved.id, userId: approved.requestedBy });
       logger.info(
         `[approveDeletion] ${approved.deletionType} (ID: ${approved.documentOrFolderId}) deletion approved by user ${userId}. Comment: ${reviewerComment || 'N/A'}`,
       );
@@ -491,6 +493,7 @@ export class HRDocumentController {
         throw ApiError.notFound('Deletion request not found');
       }
 
+      await NotificationService.notify('DOCUMENTS_REJECTED', { recordId: rejected.id, userId: rejected.requestedBy });
       logger.info(`[rejectDeletion] ${rejected.deletionType} deletion rejected by user ${userId}. Reason: ${reviewerComment}`);
 
       res.json(

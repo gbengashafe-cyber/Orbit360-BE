@@ -20,6 +20,24 @@ import { ComplaintRepository } from '../features/complaints/complaint.repository
 import { toReviewerView } from '../features/complaints/complaint.serializer';
 import { ComplaintService } from '../features/complaints/complaint.service';
 
+async function trainingQueueFilter(employeeId: number, userId: number, canApprove: boolean): Promise<WhereOptions> {
+  const reports = employeeId
+    ? await Employee.findAll({
+        where: { supervisorId: employeeId },
+        attributes: ['id'],
+        logging: false,
+      })
+    : [];
+  const stages: WhereOptions[] = [{ status: 'PENDING_SUPERVISOR_APPROVAL', employeeId: reports.map((report) => report.id) }];
+  if (canApprove)
+    stages.push({
+      status: 'PENDING_HR_APPROVAL',
+      ...(employeeId && { employeeId: { [Op.ne]: employeeId } }),
+      [Op.or]: [{ hrReviewedBy: null }, { hrReviewedBy: { [Op.ne]: userId } }],
+    });
+  return { [Op.or]: stages };
+}
+
 export class AuthorizationRepository {
   static readonly getPendingLoans = async (limit: number) => {
     return Loan.findAll({
@@ -74,7 +92,12 @@ export class AuthorizationRepository {
 
     return { loans };
   };
-  static readonly getCountsByModules = async (modules: string[], userId: number, userEmployeeId: number) => {
+  static readonly getCountsByModules = async (
+    modules: string[],
+    userId: number,
+    userEmployeeId: number,
+    canApproveTraining = false,
+  ) => {
     const tasks: Promise<{ key: string; count: number }>[] = [];
 
     if (modules.includes('LOANS')) {
@@ -95,7 +118,10 @@ export class AuthorizationRepository {
     }
     if (modules.includes('LEAVES')) {
       tasks.push(
-        Leave.count({ where: { status: 'pending', employeeId: { [Op.ne]: userEmployeeId } } }).then((c) => ({
+        Leave.count({
+          where: { status: 'pending' },
+          include: [{ model: Employee, as: 'employee', where: { supervisorId: userEmployeeId || -1 } }],
+        }).then((c) => ({
           key: 'leaves',
           count: c,
         })),
@@ -141,12 +167,10 @@ export class AuthorizationRepository {
         })),
       );
     }
-    if (modules.includes('TRAINING REQUESTS')) {
+    if (modules.includes('TRAINING REQUESTS') || canApproveTraining) {
       tasks.push(
         TrainingRequest.count({
-          where: {
-            status: ['PENDING_HR_APPROVAL', 'PENDING_SUPERVISOR_APPROVAL'],
-          },
+          where: await trainingQueueFilter(userEmployeeId, userId, canApproveTraining),
         }).then((c) => ({
           key: 'training requests',
           count: c,
@@ -170,6 +194,7 @@ export class AuthorizationRepository {
     page,
     rows,
     supervisorId,
+    canApproveTraining = false,
     userEmployeeId,
     userId,
   }: PendingModuleItemsProps) => {
@@ -206,9 +231,7 @@ export class AuthorizationRepository {
         });
       case 'TRAINING REQUESTS':
         return TrainingRequest.findAndCountAll({
-          where: {
-            status: ['PENDING_HR_APPROVAL', 'PENDING_SUPERVISOR_APPROVAL'],
-          },
+          where: await trainingQueueFilter(userEmployeeId, userId, canApproveTraining),
           limit: rows,
           offset: offset,
           include: [
@@ -246,7 +269,7 @@ export class AuthorizationRepository {
             {
               model: Employee,
               as: 'employee',
-              where: supervisorId ? { supervisorId } : {},
+              where: { supervisorId: supervisorId || -1 },
               include: [{ model: Employee, as: 'supervisor' }],
             },
           ],

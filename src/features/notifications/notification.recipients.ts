@@ -1,4 +1,6 @@
 import { Op } from 'sequelize';
+import { JobRolePermissions } from '../permissions/permission.model';
+import type { Permission } from '../permissions';
 import { logger } from '../../utils/logger';
 import { Employee } from '../employee/employee.model';
 import { User } from '../users/user.model';
@@ -7,10 +9,18 @@ import { User } from '../users/user.model';
  * A recipient as an event knows it. Employee-facing events usually know the employee record;
  * user accounts are resolved from it with the existing email convention (users.email = employees.email).
  *
- * Phase 2 supports only individual recipients. Approver fan-out (supervisor, HR Officer, HR Manager,
- * Super Admin) is deferred (D4) and will be added here as new reference kinds.
+ * Reviewer events use persisted assignment or action permissions, subject to employment and maker exclusions.
  */
-export type RecipientRef = { kind: 'user'; userId: number } | { kind: 'employee'; employeeId: number };
+export type RecipientRef = WorkflowRecipient | { kind: 'user'; userId: number } | { kind: 'employee'; employeeId: number };
+export type WorkflowRecipient = {
+  kind: 'workflow';
+  permission?: Permission;
+  supervisorOf?: number;
+  assignedEmployeeId?: number;
+  assignedUserId?: number;
+  excludeEmployeeId?: number;
+  excludeUserId?: number;
+};
 type UserRef = Extract<RecipientRef, { kind: 'user' }>;
 type EmployeeRef = Extract<RecipientRef, { kind: 'employee' }>;
 
@@ -19,7 +29,8 @@ export type UnresolvedRecipient = { ref: RecipientRef; reason: UnresolvedReason 
 export type ResolvedRecipients = { userIds: number[]; unresolved: UnresolvedRecipient[] };
 
 // Logs carry ids only, never names or email addresses.
-const describe = (ref: RecipientRef) => (ref.kind === 'user' ? `user ${ref.userId}` : `employee ${ref.employeeId}`);
+const describe = (ref: RecipientRef) =>
+  ref.kind === 'user' ? `user ${ref.userId}` : ref.kind === 'employee' ? `employee ${ref.employeeId}` : 'workflow reviewer';
 
 const normaliseEmail = (email: string | null | undefined) => email?.trim().toLowerCase() || null;
 
@@ -80,6 +91,11 @@ export class NotificationRecipients {
     const unresolved: UnresolvedRecipient[] = [];
 
     for (const ref of refs) {
+      if (ref.kind === 'workflow') {
+        const eligible = await this.resolveWorkflow(ref);
+        for (const id of eligible) if (!userIds.includes(id)) userIds.push(id);
+        continue;
+      }
       const { userId, reason } = NotificationRecipients.lookup(ref, existingUserIds, employeeUsers);
       if (userId === null) {
         unresolved.push({ ref, reason: reason as UnresolvedReason });
@@ -93,8 +109,57 @@ export class NotificationRecipients {
     return { userIds, unresolved };
   };
 
+  private static async resolveWorkflow(ref: WorkflowRecipient): Promise<number[]> {
+    if (!ref.permission && !ref.supervisorOf && !ref.assignedUserId && !ref.assignedEmployeeId) return [];
+    let email: string | undefined;
+    if (ref.assignedEmployeeId) {
+      const assigned = await Employee.findByPk(ref.assignedEmployeeId, { attributes: ['email'], logging: false });
+      if (!assigned?.email) return [];
+      email = assigned.email;
+    }
+    if (ref.supervisorOf) {
+      const owner = await Employee.findByPk(ref.supervisorOf, { attributes: ['supervisorId'], logging: false });
+      if (!owner?.supervisorId || owner.supervisorId === ref.supervisorOf) return [];
+      const supervisor = await Employee.findByPk(owner.supervisorId, { attributes: ['email'], logging: false });
+      if (!supervisor?.email) return [];
+      email = supervisor.email;
+    }
+    const roles = ref.permission
+      ? await JobRolePermissions.findAll({
+          where: { permission: ref.permission },
+          attributes: ['jobRoleId'],
+          logging: false,
+        })
+      : [];
+    const candidates = await User.findAll({
+      where: {
+        status: 'ACTIVE',
+        ...(email && { email }),
+        ...(ref.assignedUserId && { id: ref.assignedUserId }),
+        ...(ref.permission && { jobRoleId: roles.map((role) => role.jobRoleId) }),
+      },
+      attributes: ['id', 'email'],
+      logging: false,
+    });
+    if (!candidates.length || (email && candidates.length !== 1)) return [];
+    const employees = await Employee.findAll({
+      where: { email: candidates.map((user) => user.email) },
+      attributes: ['id', 'email', 'status'],
+      logging: false,
+    });
+    return candidates
+      .filter((user) => {
+        const matches = employees.filter((employee) => normaliseEmail(employee.email) === normaliseEmail(user.email));
+        if (user.id === ref.excludeUserId || matches.length > 1) return false;
+        const employee = matches[0];
+        if (!employee) return false;
+        return ['ACTIVE', 'ON_LEAVE'].includes(employee.status) && employee.id !== ref.excludeEmployeeId;
+      })
+      .map((user) => user.id);
+  }
+
   private static lookup(
-    ref: RecipientRef,
+    ref: UserRef | EmployeeRef,
     existingUserIds: Set<number>,
     employeeUsers: Map<number, number | null>,
   ): { userId: number | null; reason?: UnresolvedReason } {

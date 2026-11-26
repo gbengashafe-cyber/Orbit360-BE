@@ -85,6 +85,7 @@ describe('training notification integration', () => {
         eventType: 'TRAINING_APPLIED',
         payload: { trainingRequestId: created.id, requesterEmployeeId: 21, submittedAt: SUBMITTED_AT },
       },
+      { eventType: 'TRAINING_SUPERVISOR_REVIEW', payload: { recordId: created.id, employeeId: 21 } },
     ]);
     assert.equal('teamMemberIds' in (notifications[0].payload as object), false);
   });
@@ -117,7 +118,7 @@ describe('training notification integration', () => {
     });
   });
 
-  it('does not notify when supervisor approval only advances the request', async () => {
+  it('notifies the HR queue when supervisor approval advances the request', async () => {
     const request = trainingRequest();
     mock.method(TrainingRequest, 'findByPk', async () => request as any);
     mock.method(EmployeeRepository, 'readById', async () => ({ supervisorId: 8 }) as any);
@@ -134,7 +135,9 @@ describe('training notification integration', () => {
       approved: true,
     });
 
-    assert.equal(notifications.length, 0);
+    assert.deepEqual(notifications, [
+      { eventType: 'TRAINING_HR_REVIEW', payload: { recordId: REQUEST_ID, employeeId: 21, userId: 91 } },
+    ]);
   });
 
   it('notifies on HR Officer rejection but not on intermediate HR approval', async () => {
@@ -161,7 +164,9 @@ describe('training notification integration', () => {
     mockNotification();
 
     await TrainingRequestService.hrReview(REQUEST_ID, 92, 'APPROVE');
-    assert.equal(notifications.length, 0);
+    assert.deepEqual(notifications, [
+      { eventType: 'TRAINING_FINAL_APPROVAL', payload: { recordId: REQUEST_ID, employeeId: 21, userId: 92 } },
+    ]);
   });
 
   it('notifies the requester on final HR Manager approval and rejection', async () => {
