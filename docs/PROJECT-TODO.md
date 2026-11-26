@@ -30,7 +30,7 @@ Implemented: central registry, service and recipient resolution; owner-facing le
 
 **Status:** Partially implemented. **Priority:** High. **Dependencies:** owner-scoped APIs, agreed dashboard metrics and notification feed. **Documentation:** frontend `src/pages/employee-portal/dashboard/Dashboard.jsx`, `DESIGN.md`; [NOTIFICATIONS.md](NOTIFICATIONS.md).
 
-Implemented: welcome, job role, staff ID, supervisor, department, SBU and leave/loan shortcuts. API coverage and data freshness for additional summaries are **unverified**.
+Implemented: personal dashboard summary endpoint, owner-scoped request counts and recent requests, annual leave balance, active loans, latest approved payslip, personal profile, quick actions and existing notification feed. Focused tests, local database query and full backend rerun passed; browser and responsive acceptance remain outstanding. An earlier backend run had a non-reproduced dashboard test-file process failure. See [employee dashboard specification](EMPLOYEE-DASHBOARD-UX.md).
 
 - [ ] Define and implement owner-only activity summaries and consolidated My Requests using verified existing APIs or propose missing endpoints.
 - [ ] Add approved quick actions, recent notifications and relevant personal employment information.

@@ -3,8 +3,13 @@ import { Request, Response } from 'express';
 import z from 'zod';
 import { ApiResponse } from '../utils/api-response';
 import { DashboardService } from './dashboard.service';
+import { getPersonalDashboard } from './personal-dashboard.service';
 
 export class DashboardController {
+  static readonly getPersonal = async (req: Request, res: Response) => {
+    const data = await getPersonalDashboard(req.user!.email);
+    return res.json(ApiResponse({ data }));
+  };
   static readonly getStats = async (req: Request, res: Response) => {
     const dashboardQuerySchema = z.object({
       departmentId: z.coerce.number().optional(),
