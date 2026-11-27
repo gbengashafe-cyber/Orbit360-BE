@@ -1,3 +1,4 @@
+import { Transaction } from 'sequelize';
 import { db } from '../../db';
 import { ApiError } from '../../utils/api-error';
 import { Department } from '../department/department.model';
@@ -8,6 +9,7 @@ import {
   MovementAssignmentSnapshot,
   MovementAudit,
   MovementRequest,
+  MovementRequestDetail,
   MovementWorkflow,
   MovementWorkflowVersion,
 } from './staff-movement.models';
@@ -30,6 +32,7 @@ export async function transitionMovement(requestId: number, expectedRevision: nu
     const revision = Number(request.get('revision'));
     if (revision !== expectedRevision) throw ApiError.conflict('Stale movement revision');
     if (!isStructuralTransitionAllowed(from, to)) throw ApiError.badRequest('Invalid movement transition');
+    if (await MovementRequestDetail.findByPk(requestId, options)) throw ApiError.forbidden('Use the movement workflow command');
     const makerId = Number(request.get('initiatedBy'));
     if (from === 'DRAFT' && to === 'WITHDRAWN') {
       if (makerId !== actorId || !(await identity(actorId, transaction)))
@@ -70,23 +73,61 @@ export async function transitionMovement(requestId: number, expectedRevision: nu
         transaction,
       );
     }
-    // The request model prohibits generic updates. This locked conditional write owns state and revision together.
-    const [, affected] = await db.query(
-      'UPDATE sm_requests SET status = :to, revision = revision + 1, updated_at = CURRENT_TIMESTAMP WHERE id = :requestId AND status = :from AND revision = :revision',
-      { replacements: { requestId, from, to, revision }, transaction },
-    );
-    if ((affected as unknown as { affectedRows: number }).affectedRows !== 1)
-      throw ApiError.conflict('Movement changed concurrently');
-    await MovementAudit.create(
-      {
-        actorUserId: actorId,
-        resource: 'sm_requests',
-        recordId: requestId,
-        action: 'TRANSITION',
-        changes: { from, to, revision: revision + 1 },
-      },
-      { transaction },
-    );
-    return { status: to, revision: revision + 1 };
+    return persistMovementTransition(requestId, from, to, revision, actorId, transaction);
   });
+}
+
+/** Shared compare-and-swap and audit write, after the calling command has verified its edge and evidence. */
+export async function persistMovementTransition(
+  requestId: number,
+  from: MovementState,
+  to: MovementState,
+  revision: number,
+  actorId: number,
+  transaction: Transaction,
+  options: { effectiveDate?: string; versionId?: number; audit?: Record<string, unknown> } = {},
+) {
+  const command = options.audit?.action;
+  const resume = command === 'RESUBMIT' && ['RETURNED', 'CLARIFICATION'].includes(from) && to.startsWith('PENDING_');
+  const capturedEndorsement =
+    (command === 'FORWARD' && from === 'PENDING_HR_VALIDATION' && to === 'PENDING_RECEIVING_HOD') ||
+    (['ENDORSE', 'CONDITIONAL_RELEASE', 'RESOLVE'].includes(String(command)) &&
+      from === 'PENDING_CURRENT_HOD' &&
+      to === 'PENDING_FINAL_HR_REVIEW');
+  const sameStage =
+    from === to &&
+    (['EDIT', 'ASSIGN_HR'].includes(String(command)) ||
+      (from === 'PENDING_CURRENT_HOD' && ['OBJECT', 'ESCALATE'].includes(String(command))) ||
+      (from === 'PENDING_ADDITIONAL_APPROVAL' && command === 'APPROVE'));
+  if (!isStructuralTransitionAllowed(from, to) && !sameStage && !capturedEndorsement && !resume)
+    throw ApiError.conflict('Invalid persisted movement transition');
+  if (options.versionId && from !== 'DRAFT') throw ApiError.conflict('Submitted workflow is immutable');
+  // The request model prohibits generic updates. This locked conditional write owns state and revision together.
+  const [, affected] = await db.query(
+    'UPDATE sm_requests SET status = :to, effective_date = COALESCE(:effectiveDate, effective_date), workflow_version_id = COALESCE(:versionId, workflow_version_id), revision = revision + 1, updated_at = CURRENT_TIMESTAMP WHERE id = :requestId AND status = :from AND revision = :revision',
+    {
+      replacements: {
+        requestId,
+        from,
+        to,
+        revision,
+        effectiveDate: options.effectiveDate ?? null,
+        versionId: options.versionId ?? null,
+      },
+      transaction,
+    },
+  );
+  if ((affected as unknown as { affectedRows: number }).affectedRows !== 1)
+    throw ApiError.conflict('Movement changed concurrently');
+  await MovementAudit.create(
+    {
+      actorUserId: actorId,
+      resource: 'sm_requests',
+      recordId: requestId,
+      action: 'TRANSITION',
+      changes: { from, to, revision: revision + 1, ...options.audit },
+    },
+    { transaction },
+  );
+  return { status: to, revision: revision + 1 };
 }

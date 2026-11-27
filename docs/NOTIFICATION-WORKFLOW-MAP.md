@@ -2,6 +2,10 @@
 
 **Implementation update:** HR review requires `PENDING_HR_REVIEW` and the HR form no longer enables review while supervisor approval is pending. Role-based delivery is implemented through persisted-supervisor or bounded existing-permission resolution. The early duplicate-toast discovery remains historical and is superseded by the later frontend suppression.
 
+## Staff Movement request lifecycle
+
+Phase 2 uses the existing STAFF_MOVEMENT category. After a committed submission, review, correction or escalation, MOVEMENT_REVIEW_REQUIRED goes only to the next independent eligible stage principal and applicable bound delegate, or the expressly assigned independent HR reviewer. An initiating HOD's recorded endorsement skips that stage's duplicate task. Objections first go to assigned HR, then to Head of HR on escalation. Returned requests and clarifications send MOVEMENT_CORRECTION_REQUIRED to the designated correcting party. Approval, rejection, withdrawal and cancellation send MOVEMENT_OUTCOME to initiator and subject; approval also includes the eligible departmental heads. Recipients are deduplicated per occurrence. Payloads contain identifiers and revision only. Record access is independently rechecked by the API. Scheduling, letters and clearance are later phases.
+
 ## Current role-based delivery
 
 | Workflow transition | Recipient policy | Event/category |

@@ -50,6 +50,7 @@ export const NOTIFICATION_ENTITY_TYPES = [
   'payroll_batch',
   'deletion_request',
   'onboarding',
+  'staff_movement',
 ] as const;
 export type NotificationEntityType = (typeof NOTIFICATION_ENTITY_TYPES)[number];
 

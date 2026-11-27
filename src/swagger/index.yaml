@@ -72,6 +72,33 @@ components:
       bearerFormat: JWT
 
   schemas:
+    MovementForm:
+      type: object
+      additionalProperties: false
+      required: [departmentId, effectiveDate]
+      description: Submission also requires a position or designation, duration, reason, justification, compensation and replacement answers. Temporary movements require endDate. Executive direction requires directiveReference. Configured conditional stages require explicit answers for their flags.
+      properties:
+        departmentId: { type: integer }
+        positionId: { type: integer }
+        designationId: { type: integer }
+        managerId: { type: integer }
+        branchId: { type: integer }
+        locationId: { type: integer }
+        gradeId: { type: integer }
+        legalEntityId: { type: integer }
+        costCentreId: { type: integer }
+        replacementRequired: { type: boolean }
+        compensationImplication: { type: boolean }
+        gradeChange: { type: boolean }
+        legalEntityChange: { type: boolean }
+        policyException: { type: boolean }
+        reason: { type: string }
+        justification: { type: string }
+        directiveReference: { type: string }
+        duration: { type: string, enum: [PERMANENT, TEMPORARY] }
+        effectiveDate: { type: string, format: date }
+        endDate: { type: string, format: date }
+        documentIds: { type: array, maxItems: 20, items: { type: string, format: uuid } }
     ApiResponse:
       type: object
       properties:
@@ -940,6 +967,74 @@ components:
           example: {}
 
 paths:
+  /staff-movement/requests:
+    get:
+      summary: List accessible movements or assigned movement actions
+      parameters:
+        - { in: query, name: view, schema: { type: string, enum: [accessible, initiated, employee, assigned] } }
+        - { in: query, name: status, schema: { type: string } }
+        - { in: query, name: search, description: Reference or request ID, schema: { type: string } }
+        - { in: query, name: page, schema: { type: integer, minimum: 1 } }
+        - { in: query, name: rows, schema: { type: integer, minimum: 1, maximum: 100 } }
+      responses:
+        '200': { description: Scoped rows and total }
+    post:
+      summary: Create a movement draft and reserve its employee slot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [employeeId, categoryId, path, form]
+              properties:
+                employeeId: { type: integer }
+                categoryId: { type: integer }
+                path: { type: string, enum: [EMPLOYEE_VOLUNTARY, HR_PLANNING, EXECUTIVE_DIRECTED, CURRENT_HOD, RECEIVING_HOD] }
+                form: { $ref: '#/components/schemas/MovementForm' }
+      responses:
+        '201': { description: Draft ID and revision }
+        '403': { description: Initiator outside scope }
+        '409': { description: Active request or workflow configuration conflict }
+  /staff-movement/requests/{id}:
+    parameters:
+      - { in: path, name: id, required: true, schema: { type: integer } }
+    get:
+      summary: Movement details with role-scoped workflow history and permitted actions
+      responses:
+        '200': { description: Authorized details }
+        '404': { description: Request unavailable }
+    patch:
+      summary: Replace the form during an authorized draft or correction
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [revision, form], properties: { revision: {type: integer}, form: { $ref: '#/components/schemas/MovementForm' } } } } }
+      responses:
+        '200': { description: Updated revision }
+        '409': { description: Stale revision }
+  /staff-movement/requests/{id}/actions:
+    parameters:
+      - { in: path, name: id, required: true, schema: { type: integer } }
+    post:
+      summary: Apply an authorized stage action to the expected request revision
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision, action]
+              properties:
+                revision: {type: integer}
+                action: {type: string, enum: [ASSIGN_HR, SUBMIT, WITHDRAW, FORWARD, ENDORSE, CONDITIONAL_RELEASE, OBJECT, ACCEPT, RECOMMEND, APPROVE, RETURN, DECLINE, CLARIFY, ESCALATE, RESOLVE, RESUBMIT, CANCEL]}
+                comments: {type: string}
+                evidence: {type: object, description: "HR preliminary requires eligibility, headcount, position, competency, pendingMatters, compensation, policy, manualVerification and recommendation. Current HOD requires earliestRelease, handover, outstandingResponsibilities, replacement, operationalRisks and conditions. Receiving HOD requires responsibilities, jobDescription, reporting, suitability, resumption, costCentre, kpis, training and conditions. HR final requires recommendation, conditions, policyExceptions, compensation and handoverDeadline. Dates use YYYY-MM-DD. Other findings are nonempty text."}
+                hrUserId: {type: integer}
+      responses:
+        '200': { description: Movement ID, reference, revision and status }
+        '400': { description: Invalid or incomplete stage evidence }
+        '403': { description: Action outside actor authority }
+        '409': { description: Stale revision, contention or missing required assignment }
   /staff-movement/configuration/{resource}:
     parameters:
       - in: path

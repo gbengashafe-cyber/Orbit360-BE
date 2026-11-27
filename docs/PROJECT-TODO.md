@@ -78,15 +78,17 @@ Implemented: backend cycle and appraisal create/update/submit/review routes. Emp
 
 ## Staff movement
 
-**Status:** Phase 1 backend foundation complete and verified on local MySQL. **Priority:** Medium. See the [requirements](STAFF-MOVEMENT-REQUIREMENTS.md), [technical discovery](STAFF-MOVEMENT-TECHNICAL-DISCOVERY.md) and [implementation and migration record](STAFF-MOVEMENT-SPEC.md).
+**Status:** Phase 1 foundation verified. Phase 2 request submission and authorization implemented on local MySQL. **Priority:** Medium. See the [requirements](STAFF-MOVEMENT-REQUIREMENTS.md), [technical discovery](STAFF-MOVEMENT-TECHNICAL-DISCOVERY.md) and [implementation and migration record](STAFF-MOVEMENT-SPEC.md).
 
 - [x] Record approved D1?D9 and implement organizational configuration, effective-dated assignments and Staff Movement notification category.
 - [x] Register company-scoped configuration APIs, implement principal and delegate checks for all six authority roles, append transactional audit, enforce persisted state guards and protect historical workflow versions and stages.
 - [x] Verify the four backend controls with 13 focused tests, 179 full-suite tests, TypeScript and both repository diff checks.
 - [x] Recover `20261126161000-staff-movement-active-request-constraint.cjs` on local `orbit360_dev`. The generated slot and unique employee/slot index passed real competing-transaction, rollback, status and recovery tests. All four Staff Movement migrations are recorded. Final verification passed 27 focused tests, 193 backend tests, six frontend notification tests, TypeScript and both repository diff checks. See the specification for deployment compatibility and the separate path for an already-applied trigger migration.
-- [ ] Phase 2: implement movement submission and approvals after Phase 1 is complete and verified.
+- [x] Implement Phase 2 request intake, review queues, independent approvals, corrections, audit and notification dispatch. See the [Phase 2 implementation and verification record](STAFF-MOVEMENT-PHASE-2.md).
+- [ ] Conduct product-owner acceptance with representative organization data and published approval matrices.
 - [ ] Specify and implement Request New Staff and replacement requisitions under Recruitment, linked to approved positions and headcount when available.
-- [ ] Define notification events and recipients; build and verify only after approval.
+- [x] Integrate review, correction and outcome notifications for submission and approval.
+- [ ] Implement downstream events and scheduled reminders with their respective workflow phases.
 
 **Approved:** D1–D9, including explicit scoped assignments, protected letters, separate consent, effective-date processing and Recruitment ownership of new-staff requisitions. Remaining external inputs include authoritative organization data, approver assignments, approved letter templates and consent policy. KPI, Performance and Appraisal integrations remain deferred; existing regression and security release blockers remain unchanged.
 

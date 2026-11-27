@@ -81,7 +81,20 @@ export const MovementApprovalDecision = define('sm_approval_decisions', {
   actorUserId: required(),
   decision: str(40),
   notes: DataTypes.TEXT,
+  requestRevision: DataTypes.INTEGER,
+  evidence: DataTypes.JSON,
 });
+export const MovementRequestDetail = define('sm_request_details', {
+  companyId: required(),
+  currentDepartmentId: required(),
+  proposedDepartmentId: required(),
+  hrUserId: DataTypes.INTEGER,
+  reference: DataTypes.STRING(40),
+  path: str(32),
+  form: DataTypes.JSON,
+  routing: DataTypes.JSON,
+});
+MovementRequestDetail.belongsTo(MovementRequest, { foreignKey: 'id', as: 'request' });
 export const MovementHodAssignment = define('sm_hod_assignments', {
   departmentId: required(),
   employeeId: required(),

@@ -274,7 +274,29 @@ function workflowEvent(
   });
 }
 
+function movementEvent(event: string, task: boolean, message: string) {
+  return defineEvent({
+    category: 'STAFF_MOVEMENT',
+    audience: task ? 'ACTOR_QUEUE' : 'REQUESTER',
+    schema: z.strictObject({ recordId: id, occurrence: id, userId: id }),
+    maxRecipients: 1,
+    recipients: (p) => [{ kind: 'workflow', assignedUserId: p.userId }],
+    title: () => 'Staff movement',
+    message: () => message,
+    entity: (p) => ({ type: 'staff_movement', id: String(p.recordId) }),
+    metadata: () => null,
+    actorUserId: () => null,
+    dedupeKey: (p) => event + ':' + p.recordId + ':' + p.occurrence,
+  });
+}
 export const NOTIFICATION_EVENTS = {
+  MOVEMENT_REVIEW_REQUIRED: movementEvent('MOVEMENT_REVIEW_REQUIRED', true, 'A staff movement request awaits your review.'),
+  MOVEMENT_CORRECTION_REQUIRED: movementEvent(
+    'MOVEMENT_CORRECTION_REQUIRED',
+    true,
+    'A staff movement request requires your attention.',
+  ),
+  MOVEMENT_OUTCOME: movementEvent('MOVEMENT_OUTCOME', false, 'A decision has been recorded on your staff movement request.'),
   TRAINING_SUPERVISOR_REVIEW: workflowEvent(
     'TRAINING_SUPERVISOR_REVIEW',
     'TRAINING',

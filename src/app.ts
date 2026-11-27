@@ -1,3 +1,4 @@
+import { movementRequests } from './features/staff-movement/staff-movement.routes';
 import { staffMovementConfigurationRoutes } from './features/staff-movement/staff-movement.configuration';
 import compression from 'compression';
 import config from 'config';
@@ -149,6 +150,7 @@ app.use('/api/v1/hr-dashboard', hrDashboardRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/pending-authorization', authorizationRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
+app.use('/api/v1/staff-movement/requests', movementRequests);
 app.use('/api/v1/staff-movement/configuration', staffMovementConfigurationRoutes);
 
 // Swagger Documentation

@@ -1,3 +1,4 @@
+import { listRequests } from '../features/staff-movement/staff-movement.requests';
 import { Request, Response } from 'express';
 import { ApiResponse } from '../utils/api-response';
 import { AuthorizationService } from './pending-authorization.service';
@@ -18,6 +19,15 @@ export class AuthorizationController {
 
     const data = await AuthorizationService.getBadgeCounts(permissions, userId, userEmployeeId);
 
+    if (userEmployeeId && permissions.some((p) => ['REVIEW_STAFF_MOVEMENT', 'APPROVE_STAFF_MOVEMENT'].includes(p))) {
+      try {
+        const queue = await listRequests(userId, { view: 'assigned', page: 1, rows: 1 });
+        Object.assign(data.breakdown, { staffMovement: queue.total });
+        data.total += queue.total;
+      } catch (error) {
+        if (!(error instanceof ApiError && error.code === 403)) throw error;
+      }
+    }
     return res.json(ApiResponse({ data }));
   };
 
@@ -28,6 +38,15 @@ export class AuthorizationController {
     const userEmployeeId = req.user?.employeeRecord?.id as number;
     const supervisorId = userEmployeeId;
 
+    if (moduleName.toUpperCase() === 'STAFF MOVEMENT') {
+      const result = await listRequests(userId, { view: 'assigned', page, rows });
+      return res.json(
+        ApiResponse({
+          data: result.rows,
+          pagination: { page, rows, total: result.total, pages: Math.ceil(result.total / rows) },
+        }),
+      );
+    }
     if (!['LEAVES', 'TRAINING REQUESTS'].includes(moduleName.toLocaleUpperCase())) {
       hasModuleApprovalPermission({ moduleName, req });
     }

@@ -14,7 +14,7 @@ test('migration creates required tables and foreign key constraints', async () =
   const [keys] = await db.query(
     "SELECT constraint_name FROM information_schema.referential_constraints WHERE constraint_schema = DATABASE() AND table_name LIKE 'sm_%'",
   );
-  assert.equal(tables.length, 18);
+  assert.equal(tables.length, 19);
   assert.ok(keys.length >= 20);
 });
 

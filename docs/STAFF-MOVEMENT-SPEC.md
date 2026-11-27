@@ -1,6 +1,6 @@
 # Staff Movement technical specification
 
-Status: Phase 1 foundation complete and verified on local MySQL. Phase 2 remains pending.
+Status: Phase 1 foundation complete and verified on local MySQL. Phase 2 submission and authorization are implemented in the backend. See the [Phase 2 API and verification record](STAFF-MOVEMENT-PHASE-2.md).
 
 ## Current implementation
 
@@ -31,6 +31,10 @@ Local MySQL Community Server 26.10.0 rejected the original BEFORE triggers under
 **Already-applied trigger version.** Sequelize skips a recorded filename. Use a separate reviewed forward migration in that environment: back up, quiesce writers, inspect actual trigger definitions and dependencies, establish and verify the new generated key, then retire the verified legacy triggers before removing their column. Preserve the existing journal entry. No global settings or grants are part of this recovery.
 
 The local pre-recovery table was empty. Its verified recovery SQL captures the complete definition, including unrelated keys. Sequelize applied the revised migration by name after the authority/audit migration. Development and deployment databases maintain independent journals.
+
+### Phase 2 request lifecycle
+
+The authenticated request collection supports drafts, personal requests and assigned queues. Each command requires the current revision. Submission pins the workflow, captures both assignments and allocates the reference from the unique request ID. Separate HR appointments support independent review of HR-initiated requests. An objection returns to HR for escalation to an independent Head of HR. Override and post-approval cancellation require recorded reasons. Published executive and financial stages may use explicit request flags. Unsupported predicates block submission. The approved outcome reserves the employee's active slot. Payroll and employee assignment changes belong to later execution.
 
 ### Phase 1 acceptance on local development
 
