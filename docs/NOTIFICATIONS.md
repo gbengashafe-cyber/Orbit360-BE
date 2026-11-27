@@ -57,6 +57,7 @@ The original event definitions were established in Phase 2; Phase 4 adds Exit ev
 | `PAYROLL` | Batch/override authorization and maker outcomes |
 | `DOCUMENTS` | Document or folder deletion authorization and requester outcomes |
 | `ONBOARDING` | Onboarding review and employee outcomes |
+| `STAFF_MOVEMENT` | Category and preferences only; workflow events are not yet implemented |
 | `GENERAL` | `GENERAL_NOTIFICATION` |
 
 The Phase 2 categories remain intact. `COMPLAINT` retains its approved identity and category decision (D3). The expansion adds workflow-specific categories without renaming or removing existing values. `ACTOR_QUEUE` now represents bounded, eligible reviewer recipients. `BROADCAST` remains unavailable.

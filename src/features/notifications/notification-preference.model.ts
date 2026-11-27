@@ -1,7 +1,7 @@
 import { CreationOptional, DataTypes, ForeignKey, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import { db } from '../../db';
 import { User } from '../users/user.model';
-import { NotificationCategory } from './notification.model';
+import { NotificationCategory, NOTIFICATION_CATEGORIES } from './notification.model';
 
 export class NotificationPreference extends Model<
   InferAttributes<NotificationPreference>,
@@ -18,7 +18,7 @@ export class NotificationPreference extends Model<
 NotificationPreference.init(
   {
     userId: { type: DataTypes.INTEGER, primaryKey: true, allowNull: false },
-    category: { type: DataTypes.ENUM('LEAVE', 'LOAN', 'TRAINING', 'RELIEVER', 'COMPLAINT', 'GENERAL', 'EXIT'), primaryKey: true },
+    category: { type: DataTypes.ENUM(...NOTIFICATION_CATEGORIES), primaryKey: true },
     inAppEnabled: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
     realtimeEnabled: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
     createdAt: DataTypes.DATE,

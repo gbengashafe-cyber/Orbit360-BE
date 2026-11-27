@@ -940,6 +940,102 @@ components:
           example: {}
 
 paths:
+  /staff-movement/configuration/{resource}:
+    parameters:
+      - in: path
+        name: resource
+        required: true
+        schema:
+          type: string
+          enum: [categories, workflows, branches, locations, grades, costCentres, legalEntities, positions, headcounts, hodAssignments, approverAssignments, delegations]
+    get:
+      summary: List movement configuration records
+      description: Requires an eligible employee account with MANAGE_STAFF_MOVEMENT_CONFIGURATION. Organization records are company-scoped.
+      responses:
+        '200': { description: Configuration records }
+        '403': { description: Insufficient configuration authority }
+    post:
+      summary: Create a movement configuration record
+      description: Categories are reference records and cannot be created through this API. Input fields vary by resource.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: Created record }
+        '400': { description: Invalid configuration }
+        '403': { description: Insufficient configuration authority }
+  /staff-movement/configuration/{resource}/{id}:
+    parameters:
+      - { in: path, name: resource, required: true, schema: { type: string } }
+      - { in: path, name: id, required: true, schema: { type: integer } }
+    get:
+      summary: Get configuration record
+      responses:
+        '200': { description: Configuration record }
+        '403': { description: Insufficient configuration authority }
+    patch:
+      summary: Update supported configuration fields
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: Updated record }
+        '403': { description: Insufficient configuration authority }
+  /staff-movement/configuration/{resource}/{id}/revoke:
+    parameters:
+      - { in: path, name: resource, required: true, schema: { type: string, enum: [hodAssignments, approverAssignments, delegations] } }
+      - { in: path, name: id, required: true, schema: { type: integer } }
+    post:
+      summary: Revoke an assignment
+      responses:
+        '200': { description: Revoked assignment }
+        '403': { description: Insufficient configuration authority }
+  /staff-movement/configuration/workflows/{workflowId}/versions:
+    parameters:
+      - { in: path, name: workflowId, required: true, schema: { type: integer } }
+    get:
+      summary: List workflow versions
+      responses:
+        '200': { description: Versions with stages }
+        '403': { description: Insufficient configuration authority }
+    post:
+      summary: Create an immutable workflow version
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [stages, settings]
+              properties:
+                stages: { type: array, items: { type: object, required: [stageCode, authority, scope, mandatory, settings] } }
+                settings: { type: object }
+      responses:
+        '200': { description: Created draft version }
+        '403': { description: Insufficient configuration authority }
+  /staff-movement/configuration/workflows/{workflowId}/versions/{versionId}:
+    parameters:
+      - { in: path, name: workflowId, required: true, schema: { type: integer } }
+      - { in: path, name: versionId, required: true, schema: { type: integer } }
+    get:
+      summary: Get a workflow version
+      responses:
+        '200': { description: Version and stages }
+        '403': { description: Insufficient configuration authority }
+  /staff-movement/configuration/workflows/{workflowId}/versions/{versionId}/{action}:
+    parameters:
+      - { in: path, name: workflowId, required: true, schema: { type: integer } }
+      - { in: path, name: versionId, required: true, schema: { type: integer } }
+      - { in: path, name: action, required: true, schema: { type: string, enum: [activate, retire] } }
+    post:
+      summary: Activate or retire a workflow version
+      responses:
+        '200': { description: Updated version status }
+        '403': { description: Insufficient configuration authority }
   # ═══════════════════════════════════════════════════════════════════════════
   # AUTH  (/api/auth/...)
   # ═══════════════════════════════════════════════════════════════════════════

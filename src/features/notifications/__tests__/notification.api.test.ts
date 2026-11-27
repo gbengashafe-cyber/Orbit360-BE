@@ -379,6 +379,7 @@ describe('unread count', () => {
         PAYROLL: 0,
         DOCUMENTS: 0,
         ONBOARDING: 0,
+        STAFF_MOVEMENT: 0,
       },
     });
   });

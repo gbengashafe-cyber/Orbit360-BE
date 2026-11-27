@@ -23,6 +23,7 @@ export const NOTIFICATION_CATEGORIES = [
   'PAYROLL',
   'DOCUMENTS',
   'ONBOARDING',
+  'STAFF_MOVEMENT',
 ] as const;
 export type NotificationCategory = (typeof NOTIFICATION_CATEGORIES)[number];
 
